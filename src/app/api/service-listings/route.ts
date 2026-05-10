@@ -58,6 +58,14 @@ export async function POST(req: Request) {
       official_url: body.official_url || '',
       apply_process: body.apply_process || '',
       personal_info_fields: body.personal_info_fields || [],
+      eligibility: body.eligibility || '',
+      deadlines: body.deadlines || {},
+      loan_tiers: body.loan_tiers || [],
+      important_details: body.important_details || [],
+      processing_time: body.processing_time || '',
+      special_notes: body.special_notes || '',
+      fee_info: body.fee_info || '',
+      apply_steps: body.apply_steps || [],
     }]).select().single()
 
     if (error) {
@@ -105,6 +113,14 @@ export async function PUT(req: Request) {
       official_url: updates.official_url,
       apply_process: updates.apply_process,
       personal_info_fields: updates.personal_info_fields,
+      eligibility: updates.eligibility,
+      deadlines: updates.deadlines,
+      loan_tiers: updates.loan_tiers,
+      important_details: updates.important_details,
+      processing_time: updates.processing_time,
+      special_notes: updates.special_notes,
+      fee_info: updates.fee_info,
+      apply_steps: updates.apply_steps,
     }).eq('id', id).select().single()
 
     if (error) {
@@ -159,6 +175,14 @@ function getTableSQL() {
   official_url TEXT DEFAULT '',
   apply_process TEXT DEFAULT '',
   personal_info_fields JSONB DEFAULT '[]',
+  eligibility TEXT DEFAULT '',
+  deadlines JSONB DEFAULT '{}',
+  loan_tiers JSONB DEFAULT '[]',
+  important_details JSONB DEFAULT '[]',
+  processing_time TEXT DEFAULT '',
+  special_notes TEXT DEFAULT '',
+  fee_info TEXT DEFAULT '',
+  apply_steps JSONB DEFAULT '[]',
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );

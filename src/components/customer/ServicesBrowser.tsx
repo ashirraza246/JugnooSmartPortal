@@ -54,7 +54,7 @@ interface RequiredDocument {
   description?: string
 }
 
-// Extended service type
+// Extended service type - includes admin-managed apply flow fields
 interface ServiceData {
   id: string
   name: string
@@ -67,6 +67,15 @@ interface ServiceData {
   personal_info_fields?: PersonalInfoField[]
   official_url?: string
   apply_process?: string
+  // Admin-managed apply flow fields
+  eligibility?: string
+  deadlines?: { start_date?: string; end_date?: string; is_rolling?: boolean; note?: string } | Record<string, never>
+  loan_tiers?: { tier: number; name: string; amount_min: number; amount_max: number; markup_rate: string; duration: string; collateral: boolean }[]
+  important_details?: string[]
+  processing_time?: string
+  special_notes?: string
+  fee_info?: string
+  apply_steps?: string[]
 }
 
 // Payment settings from API
@@ -453,17 +462,113 @@ export function ServicesBrowser() {
     return []
   }
 
-  // Get govt service data for the currently selected service
+  // Get govt service data for the currently selected service (fallback)
   const getGovtService = () => {
     return selectedService ? govtServicesMap.get(selectedService.id) : null
   }
 
+  // Get eligibility text: API data first, then fallback to static govt-services-data
+  const getEligibility = (): string => {
+    // 1. Check API service data first (admin-managed)
+    if (selectedService?.eligibility && selectedService.eligibility.trim()) {
+      return selectedService.eligibility
+    }
+    // 2. Fallback to GOVT_SERVICES static data
+    const govtService = getGovtService()
+    if (govtService?.eligibility && govtService.eligibility.trim()) {
+      return govtService.eligibility
+    }
+    return ''
+  }
+
+  // Get deadlines: API data first, then fallback to static
+  const getDeadlines = (): { start_date: string; end_date: string; is_rolling: boolean; note: string } | null => {
+    // 1. Check API service data first (admin-managed)
+    if (selectedService?.deadlines && Object.keys(selectedService.deadlines).length > 0) {
+      const d = selectedService.deadlines as { start_date?: string; end_date?: string; is_rolling?: boolean; note?: string }
+      if (d.start_date || d.end_date || d.is_rolling !== undefined || d.note) {
+        return {
+          start_date: d.start_date || '',
+          end_date: d.end_date || '',
+          is_rolling: d.is_rolling !== undefined ? d.is_rolling : true,
+          note: d.note || '',
+        }
+      }
+    }
+    // 2. Fallback to GOVT_SERVICES static data
+    const govtService = getGovtService()
+    if (govtService?.deadlines) {
+      return {
+        start_date: govtService.deadlines.start_date || '',
+        end_date: govtService.deadlines.end_date || '',
+        is_rolling: govtService.deadlines.is_rolling,
+        note: govtService.deadlines.note || '',
+      }
+    }
+    return null
+  }
+
+  // Get loan tiers: API data first, then fallback to static
+  const getLoanTiers = () => {
+    // 1. Check API service data first (admin-managed)
+    if (selectedService?.loan_tiers && selectedService.loan_tiers.length > 0) {
+      return selectedService.loan_tiers
+    }
+    // 2. Fallback to GOVT_SERVICES static data
+    const govtService = getGovtService()
+    if (govtService?.loan_tiers && govtService.loan_tiers.length > 0) {
+      return govtService.loan_tiers
+    }
+    return null
+  }
+
+  // Get important details: API data first, then fallback to static
+  const getImportantDetails = (): string[] => {
+    // 1. Check API service data first (admin-managed)
+    if (selectedService?.important_details && selectedService.important_details.length > 0) {
+      return selectedService.important_details
+    }
+    // 2. Build from GOVT_SERVICES static data fields
+    const govtService = getGovtService()
+    if (govtService) {
+      const details: string[] = []
+      if (govtService.processing_time) details.push(`Processing Time: ${govtService.processing_time}`)
+      if (govtService.fee_info) details.push(`Fee: ${govtService.fee_info}`)
+      if (govtService.special_notes) details.push(govtService.special_notes)
+      if (govtService.cnic_format_note) details.push(`CNIC: ${govtService.cnic_format_note}`)
+      return details
+    }
+    return []
+  }
+
+  // Get processing time: API data first, then fallback
+  const getProcessingTime = (): string => {
+    if (selectedService?.processing_time && selectedService.processing_time.trim()) return selectedService.processing_time
+    const govtService = getGovtService()
+    return govtService?.processing_time || ''
+  }
+
+  // Get fee info: API data first, then fallback
+  const getFeeInfo = (): string => {
+    if (selectedService?.fee_info && selectedService.fee_info.trim()) return selectedService.fee_info
+    const govtService = getGovtService()
+    return govtService?.fee_info || ''
+  }
+
+  // Get special notes: API data first, then fallback
+  const getSpecialNotes = (): string => {
+    if (selectedService?.special_notes && selectedService.special_notes.trim()) return selectedService.special_notes
+    const govtService = getGovtService()
+    return govtService?.special_notes || ''
+  }
+
   // Auto-eligibility check
   const runEligibilityCheck = () => {
-    const govtService = getGovtService()
-    if (!govtService) { setEligibilityResult(null); return }
+    // Use the merged eligibility (API data > static data)
+    const eligibility = getEligibility().toLowerCase()
+    if (!eligibility) { setEligibilityResult(null); return }
 
-    const eligibility = govtService.eligibility?.toLowerCase() || ''
+    const govtService = getGovtService()
     let isEligible = true
     let reason = ''
 
@@ -487,7 +592,7 @@ export function ServicesBrowser() {
     }
 
     // Check age for loans
-    if (govtService.category === 'loan') {
+    if (isLoanService) {
       const dobField = personalInfo['pkj-p4'] || personalInfo['pyl-p4'] || personalInfo['bisp-p5'] || personalInfo['ek-p3'] || personalInfo['er-p3']
       if (dobField) {
         const age = Math.floor((Date.now() - new Date(dobField).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
@@ -524,9 +629,9 @@ export function ServicesBrowser() {
     if (step === 4) {
       // Loan Amount: must have valid amount within range
       if (!loanAmount || parseInt(loanAmount) <= 0) return false
-      const govtService = getGovtService()
-      if (govtService?.loan_tiers && selectedTier !== null) {
-        const tier = govtService.loan_tiers[selectedTier]
+      const loanTiers = getLoanTiers()
+      if (loanTiers && selectedTier !== null) {
+        const tier = loanTiers[selectedTier]
         if (tier) {
           const amount = parseInt(loanAmount)
           if (amount < tier.amount_min || amount > tier.amount_max) return false
@@ -1066,23 +1171,26 @@ export function ServicesBrowser() {
                       <h4 className="text-sm font-semibold text-[#003366]">{t.stepEligibility}</h4>
                     </div>
 
-                    {govtServiceData?.eligibility ? (
-                      <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100">
-                        <div className="space-y-2">
-                          {govtServiceData.eligibility.split('.').filter(s => s.trim()).map((item, idx) => (
-                            <div key={idx} className="flex items-start gap-2">
-                              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
-                              <p className="text-xs text-[#003366] leading-relaxed">{item.trim()}.</p>
-                            </div>
-                          ))}
+                    {(() => {
+                      const eligibility = getEligibility()
+                      return eligibility ? (
+                        <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+                          <div className="space-y-2">
+                            {eligibility.split('.').filter(s => s.trim()).map((item, idx) => (
+                              <div key={idx} className="flex items-start gap-2">
+                                <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                                <p className="text-xs text-[#003366] leading-relaxed">{item.trim()}.</p>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <Shield className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                        <p className="text-sm text-muted-foreground">{t.noEligibility}</p>
-                      </div>
-                    )}
+                      ) : (
+                        <div className="text-center py-6">
+                          <Shield className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-muted-foreground">{t.noEligibility}</p>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
 
@@ -1096,32 +1204,35 @@ export function ServicesBrowser() {
                       <h4 className="text-sm font-semibold text-[#003366]">{t.stepDeadlines}</h4>
                     </div>
 
-                    {govtServiceData?.deadlines ? (
-                      <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-3">
-                        {govtServiceData.deadlines.is_rolling ? (
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs px-3 py-1">
-                              <CheckCircle2 className="w-3 h-3 mr-1" /> {t.openYearRound}
-                            </Badge>
-                          </div>
-                        ) : (
-                          <div className="flex items-center gap-2">
-                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-xs px-3 py-1">
-                              <Clock className="w-3 h-3 mr-1" />
-                              {govtServiceData.deadlines.start_date} — {govtServiceData.deadlines.end_date}
-                            </Badge>
-                          </div>
-                        )}
-                        {govtServiceData.deadlines.note && (
-                          <p className="text-xs text-muted-foreground leading-relaxed">{govtServiceData.deadlines.note}</p>
-                        )}
-                      </div>
-                    ) : (
-                      <div className="text-center py-6">
-                        <Clock className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                        <p className="text-sm text-muted-foreground">{t.noDeadlines}</p>
-                      </div>
-                    )}
+                    {(() => {
+                      const deadlines = getDeadlines()
+                      return deadlines ? (
+                        <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-3">
+                          {deadlines.is_rolling ? (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs px-3 py-1">
+                                <CheckCircle2 className="w-3 h-3 mr-1" /> {t.openYearRound}
+                              </Badge>
+                            </div>
+                          ) : (
+                            <div className="flex items-center gap-2">
+                              <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-xs px-3 py-1">
+                                <Clock className="w-3 h-3 mr-1" />
+                                {deadlines.start_date} — {deadlines.end_date}
+                              </Badge>
+                            </div>
+                          )}
+                          {deadlines.note && (
+                            <p className="text-xs text-muted-foreground leading-relaxed">{deadlines.note}</p>
+                          )}
+                        </div>
+                      ) : (
+                        <div className="text-center py-6">
+                          <Clock className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-muted-foreground">{t.noDeadlines}</p>
+                        </div>
+                      )
+                    })()}
                   </div>
                 )}
 
@@ -1135,9 +1246,11 @@ export function ServicesBrowser() {
                       <h4 className="text-sm font-semibold text-[#003366]">{t.stepLoanTiers}</h4>
                     </div>
 
-                    {govtServiceData?.loan_tiers && govtServiceData.loan_tiers.length > 0 ? (
+                    {(() => {
+                      const loanTiers = getLoanTiers()
+                      return loanTiers && loanTiers.length > 0 ? (
                       <div className="space-y-3">
-                        {govtServiceData.loan_tiers.map((tier, idx) => {
+                        {loanTiers.map((tier, idx) => {
                           const isSelected = selectedTier === idx
                           return (
                             <button
@@ -1184,12 +1297,16 @@ export function ServicesBrowser() {
                         <Banknote className="w-10 h-10 mx-auto mb-3 text-gray-300" />
                         <p className="text-sm text-muted-foreground">No loan tiers available</p>
                       </div>
-                    )}
+                    )
+                    })()}
                   </div>
                 )}
 
                 {/* ==================== STEP 4: Loan Amount (Loan services only) ==================== */}
-                {currentStep === 4 && isLoanService && (
+                {currentStep === 4 && isLoanService && (() => {
+                  const loanTiers = getLoanTiers()
+                  const currentTier = selectedTier !== null ? loanTiers?.[selectedTier] : null
+                  return (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
@@ -1198,12 +1315,12 @@ export function ServicesBrowser() {
                       <h4 className="text-sm font-semibold text-[#003366]">{t.stepLoanAmount}</h4>
                     </div>
 
-                    {selectedTier !== null && govtServiceData?.loan_tiers?.[selectedTier] ? (
+                    {currentTier ? (
                       <div className="space-y-3">
                         <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
                           <p className="text-xs text-muted-foreground">{t.loanAmountRange}:</p>
-                          <p className="text-sm font-bold text-[#003366]">Rs {govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} — Rs {govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}</p>
-                          <p className="text-xs text-emerald-600 mt-1">Markup: {govtServiceData.loan_tiers[selectedTier].markup_rate} | Duration: {govtServiceData.loan_tiers[selectedTier].duration}</p>
+                          <p className="text-sm font-bold text-[#003366]">Rs {currentTier.amount_min.toLocaleString()} — Rs {currentTier.amount_max.toLocaleString()}</p>
+                          <p className="text-xs text-emerald-600 mt-1">Markup: {currentTier.markup_rate} | Duration: {currentTier.duration}</p>
                         </div>
                         <div className="space-y-1.5">
                           <Label className="text-xs font-medium flex items-center gap-1">
@@ -1213,14 +1330,14 @@ export function ServicesBrowser() {
                             type="number"
                             value={loanAmount}
                             onChange={(e) => setLoanAmount(e.target.value)}
-                            min={govtServiceData.loan_tiers[selectedTier].amount_min}
-                            max={govtServiceData.loan_tiers[selectedTier].amount_max}
-                            placeholder={`Rs ${govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} - ${govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}`}
+                            min={currentTier.amount_min}
+                            max={currentTier.amount_max}
+                            placeholder={`Rs ${currentTier.amount_min.toLocaleString()} - ${currentTier.amount_max.toLocaleString()}`}
                             className="border-blue-100 focus-visible:ring-blue-200"
                           />
-                          {loanAmount && (parseInt(loanAmount) < govtServiceData.loan_tiers[selectedTier].amount_min || parseInt(loanAmount) > govtServiceData.loan_tiers[selectedTier].amount_max) && (
+                          {loanAmount && (parseInt(loanAmount) < currentTier.amount_min || parseInt(loanAmount) > currentTier.amount_max) && (
                             <p className="text-[10px] text-red-500">
-                              Amount must be between Rs {govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} and Rs {govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}
+                              Amount must be between Rs {currentTier.amount_min.toLocaleString()} and Rs {currentTier.amount_max.toLocaleString()}
                             </p>
                           )}
                         </div>
@@ -1231,101 +1348,100 @@ export function ServicesBrowser() {
                       </div>
                     )}
                   </div>
-                )}
+                  )
+                })()}
 
                 {/* ==================== STEP 5: Important Details ==================== */}
-                {currentStep === 5 && (
-                  <div className="space-y-3 animate-in fade-in duration-300">
-                    <div className="flex items-center gap-2 mb-2">
-                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
-                        <Info className="w-4 h-4" />
+                {currentStep === 5 && (() => {
+                  const processingTime = getProcessingTime()
+                  const feeInfo = getFeeInfo()
+                  const specialNotes = getSpecialNotes()
+                  const importantDetails = getImportantDetails()
+                  const officialUrl = selectedService?.official_url || govtServiceData?.official_url || ''
+                  const applyProcess = selectedService?.apply_process || govtServiceData?.apply_process || ''
+                  const hasAnyData = processingTime || feeInfo || specialNotes || importantDetails.length > 0 || officialUrl || applyProcess
+
+                  return (
+                    <div className="space-y-3 animate-in fade-in duration-300">
+                      <div className="flex items-center gap-2 mb-2">
+                        <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                          <Info className="w-4 h-4" />
+                        </div>
+                        <h4 className="text-sm font-semibold text-[#003366]">{t.stepImportant}</h4>
                       </div>
-                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepImportant}</h4>
+
+                      <div className="space-y-3">
+                        {/* Admin-managed Important Details */}
+                        {importantDetails.length > 0 && importantDetails.map((detail, idx) => (
+                          <div key={idx} className="flex items-start gap-2 p-3 rounded-xl bg-cyan-50/50 border border-cyan-100">
+                            <div className="w-5 h-5 rounded-full bg-[#003366] text-white flex items-center justify-center text-[9px] font-bold shrink-0 mt-0.5">{idx + 1}</div>
+                            <p className="text-xs text-[#003366] leading-relaxed">{detail}</p>
+                          </div>
+                        ))}
+
+                        {/* Processing Time */}
+                        {processingTime && (
+                          <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                            <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                              <Clock className="w-3 h-3" /> {t.processingTime}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{processingTime}</p>
+                          </div>
+                        )}
+
+                        {/* Fee Info */}
+                        {feeInfo && (
+                          <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                            <p className="text-xs font-semibold text-emerald-700 mb-1 flex items-center gap-1">
+                              <Wallet className="w-3 h-3" /> {t.feeInfo}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{feeInfo}</p>
+                          </div>
+                        )}
+
+                        {/* Special Notes */}
+                        {specialNotes && (
+                          <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-100">
+                            <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
+                              <AlertCircle className="w-3 h-3" /> {t.specialNotes}
+                            </p>
+                            <p className="text-xs text-muted-foreground">{specialNotes}</p>
+                          </div>
+                        )}
+
+                        {/* Official URL */}
+                        {officialUrl && (
+                          <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                            <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                              <Shield className="w-3 h-3" /> {t.officialUrl}
+                            </p>
+                            <a href={officialUrl} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2980b9] underline break-all">
+                              {officialUrl}
+                            </a>
+                          </div>
+                        )}
+
+                        {/* Apply Process */}
+                        {applyProcess && (
+                          <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                            <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                              <ClipboardCheck className="w-3 h-3" /> {t.applyProcess}
+                            </p>
+                            <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{applyProcess}</p>
+                          </div>
+                        )}
+
+                        {/* Fallback if no data at all */}
+                        {!hasAnyData && (
+                          <div className="text-center py-6">
+                            <Info className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                            <p className="text-sm text-muted-foreground">Koi khaas details nahi / No special details available</p>
+                          </div>
+                        )}
+                      </div>
                     </div>
-
-                    <div className="space-y-3">
-                      {/* Processing Time */}
-                      {govtServiceData?.processing_time && (
-                        <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
-                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
-                            <Clock className="w-3 h-3" /> {t.processingTime}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{govtServiceData.processing_time}</p>
-                        </div>
-                      )}
-
-                      {/* Fee Info */}
-                      {govtServiceData?.fee_info && (
-                        <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
-                          <p className="text-xs font-semibold text-emerald-700 mb-1 flex items-center gap-1">
-                            <Wallet className="w-3 h-3" /> {t.feeInfo}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{govtServiceData.fee_info}</p>
-                        </div>
-                      )}
-
-                      {/* Special Notes */}
-                      {govtServiceData?.special_notes && (
-                        <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-100">
-                          <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
-                            <AlertCircle className="w-3 h-3" /> {t.specialNotes}
-                          </p>
-                          <p className="text-xs text-muted-foreground">{govtServiceData.special_notes}</p>
-                        </div>
-                      )}
-
-                      {/* Official URL */}
-                      {govtServiceData?.official_url && (
-                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
-                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
-                            <Shield className="w-3 h-3" /> {t.officialUrl}
-                          </p>
-                          <a href={govtServiceData.official_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2980b9] underline break-all">
-                            {govtServiceData.official_url}
-                          </a>
-                        </div>
-                      )}
-
-                      {/* Apply Process */}
-                      {govtServiceData?.apply_process && (
-                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
-                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
-                            <ClipboardCheck className="w-3 h-3" /> {t.applyProcess}
-                          </p>
-                          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{govtServiceData.apply_process}</p>
-                        </div>
-                      )}
-
-                      {/* Also show official_url/apply_process from selectedService if available */}
-                      {!govtServiceData?.official_url && selectedService?.official_url && (
-                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
-                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
-                            <Shield className="w-3 h-3" /> {t.officialUrl}
-                          </p>
-                          <a href={selectedService.official_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2980b9] underline break-all">
-                            {selectedService.official_url}
-                          </a>
-                        </div>
-                      )}
-                      {!govtServiceData?.apply_process && selectedService?.apply_process && (
-                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
-                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
-                            <ClipboardCheck className="w-3 h-3" /> {t.applyProcess}
-                          </p>
-                          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{selectedService.apply_process}</p>
-                        </div>
-                      )}
-
-                      {/* Fallback if no govt data at all */}
-                      {!govtServiceData?.processing_time && !govtServiceData?.fee_info && !govtServiceData?.special_notes && !govtServiceData?.official_url && !govtServiceData?.apply_process && !selectedService?.official_url && !selectedService?.apply_process && (
-                        <div className="text-center py-6">
-                          <Info className="w-10 h-10 mx-auto mb-3 text-gray-300" />
-                          <p className="text-sm text-muted-foreground">Koi khaas details nahi / No special details available</p>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                )}
+                  )
+                })()}
 
                 {/* ==================== STEP 6: Personal Details ==================== */}
                 {currentStep === 6 && (
