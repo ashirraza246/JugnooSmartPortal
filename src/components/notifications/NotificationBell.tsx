@@ -30,6 +30,18 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  // Lock body scroll when notification panel is open on mobile
+  useEffect(() => {
+    if (isOpen) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [isOpen]);
+
   const getTypeColor = (type: string) => {
     switch (type) {
       case 'status': return 'bg-[#E8F0FE] text-[#1A3C5E]';
@@ -87,28 +99,48 @@ export default function NotificationBell() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Mobile backdrop - click to close */}
-            <div
-              className="fixed inset-0 bg-black/30 z-40 sm:hidden"
+            {/* Backdrop - covers entire screen on both mobile and desktop */}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              transition={{ duration: 0.15 }}
+              className="fixed inset-0 bg-black/40 z-40"
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Notification panel */}
+            {/* Mobile: Bottom Sheet style / Desktop: Dropdown style */}
+            {/* Mobile panel - slides up from bottom */}
             <motion.div
-              initial={{ opacity: 0, y: 8, scale: 0.95 }}
+              initial={{ opacity: 0, y: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : 8, scale: typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: 8, scale: 0.95 }}
-              transition={{ duration: 0.2 }}
-              className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100/80 overflow-hidden z-50
-                w-[calc(100vw-16px)] sm:w-96 max-h-[80vh]"
+              exit={{ opacity: 0, y: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : 8, scale: typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 0.95 }}
+              transition={{ duration: 0.25, ease: 'easeOut' }}
+              className="fixed inset-x-0 bottom-0 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96
+                bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl border border-gray-100/80 overflow-hidden
+                sm:max-h-[80vh] max-h-[85vh] flex flex-col"
             >
-              {/* Mobile drag handle */}
-              <div className="flex justify-center pt-2 pb-0 sm:hidden">
+              {/* Drag handle for mobile */}
+              <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0 cursor-grab"
+                onTouchStart={(e) => {
+                  const startY = e.touches[0].clientY;
+                  const handleTouchMove = (ev: TouchEvent) => {
+                    if (ev.touches[0].clientY - startY > 80) {
+                      setIsOpen(false);
+                      document.removeEventListener('touchmove', handleTouchMove);
+                    }
+                  };
+                  document.addEventListener('touchmove', handleTouchMove);
+                  document.addEventListener('touchend', () => {
+                    document.removeEventListener('touchmove', handleTouchMove);
+                  }, { once: true });
+                }}
+              >
                 <div className="w-10 h-1 rounded-full bg-gray-300" />
               </div>
 
               {/* Header */}
-              <div className="p-4 bg-gradient-to-r from-[#1A3C5E] to-[#003E6B] flex items-center justify-between">
+              <div className="p-4 bg-gradient-to-r from-[#1A3C5E] to-[#003E6B] flex items-center justify-between shrink-0">
                 <div>
                   <h3 className="text-white font-semibold text-sm">Notifications / اطلاعات</h3>
                   <p className="text-blue-200 text-xs">{unreadCount} padhi nahi / unread</p>
@@ -136,7 +168,7 @@ export default function NotificationBell() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
-                  {/* Close button - visible on all screens */}
+                  {/* Close button */}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -149,7 +181,7 @@ export default function NotificationBell() {
               </div>
 
               {/* Notification list */}
-              <ScrollArea className="max-h-[60vh]">
+              <div className="flex-1 overflow-y-auto overscroll-contain">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-gray-400">
                     <Bell className="w-10 h-10 mx-auto mb-2 opacity-30" />
@@ -157,7 +189,7 @@ export default function NotificationBell() {
                   </div>
                 ) : (
                   <div className="divide-y divide-gray-50">
-                    {notifications.slice(0, 10).map((notif) => (
+                    {notifications.slice(0, 15).map((notif) => (
                       <motion.div
                         key={notif.id}
                         className={`p-3 cursor-pointer hover:bg-[#F5F7FA] transition-colors group relative ${
@@ -166,20 +198,20 @@ export default function NotificationBell() {
                         onClick={() => markNotificationRead(notif.id)}
                         whileTap={{ scale: 0.98 }}
                       >
-                        <div className="flex items-start gap-3">
-                          <div className={`flex-shrink-0 mt-0.5 px-2 py-0.5 rounded-full text-[10px] font-medium ${getTypeColor(notif.type)}`}>
+                        <div className="flex items-start gap-2 sm:gap-3">
+                          <div className={`flex-shrink-0 mt-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium ${getTypeColor(notif.type)}`}>
                             {getTypeLabel(notif.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>
+                            <p className={`text-xs sm:text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>
                               {notif.title}
                             </p>
-                            <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2">{notif.message}</p>
-                            <p className="text-[10px] text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
+                            <p className="text-[10px] sm:text-xs text-[#6B7280] mt-0.5 line-clamp-2">{notif.message}</p>
+                            <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
                           </div>
-                          <div className="flex items-center gap-1">
+                          <div className="flex items-center gap-1 shrink-0">
                             {!notif.isRead && (
-                              <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#F5A623] mt-2" />
+                              <div className="w-2 h-2 rounded-full bg-[#F5A623] mt-2" />
                             )}
                             <button
                               onClick={(e) => {
@@ -197,7 +229,10 @@ export default function NotificationBell() {
                     ))}
                   </div>
                 )}
-              </ScrollArea>
+              </div>
+
+              {/* Bottom safe area for mobile */}
+              <div className="h-safe-area-inset-bottom shrink-0 sm:hidden" />
             </motion.div>
           </>
         )}

@@ -11,10 +11,29 @@ import {
   Shield, Clock, Wallet, CheckCircle2, Search
 } from 'lucide-react'
 import { motion } from 'framer-motion'
+import { useQuery } from '@tanstack/react-query'
 
 export function HelpPage() {
   const { isAdmin } = useAuth()
   const { isUrdu, setActiveModule } = useAppStore()
+
+  // Fetch WhatsApp number from settings
+  const { data: settingsData } = useQuery({
+    queryKey: ['help-settings'],
+    queryFn: async () => {
+      try {
+        const res = await fetch('/api/settings')
+        if (!res.ok) throw new Error('Failed')
+        return res.json()
+      } catch {
+        return null
+      }
+    },
+    staleTime: 60000,
+    retry: false,
+  })
+  const whatsappNumber = settingsData?.business?.whatsapp || '923001234567'
+  const whatsappLink = `https://wa.me/${whatsappNumber}?text=${encodeURIComponent('Hi Jugnoo Support, I need help with...')}`
 
   const t = isUrdu ? {
     title: 'مدد اور رہنمائی',
@@ -226,7 +245,7 @@ export function HelpPage() {
               {t.liveChat}
             </Button>
             <a
-              href="https://wa.me/923001234567?text=Hi%20Jugnoo%20Support%2C%20I%20need%20help%20with..."
+              href={whatsappLink}
               target="_blank"
               rel="noopener noreferrer"
               className="inline-flex items-center gap-2 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white rounded-xl text-sm font-medium transition-colors"
