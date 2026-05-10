@@ -35,6 +35,7 @@ export type CustomerModuleKey =
   | 'whatsapp'
   | 'profile'
   | 'notifications'
+  | 'support-chat'
 
 export type ModuleKey = AdminModuleKey | CustomerModuleKey
 
