@@ -36,7 +36,7 @@ const customerNavItems: { key: ModuleKey; label: string; labelUrdu: string; icon
   { key: 'my-applications', label: 'My Applications', labelUrdu: 'میری درخواستیں', icon: FileText, group: 'main' },
   { key: 'my-orders', label: 'My Orders', labelUrdu: 'میرے آرڈرز', icon: ClipboardList, group: 'main' },
   { key: 'notifications', label: 'Notifications', labelUrdu: 'اطلاعات', icon: Bell, group: 'main' },
-  { key: 'cvbuilder', label: 'CV Builder', labelUrdu: 'سی وی بنائیں', icon: FilePlus2, group: 'services' },
+
   { key: 'payments', label: 'Payments', labelUrdu: 'پیمنٹس', icon: CreditCard, group: 'finance' },
   { key: 'whatsapp', label: 'WhatsApp', labelUrdu: 'واٹس ایپ', icon: MessageSquare, group: 'main' },
   { key: 'profile', label: 'Profile', labelUrdu: 'پروفائل', icon: UserCircle, group: 'account' },

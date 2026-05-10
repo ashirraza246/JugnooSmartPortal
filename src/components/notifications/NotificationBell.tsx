@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, CheckCheck } from 'lucide-react';
+import { Bell, Check, CheckCheck, X, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -12,6 +12,8 @@ export default function NotificationBell() {
   const notifications = useAppStore((s) => s.notifications);
   const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const markAllNotificationsRead = useAppStore((s) => s.markAllNotificationsRead);
+  const clearNotification = useAppStore((s) => s.clearNotification);
+  const clearAllNotifications = useAppStore((s) => s.clearAllNotifications);
   const ref = useRef<HTMLDivElement>(null);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
@@ -91,17 +93,30 @@ export default function NotificationBell() {
                 <h3 className="text-white font-semibold">Notifications / اطلاعات</h3>
                 <p className="text-blue-200 text-xs">{unreadCount} padhi nahi / unread</p>
               </div>
-              {unreadCount > 0 && (
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={markAllNotificationsRead}
-                  className="text-blue-200 hover:text-white hover:bg-white/10 text-xs"
-                >
-                  <CheckCheck className="w-4 h-4 mr-1" />
-                  Sab parhein / Mark all read
-                </Button>
-              )}
+              <div className="flex items-center gap-1">
+                {unreadCount > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={markAllNotificationsRead}
+                    className="text-blue-200 hover:text-white hover:bg-white/10 text-xs"
+                  >
+                    <CheckCheck className="w-4 h-4 mr-1" />
+                    Sab parhein
+                  </Button>
+                )}
+                {notifications.length > 0 && (
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={clearAllNotifications}
+                    className="text-red-300 hover:text-red-200 hover:bg-red-500/10 text-xs"
+                    title="Sab hatao / Clear all"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </Button>
+                )}
+              </div>
             </div>
 
             {/* Notification list */}
@@ -116,7 +131,7 @@ export default function NotificationBell() {
                   {notifications.slice(0, 10).map((notif) => (
                     <motion.div
                       key={notif.id}
-                      className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors ${
+                      className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors group relative ${
                         !notif.isRead ? 'bg-blue-50/50' : ''
                       }`}
                       onClick={() => markNotificationRead(notif.id)}
@@ -133,9 +148,21 @@ export default function NotificationBell() {
                           <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.message}</p>
                           <p className="text-xs text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
                         </div>
-                        {!notif.isRead && (
-                          <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#2980b9] mt-2" />
-                        )}
+                        <div className="flex items-center gap-1">
+                          {!notif.isRead && (
+                            <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#2980b9] mt-2" />
+                          )}
+                          <button
+                            onClick={(e) => {
+                              e.stopPropagation();
+                              clearNotification(notif.id);
+                            }}
+                            className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500"
+                            title="Hatao / Dismiss"
+                          >
+                            <X className="w-3.5 h-3.5" />
+                          </button>
+                        </div>
                       </div>
                     </motion.div>
                   ))}

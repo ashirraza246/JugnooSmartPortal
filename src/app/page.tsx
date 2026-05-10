@@ -9,7 +9,7 @@ import dynamic from 'next/dynamic'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, Suspense, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Loader2, Bell, CheckCheck } from 'lucide-react'
+import { Loader2, Bell, CheckCheck, X } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
@@ -49,7 +49,7 @@ const queryClient = new QueryClient({
 })
 
 // Admin-only module keys - customers can NEVER access these
-const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'payments', 'pricing', 'inventory', 'team', 'settings']
+const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'payments', 'pricing', 'inventory', 'team', 'settings']
 
 function ModuleFallback() {
   return (
@@ -100,7 +100,7 @@ function AdminContent() {
 }
 
 function NotificationList() {
-  const { notifications, markNotificationRead, markAllNotificationsRead, isUrdu } = useAppStore()
+  const { notifications, markNotificationRead, markAllNotificationsRead, clearNotification, clearAllNotifications, isUrdu } = useAppStore()
 
   return (
     <div className="space-y-6">
@@ -110,12 +110,19 @@ function NotificationList() {
           <h2 className="text-2xl font-bold text-[#003366]">{isUrdu ? 'اطلاعات' : 'Notifications'}</h2>
           <p className="text-muted-foreground">{isUrdu ? 'اپنی تمام اطلاعات دیکھیں' : 'Dekhein apni saari notifications'}</p>
         </div>
-        {notifications.filter(n => !n.isRead).length > 0 && (
-          <Button size="sm" onClick={markAllNotificationsRead} className="bg-[#003366] text-white">
-            <CheckCheck className="w-4 h-4 mr-1" />
-            {isUrdu ? 'سب پڑھیں' : 'Sab Parhein'}
-          </Button>
-        )}
+        <div className="flex items-center gap-2">
+          {notifications.filter(n => !n.isRead).length > 0 && (
+            <Button size="sm" onClick={markAllNotificationsRead} className="bg-[#003366] text-white">
+              <CheckCheck className="w-4 h-4 mr-1" />
+              {isUrdu ? 'سب پڑھیں' : 'Sab Parhein'}
+            </Button>
+          )}
+          {notifications.length > 0 && (
+            <Button size="sm" variant="outline" onClick={clearAllNotifications} className="text-red-500 border-red-200 hover:bg-red-50">
+              {isUrdu ? 'سب ہٹائیں' : 'Clear All'}
+            </Button>
+          )}
+        </div>
       </div>
 
       {notifications.length === 0 ? (
@@ -126,7 +133,7 @@ function NotificationList() {
       ) : (
         <div className="space-y-3">
           {notifications.map((notif) => (
-            <Card key={notif.id} className={`border-0 shadow-sm overflow-hidden cursor-pointer ${!notif.isRead ? 'bg-blue-50/30' : ''}`} onClick={() => markNotificationRead(notif.id)}>
+            <Card key={notif.id} className={`border-0 shadow-sm overflow-hidden cursor-pointer group relative ${!notif.isRead ? 'bg-blue-50/30' : ''}`} onClick={() => markNotificationRead(notif.id)}>
               <div className="flex">
                 <div className={`w-1.5 ${
                   notif.type === 'status' ? 'bg-blue-500' :
@@ -135,15 +142,24 @@ function NotificationList() {
                 }`} />
                 <CardContent className="flex-1 p-4">
                   <div className="flex items-start justify-between">
-                    <div>
+                    <div className="flex-1 min-w-0">
                       <p className={`text-sm ${!notif.isRead ? 'font-semibold text-[#003366]' : 'text-gray-700'}`}>{notif.title}</p>
                       <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
                     </div>
-                    <Badge className={`text-[10px] ${
-                      notif.type === 'status' ? 'bg-blue-100 text-blue-700' :
-                      notif.type === 'payment' ? 'bg-emerald-100 text-emerald-700' :
-                      notif.type === 'deadline' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
-                    }`}>{notif.type}</Badge>
+                    <div className="flex items-center gap-2 ml-2">
+                      <Badge className={`text-[10px] ${
+                        notif.type === 'status' ? 'bg-blue-100 text-blue-700' :
+                        notif.type === 'payment' ? 'bg-emerald-100 text-emerald-700' :
+                        notif.type === 'deadline' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
+                      }`}>{notif.type}</Badge>
+                      <button
+                        onClick={(e) => { e.stopPropagation(); clearNotification(notif.id) }}
+                        className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500"
+                        title={isUrdu ? 'ہٹائیں' : 'Dismiss'}
+                      >
+                        <X className="w-4 h-4" />
+                      </button>
+                    </div>
                   </div>
                   <p className="text-[10px] text-muted-foreground mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
                 </CardContent>
@@ -175,7 +191,6 @@ function CustomerContent() {
     'whatsapp': CustomerWhatsApp,
     'profile': CustomerProfile,
     'notifications': NotificationList,
-    'cvbuilder': CVBuilderModule,
   }
 
   const ActiveComponent = modules[activeModule] || CustomerDashboard
