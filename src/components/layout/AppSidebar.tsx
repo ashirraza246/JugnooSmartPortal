@@ -7,7 +7,7 @@ import {
   LayoutDashboard, MessageSquare, ClipboardList, Users, Building2,
   Scale, Banknote, DollarSign, Package, Settings, X,
   LogOut, Home, Sparkles, FileText, CreditCard, UserCircle, Shield,
-  UsersRound, ListChecks, Stamp, FilePlus2, Globe,
+  UsersRound, ListChecks, Stamp, FilePlus2, Globe, Bell,
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { ScrollArea } from '@/components/ui/scroll-area'
@@ -35,6 +35,8 @@ const customerNavItems: { key: ModuleKey; label: string; labelUrdu: string; icon
   { key: 'services', label: 'Services', labelUrdu: 'سروسز', icon: Sparkles, group: 'main' },
   { key: 'my-applications', label: 'My Applications', labelUrdu: 'میری درخواستیں', icon: FileText, group: 'main' },
   { key: 'my-orders', label: 'My Orders', labelUrdu: 'میرے آرڈرز', icon: ClipboardList, group: 'main' },
+  { key: 'notifications', label: 'Notifications', labelUrdu: 'اطلاعات', icon: Bell, group: 'main' },
+  { key: 'cvbuilder', label: 'CV Builder', labelUrdu: 'سی وی بنائیں', icon: FilePlus2, group: 'services' },
   { key: 'payments', label: 'Payments', labelUrdu: 'پیمنٹس', icon: CreditCard, group: 'finance' },
   { key: 'whatsapp', label: 'WhatsApp', labelUrdu: 'واٹس ایپ', icon: MessageSquare, group: 'main' },
   { key: 'profile', label: 'Profile', labelUrdu: 'پروفائل', icon: UserCircle, group: 'account' },
@@ -121,13 +123,14 @@ export function AppSidebar() {
                         key={item.key}
                         onClick={() => { setActiveModule(item.key); setSidebarOpen(false) }}
                         className={cn(
-                          'w-full flex items-center gap-3 px-3 py-2.5 rounded-xl text-[13px] font-medium transition-all duration-200',
+                          'w-full flex items-center gap-3 px-3 rounded-xl font-medium transition-all duration-200',
+                          isAdmin ? 'py-2.5 text-[13px]' : 'py-3 text-sm',
                           isActive
-                            ? 'bg-gradient-to-r from-blue-500/20 to-cyan-500/10 text-white shadow-sm shadow-blue-500/10 border border-blue-400/20'
+                            ? 'bg-white/10 backdrop-blur-md shadow-inner border border-white/10 text-white'
                             : 'text-slate-400 hover:text-white hover:bg-white/5'
                         )}
                       >
-                        <Icon className={cn('w-[18px] h-[18px]', isActive ? 'text-blue-300' : 'text-slate-500')} />
+                        <Icon className={cn(isAdmin ? 'w-[18px] h-[18px]' : 'w-5 h-5', isActive ? 'text-blue-300' : 'text-slate-500')} />
                         {isUrdu ? item.labelUrdu : item.label}
                         {isActive && <div className="ml-auto w-1.5 h-1.5 rounded-full bg-blue-400 shadow-sm shadow-blue-400/50" />}
                       </button>

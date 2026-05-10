@@ -57,6 +57,21 @@ export interface ServiceInfo {
   special_notes: string
   is_active: boolean
   sort_order: number
+  deadlines: {
+    start_date: string  // Jab applications open hoti hain
+    end_date: string    // Jab applications close hoti hain
+    is_rolling: boolean // Agar year-round applications accept hoti hain
+    note?: string       // Deadline se related koi note
+  }
+  loan_tiers?: {       // Sirf loan services ke liye
+    tier: number
+    name: string
+    amount_min: number
+    amount_max: number
+    markup_rate: string  // Jaise "0%", "5%", "7%"
+    duration: string     // Jaise "3 years", "5 years", "8 years"
+    collateral: boolean
+  }[]
 }
 
 // ============================================================
@@ -137,6 +152,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'NSER (National Socio-Economic Registry) survey is mandatory for new applicants. Payment amount revised quarterly. Call helpline 0800-26477 for assistance.',
     is_active: true,
     sort_order: 1,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'BISP registration is available throughout the year. Visit nearest BISP office anytime.' },
   },
 
   // ─────────────────────────────────────────────
@@ -189,6 +205,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Ehsaas Kafalat is specifically for women. New NSER survey data is used for eligibility. Program now integrated with BISP payment system.',
     is_active: true,
     sort_order: 2,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Registration continues year-round via 8171 SMS or Ehsaas centers.' },
   },
 
   // ─────────────────────────────────────────────
@@ -238,6 +255,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Previously registered Ehsaas/BISP beneficiaries are auto-eligible. Discount available at registered utility stores. Program periodically re-launched with new phases.',
     is_active: true,
     sort_order: 3,
+    deadlines: { start_date: 'Phase-wise', end_date: 'Check Official Website', is_rolling: false, note: 'Ehsaas Rashan is launched in phases. Check ehsaas.nadra.gov.pk for current phase dates.' },
   },
 
   // ─────────────────────────────────────────────
@@ -296,6 +314,12 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Online application only through pmyp.gov.pk. CNIC details verified against NADRA database. Tracking ID for status updates via SMS/email. Processing time: ~30 days max.',
     is_active: true,
     sort_order: 20,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Applications accepted continuously through pmyp.gov.pk portal.' },
+    loan_tiers: [
+      { tier: 1, name: 'Tier 1 - Interest Free', amount_min: 100000, amount_max: 500000, markup_rate: '0%', duration: '3 years', collateral: false },
+      { tier: 2, name: 'Tier 2 - Low Markup', amount_min: 500001, amount_max: 1500000, markup_rate: '5%', duration: '5 years', collateral: false },
+      { tier: 3, name: 'Tier 3 - Standard Markup', amount_min: 1500001, amount_max: 7500000, markup_rate: '7%', duration: '8 years', collateral: true },
+    ],
   },
 
   // ─────────────────────────────────────────────
@@ -354,6 +378,12 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Only one loan per applicant. Women quota available. NAVTTC training recommended before applying. SMEDA provides free business plan templates. Approval timeline: 2-4 weeks.',
     is_active: true,
     sort_order: 21,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Applications accepted continuously through kamyabjawan.gov.pk portal.' },
+    loan_tiers: [
+      { tier: 1, name: 'Tier 1 - Interest Free', amount_min: 100000, amount_max: 500000, markup_rate: '0%', duration: '3 years', collateral: false },
+      { tier: 2, name: 'Tier 2 - Low Markup', amount_min: 500001, amount_max: 1500000, markup_rate: '5%', duration: '5 years', collateral: false },
+      { tier: 3, name: 'Tier 3 - Standard Markup', amount_min: 1500001, amount_max: 7500000, markup_rate: '7%', duration: '8 years', collateral: true },
+    ],
   },
 
   // ─────────────────────────────────────────────
@@ -405,6 +435,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Biometric verification mandatory (fingerprints + iris scan). Must apply in person. NADRA centers open 6 days a week. Tracking ID can be checked online or via Pak ID App.',
     is_active: true,
     sort_order: 30,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Must apply within 30 days of turning 18. NADRA centers open 6 days a week.' },
   },
 
   // ─────────────────────────────────────────────
@@ -449,6 +480,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'CNIC must be renewed before or shortly after expiry. Name corrections require supporting documents (Matric certificate, etc.). Address change requires utility bill proof.',
     is_active: true,
     sort_order: 31,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Apply before or shortly after CNIC expiry date.' },
   },
 
   // ─────────────────────────────────────────────
@@ -499,6 +531,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Age-based biometric system: 0-3 years (no photo/biometric), 3-10 years (photo only), 10-18 years (photo + fingerprints). B-Form must be updated at each age milestone. CRC is renewed at ages 3 and 10.',
     is_active: true,
     sort_order: 32,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'Must register within 1 month of birth (legally mandated).' },
   },
 
   // ─────────────────────────────────────────────
@@ -557,6 +590,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Application deadlines vary by institution. Special quotas: Orphans, children of government employees (Grade 1-4), disabled, minorities. Attested documents required.',
     is_active: true,
     sort_order: 40,
+    deadlines: { start_date: 'September 1', end_date: 'November 30', is_rolling: false, note: 'Annual scholarship cycle. Applications typically open September-November. Check peef.org.pk for exact dates.' },
   },
 
   {
@@ -608,6 +642,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Different programs have different deadlines. HEC portal account required. Must check HEC website for open scholarships. Interview stage for most programs.',
     is_active: true,
     sort_order: 41,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
 
   // ─────────────────────────────────────────────
@@ -666,6 +701,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Age relaxation available for government servants, disabled, minorities. Domicile is mandatory. All documents must be attested by gazetted officer. Keep photocopies of everything submitted. Check NJP (njp.gov.pk) for all government job listings.',
     is_active: true,
     sort_order: 50,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
 
   // ─────────────────────────────────────────────
@@ -720,6 +756,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Forms available in both Urdu and English on zakat.punjab.gov.pk. Must apply through Local Zakat Committee. Zakat is deducted on 1st of Ramazan from bank accounts. CZ-50 form for Zakat exemption. Different provinces have separate Zakat departments.',
     is_active: true,
     sort_order: 55,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
 
   // ─────────────────────────────────────────────
@@ -773,6 +810,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'NEPRA regulates connection timelines. Complain to NEPRA if delayed beyond timeline. K-Electric has separate process from WAPDA DISCOs. ENC portal works for all DISCOs except K-Electric. Fee includes meter cost, wiring to pole, and security deposit.',
     is_active: true,
     sort_order: 60,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
 
   {
@@ -814,6 +852,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     special_notes: 'Most duplicate bills available free online. Check DISCO websites for online bill services. SNGPL covers Punjab/KPK, SSGC covers Sindh/Balochistan.',
     is_active: true,
     sort_order: 61,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
 ]
 

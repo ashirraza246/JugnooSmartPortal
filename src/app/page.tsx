@@ -9,7 +9,10 @@ import dynamic from 'next/dynamic'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useState, Suspense, useEffect } from 'react'
 import { useAppStore } from '@/lib/store'
-import { Loader2 } from 'lucide-react'
+import { Loader2, Bell, CheckCheck } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 
 // Admin modules - dynamic import
 const DashboardModule = dynamic(() => import('@/components/dashboard/DashboardModule').then(m => ({ default: m.DashboardModule })), { ssr: false })
@@ -46,7 +49,7 @@ const queryClient = new QueryClient({
 })
 
 // Admin-only module keys - customers can NEVER access these
-const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'payments', 'pricing', 'inventory', 'team', 'settings']
+const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'payments', 'pricing', 'inventory', 'team', 'settings']
 
 function ModuleFallback() {
   return (
@@ -96,6 +99,63 @@ function AdminContent() {
   )
 }
 
+function NotificationList() {
+  const { notifications, markNotificationRead, markAllNotificationsRead, isUrdu } = useAppStore()
+
+  return (
+    <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h2 className="text-2xl font-bold text-[#003366]">{isUrdu ? 'اطلاعات' : 'Notifications'}</h2>
+          <p className="text-muted-foreground">{isUrdu ? 'اپنی تمام اطلاعات دیکھیں' : 'Dekhein apni saari notifications'}</p>
+        </div>
+        {notifications.filter(n => !n.isRead).length > 0 && (
+          <Button size="sm" onClick={markAllNotificationsRead} className="bg-[#003366] text-white">
+            <CheckCheck className="w-4 h-4 mr-1" />
+            {isUrdu ? 'سب پڑھیں' : 'Sab Parhein'}
+          </Button>
+        )}
+      </div>
+
+      {notifications.length === 0 ? (
+        <div className="text-center py-16">
+          <Bell className="w-16 h-16 mx-auto mb-4 opacity-15" />
+          <h3 className="text-lg font-semibold">{isUrdu ? 'کوئی اطلاع نہیں' : 'Koi notification nahi'}</h3>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          {notifications.map((notif) => (
+            <Card key={notif.id} className={`border-0 shadow-sm overflow-hidden cursor-pointer ${!notif.isRead ? 'bg-blue-50/30' : ''}`} onClick={() => markNotificationRead(notif.id)}>
+              <div className="flex">
+                <div className={`w-1.5 ${
+                  notif.type === 'status' ? 'bg-blue-500' :
+                  notif.type === 'payment' ? 'bg-emerald-500' :
+                  notif.type === 'deadline' ? 'bg-amber-500' : 'bg-purple-500'
+                }`} />
+                <CardContent className="flex-1 p-4">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <p className={`text-sm ${!notif.isRead ? 'font-semibold text-[#003366]' : 'text-gray-700'}`}>{notif.title}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
+                    </div>
+                    <Badge className={`text-[10px] ${
+                      notif.type === 'status' ? 'bg-blue-100 text-blue-700' :
+                      notif.type === 'payment' ? 'bg-emerald-100 text-emerald-700' :
+                      notif.type === 'deadline' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
+                    }`}>{notif.type}</Badge>
+                  </div>
+                  <p className="text-[10px] text-muted-foreground mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
+                </CardContent>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 function CustomerContent() {
   const { activeModule, setActiveModule } = useAppStore()
 
@@ -106,8 +166,6 @@ function CustomerContent() {
     }
   }, [activeModule, setActiveModule])
 
-  // Customer only gets: browse services, apply, track orders, payments, whatsapp, profile
-  // NO CV Builder, NO Doc Services (those are admin-only work tools)
   const modules: Record<string, React.ComponentType> = {
     'customer-dashboard': CustomerDashboard,
     'services': ServicesBrowser,
@@ -116,6 +174,8 @@ function CustomerContent() {
     'payments': CustomerPayments,
     'whatsapp': CustomerWhatsApp,
     'profile': CustomerProfile,
+    'notifications': NotificationList,
+    'cvbuilder': CVBuilderModule,
   }
 
   const ActiveComponent = modules[activeModule] || CustomerDashboard

@@ -2,10 +2,11 @@
 
 import { useAppStore, type ModuleKey } from '@/lib/store'
 import { useAuth } from '@/lib/auth'
-import { Menu, Search, Bell, Shield, UserCircle, Globe } from 'lucide-react'
+import { Menu, Search, Shield, UserCircle, Globe } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import NotificationBell from '@/components/notifications/NotificationBell'
 
 const moduleTitles: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -27,6 +28,8 @@ const moduleTitles: Record<string, string> = {
   'my-applications': 'My Applications',
   'my-orders': 'My Orders',
   profile: 'Profile',
+  notifications: 'Notifications',
+  cvbuilder: 'CV Builder',
 }
 
 const moduleTitlesUrdu: Record<string, string> = {
@@ -49,6 +52,8 @@ const moduleTitlesUrdu: Record<string, string> = {
   'my-applications': 'میری درخواستیں',
   'my-orders': 'میرے آرڈرز',
   profile: 'پروفائل',
+  notifications: 'اطلاعات',
+  cvbuilder: 'سی وی بنائیں',
 }
 
 export function AppHeader() {
@@ -58,7 +63,8 @@ export function AppHeader() {
   const titles = isUrdu ? moduleTitlesUrdu : moduleTitles
 
   return (
-    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-blue-100/60 px-4 sm:px-6 py-3 shadow-sm">
+    <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-blue-100/60 px-4 sm:px-6 py-3 shadow-sm relative">
+      <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#2980b9]/30 to-transparent" />
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="lg:hidden hover:bg-blue-50" onClick={() => setSidebarOpen(true)}>
           <Menu className="w-5 h-5 text-[#003366]" />
@@ -100,10 +106,7 @@ export function AppHeader() {
           {isUrdu ? 'English' : 'اردو'}
         </Button>
 
-        <Button variant="ghost" size="icon" className="relative text-[#003366] hover:bg-[#003366]/5">
-          <Bell className="w-5 h-5" />
-          <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full ring-2 ring-white" />
-        </Button>
+        <NotificationBell />
       </div>
     </header>
   )

@@ -22,7 +22,7 @@ import {
   ImagePlus, X, AlertCircle, FileCheck,
   ClipboardCheck, UserCircle, Wallet, Eye, Shield, Zap, Heart,
   ShoppingBag, Rocket, RefreshCw, Camera, Image, Copy, Briefcase,
-  Layers, Type, Receipt, Stamp
+  Layers, Type, Receipt, Stamp, Clock, Info
 } from 'lucide-react'
 
 // Build a lookup map from GOVT_SERVICES for fast access by service ID
@@ -171,10 +171,19 @@ export function ServicesBrowser() {
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null)
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null)
 
+  // New state for loan & eligibility
+  const [selectedTier, setSelectedTier] = useState<number | null>(null)
+  const [loanAmount, setLoanAmount] = useState<string>('')
+  const [eligibilityResult, setEligibilityResult] = useState<'eligible' | 'possibly-ineligible' | null>(null)
+  const [showEligibilityDialog, setShowEligibilityDialog] = useState(false)
+  const [eligibilityReason, setEligibilityReason] = useState('')
+
   const fileInputRef = useRef<HTMLInputElement>(null)
   const docFileRefs = useRef<Record<string, HTMLInputElement | null>>({})
 
-  const totalSteps = 4
+  // Dynamic total steps based on service category
+  const isLoanService = selectedService?.category === 'loan'
+  const totalSteps = isLoanService ? 9 : 7
 
   // Fetch payment settings from API (so admin changes reflect for customers)
   const { data: paymentConfig } = useQuery({
@@ -242,6 +251,11 @@ export function ServicesBrowser() {
     applyFor: 'کے لیے درخواست',
     serviceFee: 'سروس فیس',
     feeNote: 'یہ فیس درخواست جمع کرانے کے بعد ادا کرنی ہوگی',
+    stepEligibility: 'اہلیت',
+    stepDeadlines: 'آخری تاریخ',
+    stepLoanTiers: 'قرضے کی اقسام',
+    stepLoanAmount: 'قرض کی رقم',
+    stepImportant: 'اہم تفصیلات',
     step1: 'ذاتی معلومات',
     step2: 'مطلوبہ دستاویزات',
     step3: 'پیمنٹ',
@@ -281,6 +295,21 @@ export function ServicesBrowser() {
     orSkip: 'یا اسے چھوڑ دیں',
     officialUrl: 'سرکاری ویب سائٹ',
     applyProcess: 'درخواست کا طریقہ',
+    noEligibility: 'کوئی خاص اہلیت نہیں / No special eligibility requirements',
+    noDeadlines: 'سال بھر دستیاب / Available year-round',
+    openYearRound: 'سال بھر کھلا / Open Year-Round',
+    selectTier: 'براہ کرم ایک ٹیئر منتخب کریں / Please select a loan tier',
+    enterLoanAmount: 'براہ کرم قرض کی رقم درج کریں / Please enter loan amount',
+    loanAmountRange: 'قرض کی حد / Loan amount range',
+    screenshotRequired: 'پیمنٹ اسکرین شاٹ لازمی ہے / Payment screenshot is mandatory',
+    eligibleGreen: 'بدھائی! آپ اہل ہیں / Congratulations! You appear eligible',
+    ineligibleRed: 'آپ اہل نہیں ہیں / You may not be eligible',
+    autoCheckNote: 'یہ آٹو چیک ہے۔ حتمی فیصلہ ایڈمن کرے گا۔ / This is an auto-check. Final decision by admin.',
+    goBack: 'واپس جائیں / Go Back',
+    proceedAnyway: 'پھر بھی آگے بڑھیں / Proceed Anyway',
+    processingTime: 'پروسیسنگ ٹائم / Processing Time',
+    feeInfo: 'فیس کی معلومات / Fee Info',
+    specialNotes: 'خصوصی نوٹ / Special Notes',
   } : {
     title: 'Hamari Services',
     subtitle: 'Jugnoo Photostate ki saari services browse karein aur apply karein',
@@ -293,6 +322,11 @@ export function ServicesBrowser() {
     applyFor: 'Apply for',
     serviceFee: 'Service Fee',
     feeNote: 'Yeh fee application submit karne ke baad pay karni hogi',
+    stepEligibility: 'Eligibility',
+    stepDeadlines: 'Deadlines',
+    stepLoanTiers: 'Loan Tiers',
+    stepLoanAmount: 'Loan Amount',
+    stepImportant: 'Important Details',
     step1: 'Personal Details',
     step2: 'Required Documents',
     step3: 'Payment',
@@ -332,6 +366,21 @@ export function ServicesBrowser() {
     orSkip: 'or skip it',
     officialUrl: 'Official Website',
     applyProcess: 'Apply Process',
+    noEligibility: 'Koi khaas eligibility nahi / No special eligibility requirements',
+    noDeadlines: 'Saal bhar available / Available year-round',
+    openYearRound: 'Open Year-Round',
+    selectTier: 'Please select a loan tier / Tier select karein',
+    enterLoanAmount: 'Please enter loan amount / Loan amount enter karein',
+    loanAmountRange: 'Loan amount range',
+    screenshotRequired: 'Payment screenshot is mandatory / Screenshot lazmi hai',
+    eligibleGreen: 'Badhai! Aap eligible hain / Congratulations! You appear eligible',
+    ineligibleRed: 'Aap eligible nahi hain / You may not be eligible',
+    autoCheckNote: 'Yeh auto-check hai. Final decision admin karega. / This is an auto-check. Final decision by admin.',
+    goBack: 'Wapis jayein / Go Back',
+    proceedAnyway: 'Phir bhi aage barhein / Proceed Anyway',
+    processingTime: 'Processing Time',
+    feeInfo: 'Fee Info',
+    specialNotes: 'Special Notes',
   }
 
   const { data: services, isLoading } = useQuery({
@@ -404,9 +453,88 @@ export function ServicesBrowser() {
     return []
   }
 
-  // Validate current step
+  // Get govt service data for the currently selected service
+  const getGovtService = () => {
+    return selectedService ? govtServicesMap.get(selectedService.id) : null
+  }
+
+  // Auto-eligibility check
+  const runEligibilityCheck = () => {
+    const govtService = getGovtService()
+    if (!govtService) { setEligibilityResult(null); return }
+
+    const eligibility = govtService.eligibility?.toLowerCase() || ''
+    let isEligible = true
+    let reason = ''
+
+    // Check income thresholds
+    const incomeFields = Object.keys(personalInfo).filter(k =>
+      k.includes('income') || k.includes('pyl-p10') || k.includes('ek-p9') ||
+      k.includes('bisp-p11') || k.includes('er-p7')
+    )
+    for (const key of incomeFields) {
+      const income = parseInt(personalInfo[key])
+      if (!isNaN(income)) {
+        if ((eligibility.includes('25,000') || eligibility.includes('25000')) && income > 25000) {
+          isEligible = false
+          reason = 'Monthly income Rs 25,000 se zyada hai / Monthly income exceeds Rs 25,000 limit'
+        }
+        if ((eligibility.includes('50,000') || eligibility.includes('50000')) && income > 50000) {
+          isEligible = false
+          reason = 'Monthly income Rs 50,000 se zyada hai / Monthly income exceeds Rs 50,000 limit'
+        }
+      }
+    }
+
+    // Check age for loans
+    if (govtService.category === 'loan') {
+      const dobField = personalInfo['pkj-p4'] || personalInfo['pyl-p4'] || personalInfo['bisp-p5'] || personalInfo['ek-p3'] || personalInfo['er-p3']
+      if (dobField) {
+        const age = Math.floor((Date.now() - new Date(dobField).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+        if (age < 18 || age > 45) {
+          isEligible = false
+          reason = `Umar ${age} saal hai. Loan ke liye 18-45 saal chahiye / Age ${age} years. Loan requires 18-45 years`
+        }
+      }
+    }
+
+    // Check government employee restriction
+    const govtEmpFields = Object.keys(personalInfo).filter(k =>
+      personalInfo[k]?.toLowerCase().includes('government') ||
+      personalInfo[k]?.toLowerCase().includes('govt')
+    )
+    if (govtEmpFields.length > 0 && eligibility.includes('government employee')) {
+      isEligible = false
+      reason = 'Government employees eligible nahi hain / Government employees are not eligible'
+    }
+
+    setEligibilityResult(isEligible ? 'eligible' : 'possibly-ineligible')
+    if (!isEligible) {
+      setEligibilityReason(reason)
+      setShowEligibilityDialog(true)
+    }
+  }
+
+  // Validate current step (step numbers: 1=Eligibility, 2=Deadlines, 3=LoanTiers, 4=LoanAmount, 5=Important, 6=Personal, 7=Documents, 8=Payment, 9=Review)
   const validateStep = (step: number): boolean => {
-    if (step === 1) {
+    if (step === 3) {
+      // Loan Tiers: must have selectedTier
+      return selectedTier !== null
+    }
+    if (step === 4) {
+      // Loan Amount: must have valid amount within range
+      if (!loanAmount || parseInt(loanAmount) <= 0) return false
+      const govtService = getGovtService()
+      if (govtService?.loan_tiers && selectedTier !== null) {
+        const tier = govtService.loan_tiers[selectedTier]
+        if (tier) {
+          const amount = parseInt(loanAmount)
+          if (amount < tier.amount_min || amount > tier.amount_max) return false
+        }
+      }
+      return true
+    }
+    if (step === 6) {
       const fields = getActiveFields()
       for (const field of fields) {
         if (field.is_required && !personalInfo[field.id]?.trim()) {
@@ -415,7 +543,7 @@ export function ServicesBrowser() {
       }
       return true
     }
-    if (step === 2) {
+    if (step === 7) {
       const docs = getRequiredDocs()
       for (const doc of docs) {
         if (doc.is_mandatory && !documentFiles[doc.id]) {
@@ -424,30 +552,62 @@ export function ServicesBrowser() {
       }
       return true
     }
-    if (step === 3) {
-      return !!paymentMethod
+    if (step === 8) {
+      // Payment: must have payment method AND screenshot
+      if (!paymentMethod) return false
+      if (!paymentScreenshot) return false
+      return true
     }
     return true
   }
 
   const goNext = () => {
-    if (currentStep === 1 && !validateStep(1)) {
+    // Validation for each step
+    if (currentStep === 3 && !validateStep(3)) {
+      toast({ title: t.selectTier, variant: 'destructive' })
+      return
+    }
+    if (currentStep === 4 && !validateStep(4)) {
+      toast({ title: t.enterLoanAmount, variant: 'destructive' })
+      return
+    }
+    if (currentStep === 6 && !validateStep(6)) {
       toast({ title: t.fillAllRequired, variant: 'destructive' })
       return
     }
-    if (currentStep === 2 && !validateStep(2)) {
+    if (currentStep === 7 && !validateStep(7)) {
       toast({ title: t.uploadMandatory, variant: 'destructive' })
       return
     }
-    if (currentStep === 3 && !validateStep(3)) {
-      toast({ title: t.selectPayMethod, variant: 'destructive' })
+    if (currentStep === 8 && !validateStep(8)) {
+      if (!paymentMethod) {
+        toast({ title: t.selectPayMethod, variant: 'destructive' })
+      } else if (!paymentScreenshot) {
+        toast({ title: t.screenshotRequired, variant: 'destructive' })
+      }
       return
     }
-    setCurrentStep(prev => Math.min(prev + 1, totalSteps))
+
+    // After personal details (step 6), run auto-eligibility check
+    if (currentStep === 6) {
+      runEligibilityCheck()
+    }
+
+    // Compute next step, skipping loan steps for non-loan services
+    let nextStep = currentStep + 1
+    if (!isLoanService && (nextStep === 3 || nextStep === 4)) {
+      nextStep = 5
+    }
+
+    setCurrentStep(nextStep)
   }
 
   const goPrev = () => {
-    setCurrentStep(prev => Math.max(prev - 1, 1))
+    let prevStep = currentStep - 1
+    if (!isLoanService && (prevStep === 4 || prevStep === 3)) {
+      prevStep = 2
+    }
+    setCurrentStep(prevStep)
   }
 
   const handlePersonalInfoChange = (fieldId: string, value: string, fieldType: string) => {
@@ -513,6 +673,11 @@ export function ServicesBrowser() {
     setPaymentScreenshot(null)
     setPaymentPreview(null)
     setApplySuccess(false)
+    setSelectedTier(null)
+    setLoanAmount('')
+    setEligibilityResult(null)
+    setShowEligibilityDialog(false)
+    setEligibilityReason('')
 
     // Pre-fill default values from user profile
     const initialInfo: Record<string, string> = {}
@@ -557,12 +722,24 @@ export function ServicesBrowser() {
       toast({ title: t.selectPayMethod, variant: 'destructive' })
       return
     }
+    if (!paymentScreenshot) {
+      toast({ title: t.screenshotRequired, variant: 'destructive' })
+      return
+    }
     setApplying(true)
     try {
       const fields = getActiveFields()
       const personalInfoPayload: Record<string, string> = {}
       for (const field of fields) {
         personalInfoPayload[field.id] = personalInfo[field.id] || ''
+      }
+
+      // Include loan amount in personalInfo if loan service
+      if (isLoanService && loanAmount) {
+        personalInfoPayload['loanAmount'] = loanAmount
+      }
+      if (isLoanService && selectedTier !== null) {
+        personalInfoPayload['loanTier'] = String(selectedTier + 1)
       }
 
       // Extract common fields from dynamic personal info for backwards compatibility
@@ -624,44 +801,60 @@ export function ServicesBrowser() {
   const dynamicPaymentMethods = getPaymentMethods()
   const selectedPaymentInfo = dynamicPaymentMethods.find(m => m.id === paymentMethod)
 
+  // Build dynamic steps for the step indicator
+  const getStepList = () => {
+    const steps = [
+      { num: 1, label: t.stepEligibility, icon: Shield },
+      { num: 2, label: t.stepDeadlines, icon: Clock },
+    ]
+    if (isLoanService) {
+      steps.push({ num: 3, label: t.stepLoanTiers, icon: Banknote })
+      steps.push({ num: 4, label: t.stepLoanAmount, icon: Wallet })
+    }
+    steps.push({ num: 5, label: t.stepImportant, icon: Info })
+    steps.push({ num: 6, label: t.step1, icon: UserCircle })
+    steps.push({ num: 7, label: t.step2, icon: FileCheck })
+    steps.push({ num: 8, label: t.step3, icon: Wallet })
+    steps.push({ num: 9, label: t.step4, icon: Eye })
+    return steps
+  }
+
   // Step indicator component
-  const StepIndicator = () => (
-    <div className="flex items-center justify-between mb-6">
-      {[
-        { num: 1, label: t.step1, icon: UserCircle },
-        { num: 2, label: t.step2, icon: FileCheck },
-        { num: 3, label: t.step3, icon: Wallet },
-        { num: 4, label: t.step4, icon: Eye },
-      ].map((step, idx) => {
-        const StepIcon = step.icon
-        const isActive = currentStep === step.num
-        const isCompleted = currentStep > step.num
-        return (
-          <div key={step.num} className="flex items-center flex-1">
-            <div className="flex flex-col items-center gap-1">
-              <div
-                className={`w-9 h-9 rounded-full flex items-center justify-center transition-all duration-300 ${
-                  isCompleted
-                    ? 'bg-emerald-500 text-white'
-                    : isActive
-                    ? 'bg-[#003366] text-white shadow-md shadow-blue-200'
-                    : 'bg-gray-100 text-gray-400'
-                }`}
-              >
-                {isCompleted ? <CheckCircle2 className="w-4 h-4" /> : <StepIcon className="w-4 h-4" />}
+  const StepIndicator = () => {
+    const steps = getStepList()
+    return (
+      <div className="flex items-center justify-between mb-6 overflow-x-auto">
+        {steps.map((step, idx) => {
+          const StepIcon = step.icon
+          const isActive = currentStep === step.num
+          const isCompleted = currentStep > step.num
+          return (
+            <div key={step.num} className="flex items-center flex-1 min-w-0">
+              <div className="flex flex-col items-center gap-1">
+                <div
+                  className={`w-7 h-7 rounded-full flex items-center justify-center transition-all duration-300 ${
+                    isCompleted
+                      ? 'bg-emerald-500 text-white'
+                      : isActive
+                      ? 'bg-[#003366] text-white shadow-md shadow-blue-200'
+                      : 'bg-gray-100 text-gray-400'
+                  }`}
+                >
+                  {isCompleted ? <CheckCircle2 className="w-3 h-3" /> : <StepIcon className="w-3 h-3" />}
+                </div>
+                <span className={`text-[8px] font-medium text-center leading-tight max-w-[48px] ${isActive ? 'text-[#003366]' : isCompleted ? 'text-emerald-600' : 'text-gray-400'}`}>
+                  {step.label}
+                </span>
               </div>
-              <span className={`text-[10px] font-medium text-center leading-tight max-w-[60px] ${isActive ? 'text-[#003366]' : isCompleted ? 'text-emerald-600' : 'text-gray-400'}`}>
-                {step.label}
-              </span>
+              {idx < steps.length - 1 && (
+                <div className={`flex-1 h-0.5 mx-0.5 mt-[-12px] transition-colors ${currentStep > step.num ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+              )}
             </div>
-            {idx < 3 && (
-              <div className={`flex-1 h-0.5 mx-1 mt-[-16px] transition-colors ${currentStep > step.num ? 'bg-emerald-400' : 'bg-gray-200'}`} />
-            )}
-          </div>
-        )
-      })}
-    </div>
-  )
+          )
+        })}
+      </div>
+    )
+  }
 
   // Render a dynamic form field
   const renderField = (field: PersonalInfoField) => {
@@ -716,6 +909,9 @@ export function ServicesBrowser() {
       </div>
     )
   }
+
+  // Get the govt service data for rendering new steps
+  const govtServiceData = getGovtService()
 
   return (
     <div className="space-y-6">
@@ -860,8 +1056,279 @@ export function ServicesBrowser() {
                   <p className="text-xs text-[#2980b9] mt-1">{t.feeNote}</p>
                 </div>
 
-                {/* ==================== STEP 1: Personal Details ==================== */}
+                {/* ==================== STEP 1: Eligibility Criteria ==================== */}
                 {currentStep === 1 && (
+                  <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                        <Shield className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepEligibility}</h4>
+                    </div>
+
+                    {govtServiceData?.eligibility ? (
+                      <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100">
+                        <div className="space-y-2">
+                          {govtServiceData.eligibility.split('.').filter(s => s.trim()).map((item, idx) => (
+                            <div key={idx} className="flex items-start gap-2">
+                              <CheckCircle2 className="w-4 h-4 text-emerald-500 mt-0.5 shrink-0" />
+                              <p className="text-xs text-[#003366] leading-relaxed">{item.trim()}.</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <Shield className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm text-muted-foreground">{t.noEligibility}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ==================== STEP 2: Deadlines ==================== */}
+                {currentStep === 2 && (
+                  <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                        <Clock className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepDeadlines}</h4>
+                    </div>
+
+                    {govtServiceData?.deadlines ? (
+                      <div className="p-4 rounded-xl bg-blue-50/50 border border-blue-100 space-y-3">
+                        {govtServiceData.deadlines.is_rolling ? (
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-emerald-100 text-emerald-700 hover:bg-emerald-100 text-xs px-3 py-1">
+                              <CheckCircle2 className="w-3 h-3 mr-1" /> {t.openYearRound}
+                            </Badge>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <Badge className="bg-amber-100 text-amber-700 hover:bg-amber-100 text-xs px-3 py-1">
+                              <Clock className="w-3 h-3 mr-1" />
+                              {govtServiceData.deadlines.start_date} — {govtServiceData.deadlines.end_date}
+                            </Badge>
+                          </div>
+                        )}
+                        {govtServiceData.deadlines.note && (
+                          <p className="text-xs text-muted-foreground leading-relaxed">{govtServiceData.deadlines.note}</p>
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <Clock className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm text-muted-foreground">{t.noDeadlines}</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ==================== STEP 3: Loan Tiers (Loan services only) ==================== */}
+                {currentStep === 3 && isLoanService && (
+                  <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                        <Banknote className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepLoanTiers}</h4>
+                    </div>
+
+                    {govtServiceData?.loan_tiers && govtServiceData.loan_tiers.length > 0 ? (
+                      <div className="space-y-3">
+                        {govtServiceData.loan_tiers.map((tier, idx) => {
+                          const isSelected = selectedTier === idx
+                          return (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => {
+                                setSelectedTier(idx)
+                                setLoanAmount('')
+                              }}
+                              className={`w-full p-3 rounded-xl border-2 transition-all text-left ${
+                                isSelected
+                                  ? 'border-[#003366] bg-blue-50 shadow-sm'
+                                  : 'border-gray-200 hover:border-blue-200 hover:bg-blue-50/50'
+                              }`}
+                            >
+                              <div className="flex items-center justify-between mb-2">
+                                <p className="text-sm font-semibold text-[#003366]">{tier.name}</p>
+                                {isSelected && <CheckCircle2 className="w-4 h-4 text-[#003366]" />}
+                              </div>
+                              <div className="grid grid-cols-2 gap-2 text-xs">
+                                <div>
+                                  <span className="text-muted-foreground">Amount:</span>
+                                  <p className="font-medium text-[#003366]">Rs {tier.amount_min.toLocaleString()} - {tier.amount_max.toLocaleString()}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Markup:</span>
+                                  <p className="font-medium text-emerald-600">{tier.markup_rate}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Duration:</span>
+                                  <p className="font-medium text-[#003366]">{tier.duration}</p>
+                                </div>
+                                <div>
+                                  <span className="text-muted-foreground">Collateral:</span>
+                                  <p className="font-medium text-[#003366]">{tier.collateral ? 'Required' : 'Not Required'}</p>
+                                </div>
+                              </div>
+                            </button>
+                          )
+                        })}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6">
+                        <Banknote className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                        <p className="text-sm text-muted-foreground">No loan tiers available</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ==================== STEP 4: Loan Amount (Loan services only) ==================== */}
+                {currentStep === 4 && isLoanService && (
+                  <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                        <Wallet className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepLoanAmount}</h4>
+                    </div>
+
+                    {selectedTier !== null && govtServiceData?.loan_tiers?.[selectedTier] ? (
+                      <div className="space-y-3">
+                        <div className="p-3 bg-blue-50/50 rounded-xl border border-blue-100">
+                          <p className="text-xs text-muted-foreground">{t.loanAmountRange}:</p>
+                          <p className="text-sm font-bold text-[#003366]">Rs {govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} — Rs {govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}</p>
+                          <p className="text-xs text-emerald-600 mt-1">Markup: {govtServiceData.loan_tiers[selectedTier].markup_rate} | Duration: {govtServiceData.loan_tiers[selectedTier].duration}</p>
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-xs font-medium flex items-center gap-1">
+                            {t.stepLoanAmount} <span className="text-red-500">*</span>
+                          </Label>
+                          <Input
+                            type="number"
+                            value={loanAmount}
+                            onChange={(e) => setLoanAmount(e.target.value)}
+                            min={govtServiceData.loan_tiers[selectedTier].amount_min}
+                            max={govtServiceData.loan_tiers[selectedTier].amount_max}
+                            placeholder={`Rs ${govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} - ${govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}`}
+                            className="border-blue-100 focus-visible:ring-blue-200"
+                          />
+                          {loanAmount && (parseInt(loanAmount) < govtServiceData.loan_tiers[selectedTier].amount_min || parseInt(loanAmount) > govtServiceData.loan_tiers[selectedTier].amount_max) && (
+                            <p className="text-[10px] text-red-500">
+                              Amount must be between Rs {govtServiceData.loan_tiers[selectedTier].amount_min.toLocaleString()} and Rs {govtServiceData.loan_tiers[selectedTier].amount_max.toLocaleString()}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-3 bg-amber-50 rounded-xl border border-amber-200">
+                        <p className="text-xs text-amber-700">Please go back and select a loan tier first.</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* ==================== STEP 5: Important Details ==================== */}
+                {currentStep === 5 && (
+                  <div className="space-y-3 animate-in fade-in duration-300">
+                    <div className="flex items-center gap-2 mb-2">
+                      <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
+                        <Info className="w-4 h-4" />
+                      </div>
+                      <h4 className="text-sm font-semibold text-[#003366]">{t.stepImportant}</h4>
+                    </div>
+
+                    <div className="space-y-3">
+                      {/* Processing Time */}
+                      {govtServiceData?.processing_time && (
+                        <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
+                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                            <Clock className="w-3 h-3" /> {t.processingTime}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{govtServiceData.processing_time}</p>
+                        </div>
+                      )}
+
+                      {/* Fee Info */}
+                      {govtServiceData?.fee_info && (
+                        <div className="p-3 rounded-xl bg-emerald-50/50 border border-emerald-100">
+                          <p className="text-xs font-semibold text-emerald-700 mb-1 flex items-center gap-1">
+                            <Wallet className="w-3 h-3" /> {t.feeInfo}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{govtServiceData.fee_info}</p>
+                        </div>
+                      )}
+
+                      {/* Special Notes */}
+                      {govtServiceData?.special_notes && (
+                        <div className="p-3 rounded-xl bg-amber-50/50 border border-amber-100">
+                          <p className="text-xs font-semibold text-amber-700 mb-1 flex items-center gap-1">
+                            <AlertCircle className="w-3 h-3" /> {t.specialNotes}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{govtServiceData.special_notes}</p>
+                        </div>
+                      )}
+
+                      {/* Official URL */}
+                      {govtServiceData?.official_url && (
+                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> {t.officialUrl}
+                          </p>
+                          <a href={govtServiceData.official_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2980b9] underline break-all">
+                            {govtServiceData.official_url}
+                          </a>
+                        </div>
+                      )}
+
+                      {/* Apply Process */}
+                      {govtServiceData?.apply_process && (
+                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                            <ClipboardCheck className="w-3 h-3" /> {t.applyProcess}
+                          </p>
+                          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{govtServiceData.apply_process}</p>
+                        </div>
+                      )}
+
+                      {/* Also show official_url/apply_process from selectedService if available */}
+                      {!govtServiceData?.official_url && selectedService?.official_url && (
+                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                            <Shield className="w-3 h-3" /> {t.officialUrl}
+                          </p>
+                          <a href={selectedService.official_url} target="_blank" rel="noopener noreferrer" className="text-xs text-[#2980b9] underline break-all">
+                            {selectedService.official_url}
+                          </a>
+                        </div>
+                      )}
+                      {!govtServiceData?.apply_process && selectedService?.apply_process && (
+                        <div className="p-3 rounded-xl bg-[#003366]/5 border border-blue-100">
+                          <p className="text-xs font-semibold text-[#003366] mb-1 flex items-center gap-1">
+                            <ClipboardCheck className="w-3 h-3" /> {t.applyProcess}
+                          </p>
+                          <p className="text-xs text-muted-foreground whitespace-pre-line leading-relaxed">{selectedService.apply_process}</p>
+                        </div>
+                      )}
+
+                      {/* Fallback if no govt data at all */}
+                      {!govtServiceData?.processing_time && !govtServiceData?.fee_info && !govtServiceData?.special_notes && !govtServiceData?.official_url && !govtServiceData?.apply_process && !selectedService?.official_url && !selectedService?.apply_process && (
+                        <div className="text-center py-6">
+                          <Info className="w-10 h-10 mx-auto mb-3 text-gray-300" />
+                          <p className="text-sm text-muted-foreground">Koi khaas details nahi / No special details available</p>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* ==================== STEP 6: Personal Details ==================== */}
+                {currentStep === 6 && (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
@@ -875,8 +1342,8 @@ export function ServicesBrowser() {
                   </div>
                 )}
 
-                {/* ==================== STEP 2: Required Documents ==================== */}
-                {currentStep === 2 && (
+                {/* ==================== STEP 7: Required Documents ==================== */}
+                {currentStep === 7 && (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
@@ -989,8 +1456,8 @@ export function ServicesBrowser() {
                       </div>
                     )}
 
-                    {/* Official URL & Apply Process Info */}
-                    {selectedService && (selectedService.official_url || selectedService.apply_process) && (
+                    {/* Official URL & Apply Process Info for documents step */}
+                    {selectedService && !govtServiceData && (selectedService.official_url || selectedService.apply_process) && (
                       <div className="mt-4 space-y-2">
                         {selectedService.official_url && (
                           <div className="p-2 bg-blue-50 rounded-lg border border-blue-100">
@@ -1015,8 +1482,8 @@ export function ServicesBrowser() {
                   </div>
                 )}
 
-                {/* ==================== STEP 3: Payment ==================== */}
-                {currentStep === 3 && (
+                {/* ==================== STEP 8: Payment ==================== */}
+                {currentStep === 8 && (
                   <div className="space-y-3 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
@@ -1057,10 +1524,12 @@ export function ServicesBrowser() {
                       })}
                     </div>
 
-                    {/* Payment Screenshot Upload */}
+                    {/* Payment Screenshot Upload - MANDATORY */}
                     {paymentMethod && (
                       <div className="mt-3 p-3 bg-blue-50/50 rounded-lg border border-blue-100">
-                        <Label className="text-xs font-medium mb-2 block">{t.uploadScreenshot}</Label>
+                        <Label className="text-xs font-medium mb-2 block">
+                          {t.uploadScreenshot} <span className="text-red-500">*</span>
+                        </Label>
                         <p className="text-[10px] text-muted-foreground mb-2">{t.uploadNote}</p>
 
                         {selectedPaymentInfo && (
@@ -1082,6 +1551,7 @@ export function ServicesBrowser() {
                               <ImagePlus className="w-5 h-5 text-[#003366]" />
                             </div>
                             <span className="text-xs text-[#003366] font-medium">{t.clickToUpload}</span>
+                            <span className="text-[10px] text-red-500 font-medium">* {t.screenshotRequired}</span>
                           </button>
                         ) : (
                           <div className="relative rounded-lg overflow-hidden border border-blue-200">
@@ -1107,8 +1577,8 @@ export function ServicesBrowser() {
                   </div>
                 )}
 
-                {/* ==================== STEP 4: Review & Submit ==================== */}
-                {currentStep === 4 && (
+                {/* ==================== STEP 9: Review & Submit ==================== */}
+                {currentStep === 9 && (
                   <div className="space-y-4 animate-in fade-in duration-300">
                     <div className="flex items-center gap-2 mb-2">
                       <div className="w-7 h-7 rounded-full bg-[#003366] text-white flex items-center justify-center">
@@ -1116,6 +1586,59 @@ export function ServicesBrowser() {
                       </div>
                       <h4 className="text-sm font-semibold text-[#003366]">{t.reviewTitle}</h4>
                     </div>
+
+                    {/* Eligibility Check Result */}
+                    {eligibilityResult && (
+                      <div className={`p-3 rounded-xl border-2 ${
+                        eligibilityResult === 'eligible'
+                          ? 'border-emerald-300 bg-emerald-50/50'
+                          : 'border-red-300 bg-red-50/50'
+                      }`}>
+                        <div className="flex items-center gap-2">
+                          {eligibilityResult === 'eligible' ? (
+                            <CheckCircle2 className="w-4 h-4 text-emerald-500" />
+                          ) : (
+                            <AlertCircle className="w-4 h-4 text-red-500" />
+                          )}
+                          <p className={`text-xs font-semibold ${
+                            eligibilityResult === 'eligible' ? 'text-emerald-700' : 'text-red-700'
+                          }`}>
+                            {eligibilityResult === 'eligible' ? t.eligibleGreen : t.ineligibleRed}
+                          </p>
+                        </div>
+                        {eligibilityResult === 'possibly-ineligible' && eligibilityReason && (
+                          <p className="text-[10px] text-red-600 mt-1">{eligibilityReason}</p>
+                        )}
+                        <p className="text-[10px] text-muted-foreground mt-1">{t.autoCheckNote}</p>
+                      </div>
+                    )}
+
+                    {/* Loan Tier & Amount (if loan service) */}
+                    {isLoanService && selectedTier !== null && govtServiceData?.loan_tiers?.[selectedTier] && (
+                      <div className="p-3 rounded-xl bg-purple-50/50 border border-purple-100">
+                        <p className="text-xs font-semibold text-purple-700 mb-2 flex items-center gap-1">
+                          <Banknote className="w-3 h-3" /> {t.stepLoanTiers}
+                        </p>
+                        <div className="space-y-1 text-xs">
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Tier</span>
+                            <span className="font-medium text-purple-700">{govtServiceData.loan_tiers[selectedTier].name}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">{t.stepLoanAmount}</span>
+                            <span className="font-bold text-purple-700">Rs {parseInt(loanAmount || '0').toLocaleString()}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Markup</span>
+                            <span className="font-medium text-emerald-600">{govtServiceData.loan_tiers[selectedTier].markup_rate}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span className="text-muted-foreground">Duration</span>
+                            <span className="font-medium">{govtServiceData.loan_tiers[selectedTier].duration}</span>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Personal Details Review */}
                     <div className="p-3 rounded-xl bg-blue-50/50 border border-blue-100">
@@ -1184,6 +1707,26 @@ export function ServicesBrowser() {
                   </div>
                 )}
 
+                {/* Eligibility Dialog Banner */}
+                {showEligibilityDialog && (
+                  <div className="p-4 rounded-xl border-2 border-red-300 bg-red-50 space-y-3">
+                    <div className="flex items-center gap-2">
+                      <AlertCircle className="w-6 h-6 text-red-500" />
+                      <h4 className="font-bold text-red-700 text-sm">{t.ineligibleRed}</h4>
+                    </div>
+                    <p className="text-xs text-red-600">{eligibilityReason}</p>
+                    <p className="text-[10px] text-muted-foreground">{t.autoCheckNote}</p>
+                    <div className="flex gap-2">
+                      <Button size="sm" variant="outline" onClick={() => setShowEligibilityDialog(false)} className="text-red-600 border-red-300">
+                        {t.goBack}
+                      </Button>
+                      <Button size="sm" onClick={() => setShowEligibilityDialog(false)} className="bg-red-600 text-white hover:bg-red-700">
+                        {t.proceedAnyway}
+                      </Button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Navigation Buttons */}
                 <div className="flex gap-2 pt-2">
                   {currentStep > 1 && (
@@ -1191,7 +1734,7 @@ export function ServicesBrowser() {
                       {t.previous}
                     </Button>
                   )}
-                  {currentStep < totalSteps ? (
+                  {currentStep < 9 ? (
                     <Button onClick={goNext} className="flex-1 bg-gradient-to-r from-[#003366] to-[#2980b9] text-white">
                       {t.next}
                     </Button>

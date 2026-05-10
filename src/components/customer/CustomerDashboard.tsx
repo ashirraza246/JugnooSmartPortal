@@ -69,11 +69,11 @@ export function CustomerDashboard() {
   }
 
   const quickActions = [
-    { label: t.browseServices, icon: Sparkles, module: 'services' as const, color: 'from-blue-500 to-blue-700' },
-    { label: t.applyNow, icon: FileText, module: 'services' as const, color: 'from-[#003366] to-[#1a5276]' },
-    { label: t.whatsappMsg, icon: MessageSquare, module: 'whatsapp' as const, color: 'from-emerald-500 to-teal-600' },
-    { label: t.paymentHistory, icon: CreditCard, module: 'payments' as const, color: 'from-indigo-500 to-purple-600' },
-    { label: t.myProfile, icon: Package, module: 'profile' as const, color: 'from-cyan-500 to-blue-600' },
+    { label: t.browseServices, subLabel: isUrdu ? 'سروسز دیکھیں' : 'Govt & Private Services', icon: Sparkles, module: 'services' as const, color: 'from-blue-500 to-blue-700' },
+    { label: t.applyNow, subLabel: isUrdu ? 'درخواست دیں' : 'Abhi apply karein', icon: FileText, module: 'services' as const, color: 'from-[#003366] to-[#1a5276]' },
+    { label: t.whatsappMsg, subLabel: isUrdu ? 'واٹس ایپ' : 'Message bhejein', icon: MessageSquare, module: 'whatsapp' as const, color: 'from-emerald-500 to-teal-600' },
+    { label: t.paymentHistory, subLabel: isUrdu ? 'پیمنٹ ہسٹری' : 'Payment record dekhein', icon: CreditCard, module: 'payments' as const, color: 'from-indigo-500 to-purple-600' },
+    { label: t.myProfile, subLabel: isUrdu ? 'میرا پروفائل' : 'Profile update karein', icon: Package, module: 'profile' as const, color: 'from-cyan-500 to-blue-600' },
   ]
 
   const getStatusIcon = (status: string) => {
@@ -154,13 +154,14 @@ export function CustomerDashboard() {
             <Button
               key={action.label}
               variant="outline"
-              className="h-auto py-4 px-3 flex flex-col items-center gap-2.5 hover:shadow-md transition-all border-2 border-[#003366]/10 hover:border-transparent hover:bg-[#003366]/5 group rounded-xl"
+              className="h-auto py-5 px-3 flex flex-col items-center gap-2.5 hover:shadow-md transition-all border-2 border-[#003366]/10 hover:border-transparent hover:bg-[#003366]/5 group rounded-xl"
               onClick={() => setActiveModule(action.module)}
             >
-              <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-sm`}>
-                <action.icon className="w-5 h-5" />
+              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-sm`}>
+                <action.icon className="w-6 h-6" />
               </div>
-              <span className="text-[11px] font-medium text-center text-[#003366]">{action.label}</span>
+              <span className="text-sm font-medium text-center text-[#003366]">{action.label}</span>
+              <span className="text-[10px] text-muted-foreground text-center leading-tight">{action.subLabel}</span>
             </Button>
           ))}
         </div>
