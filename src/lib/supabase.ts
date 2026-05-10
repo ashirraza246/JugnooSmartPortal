@@ -1,6 +1,42 @@
-import { createClient } from '@supabase/supabase-js'
+import { createClient, type SupabaseClient } from '@supabase/supabase-js'
 
-const supabaseUrl = 'https://aukoisdyezickvruhfyv.supabase.co'
-const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImF1a29pc2R6ZXppY2t2cnVoZnl2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzgyNjkyOTgsImV4cCI6MjA5Mzg0NTI5OH0.9AX6E08_radO0HUtYjbcLiW2UC9-vHhA-2BlZHrJUqI'
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
 
-export const supabase = createClient(supabaseUrl, supabaseAnonKey)
+let _supabase: SupabaseClient | null = null
+
+function getSupabase(): SupabaseClient {
+  if (!_supabase && supabaseUrl && supabaseAnonKey) {
+    _supabase = createClient(supabaseUrl, supabaseAnonKey, {
+      auth: {
+        persistSession: false,
+        autoRefreshToken: false,
+      }
+    })
+  }
+  return _supabase!
+}
+
+export const supabase = new Proxy({} as SupabaseClient, {
+  get(_target, prop) {
+    const client = getSupabase()
+    if (!client) return undefined
+    return (client as Record<string | symbol, unknown>)[prop]
+  }
+})
+
+export function isSupabaseConfigured(): boolean {
+  return !!(supabaseUrl && supabaseAnonKey)
+}
+
+export async function checkTablesExist(): Promise<boolean> {
+  try {
+    if (!isSupabaseConfigured()) return false
+    const client = getSupabase()
+    if (!client) return false
+    const { error } = await client.from('users').select('id').limit(1)
+    return !error
+  } catch {
+    return false
+  }
+}

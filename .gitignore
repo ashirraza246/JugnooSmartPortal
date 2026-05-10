@@ -52,3 +52,21 @@ prompt
 server.log
 # Skills directory
 /skills/
+# Database
+/db/
+# Z scripts
+.zscripts/
+# Upload directory
+/upload/
+# Download directory  
+/download/
+# AI search results
+*.json
+!package.json
+!tsconfig.json
+!components.json
+!prisma/
+# Worklog
+worklog.md
+# Examples
+/examples/# Build Sat May  9 13:56:37 UTC 2026

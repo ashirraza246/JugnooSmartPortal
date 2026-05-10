@@ -1,141 +1,169 @@
-'use client';
+'use client'
 
-import { useSyncExternalStore, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
-import { useAppStore } from '@/lib/store';
-import LoginForm from '@/components/auth/LoginForm';
-import RegisterForm from '@/components/auth/RegisterForm';
-import AppSidebar from '@/components/layout/AppSidebar';
-import AppHeader from '@/components/layout/AppHeader';
-import CustomerDashboard from '@/components/dashboard/CustomerDashboard';
-import AdminDashboard from '@/components/dashboard/AdminDashboard';
-import ApplicationsList from '@/components/dashboard/ApplicationsList';
-import ProfileSection from '@/components/dashboard/ProfileSection';
-import ServicesBrowser from '@/components/services/ServicesBrowser';
-import ServiceApplicationWizard from '@/components/services/ServiceApplicationWizard';
-import SuccessPage from '@/components/services/SuccessPage';
-import CVBuilder from '@/components/cv-builder/CVBuilder';
+import { useAuth } from '@/lib/auth'
+import { AppSidebar } from '@/components/layout/AppSidebar'
+import { AppHeader } from '@/components/layout/AppHeader'
+import { ErrorBoundary } from '@/components/ErrorBoundary'
+import { PremiumBootScreen } from '@/components/PremiumBootScreen'
+import dynamic from 'next/dynamic'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useState, Suspense, useEffect } from 'react'
+import { useAppStore } from '@/lib/store'
+import { Loader2 } from 'lucide-react'
 
-const emptySubscribe = () => () => {};
-function useHydrated() {
-  return useSyncExternalStore(
-    emptySubscribe,
-    () => true,
-    () => false
-  );
+// Admin modules - dynamic import
+const DashboardModule = dynamic(() => import('@/components/dashboard/DashboardModule').then(m => ({ default: m.DashboardModule })), { ssr: false })
+const WhatsappModule = dynamic(() => import('@/components/whatsapp/WhatsappModule').then(m => ({ default: m.WhatsappModule })), { ssr: false })
+const OrdersModule = dynamic(() => import('@/components/orders/OrdersModule').then(m => ({ default: m.OrdersModule })), { ssr: false })
+const CustomersModule = dynamic(() => import('@/components/customers/CustomersModule').then(m => ({ default: m.CustomersModule })), { ssr: false })
+const GovtModule = dynamic(() => import('@/components/govt/GovtModule').then(m => ({ default: m.GovtModule })), { ssr: false })
+const NotarisationModule = dynamic(() => import('@/components/notarisation/NotarisationModule').then(m => ({ default: m.NotarisationModule })), { ssr: false })
+const PaymentsModule = dynamic(() => import('@/components/payments/PaymentsModule').then(m => ({ default: m.PaymentsModule })), { ssr: false })
+const PricingModule = dynamic(() => import('@/components/pricing/PricingModule').then(m => ({ default: m.PricingModule })), { ssr: false })
+const InventoryModule = dynamic(() => import('@/components/inventory/InventoryModule').then(m => ({ default: m.InventoryModule })), { ssr: false })
+const SettingsModule = dynamic(() => import('@/components/settings/SettingsModule').then(m => ({ default: m.SettingsModule })), { ssr: false })
+const ServiceManagerModule = dynamic(() => import('@/components/services/ServiceManagerModule').then(m => ({ default: m.ServiceManagerModule })), { ssr: false })
+const TeamManagementModule = dynamic(() => import('@/components/team/TeamManagementModule').then(m => ({ default: m.TeamManagementModule })), { ssr: false })
+const CVBuilderModule = dynamic(() => import('@/components/cvbuilder/CVBuilderModule').then(m => ({ default: m.CVBuilderModule })), { ssr: false })
+const DocumentServicesModule = dynamic(() => import('@/components/documents/DocumentServicesModule').then(m => ({ default: m.DocumentServicesModule })), { ssr: false })
+
+// Customer modules - dynamic import
+const CustomerDashboard = dynamic(() => import('@/components/customer/CustomerDashboard').then(m => ({ default: m.CustomerDashboard })), { ssr: false })
+const ServicesBrowser = dynamic(() => import('@/components/customer/ServicesBrowser').then(m => ({ default: m.ServicesBrowser })), { ssr: false })
+const MyApplications = dynamic(() => import('@/components/customer/MyApplications').then(m => ({ default: m.MyApplications })), { ssr: false })
+const CustomerPayments = dynamic(() => import('@/components/customer/CustomerPayments').then(m => ({ default: m.CustomerPayments })), { ssr: false })
+const CustomerWhatsApp = dynamic(() => import('@/components/customer/CustomerWhatsApp').then(m => ({ default: m.CustomerWhatsApp })), { ssr: false })
+const CustomerProfile = dynamic(() => import('@/components/customer/CustomerProfile').then(m => ({ default: m.CustomerProfile })), { ssr: false })
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 30000,
+      retry: 1,
+      refetchOnWindowFocus: false,
+    },
+  },
+})
+
+// Admin-only module keys - customers can NEVER access these
+const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'payments', 'pricing', 'inventory', 'team', 'settings']
+
+function ModuleFallback() {
+  return (
+    <div className="flex items-center justify-center h-64">
+      <div className="text-center space-y-3">
+        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+        <p className="text-muted-foreground text-sm">Loading...</p>
+      </div>
+    </div>
+  )
+}
+
+function AdminContent() {
+  const { activeModule } = useAppStore()
+
+  const modules: Record<string, React.ComponentType> = {
+    dashboard: DashboardModule,
+    whatsapp: WhatsappModule,
+    orders: OrdersModule,
+    customers: CustomersModule,
+    govt: GovtModule,
+    notarisation: NotarisationModule,
+    'service-mgmt': ServiceManagerModule,
+    payments: PaymentsModule,
+    pricing: PricingModule,
+    inventory: InventoryModule,
+    team: TeamManagementModule,
+    settings: SettingsModule,
+    documents: DocumentServicesModule,
+    cvbuilder: CVBuilderModule,
+  }
+
+  const ActiveComponent = modules[activeModule] || DashboardModule
+
+  return (
+    <div className="flex h-screen bg-background">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <AppHeader />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <Suspense fallback={<ModuleFallback />}>
+            <ActiveComponent />
+          </Suspense>
+        </main>
+      </div>
+    </div>
+  )
+}
+
+function CustomerContent() {
+  const { activeModule, setActiveModule } = useAppStore()
+
+  // SECURITY: If activeModule is an admin-only module, redirect to customer dashboard
+  useEffect(() => {
+    if (ADMIN_ONLY_MODULES.includes(activeModule)) {
+      setActiveModule('customer-dashboard')
+    }
+  }, [activeModule, setActiveModule])
+
+  // Customer only gets: browse services, apply, track orders, payments, whatsapp, profile
+  // NO CV Builder, NO Doc Services (those are admin-only work tools)
+  const modules: Record<string, React.ComponentType> = {
+    'customer-dashboard': CustomerDashboard,
+    'services': ServicesBrowser,
+    'my-applications': MyApplications,
+    'my-orders': MyApplications,
+    'payments': CustomerPayments,
+    'whatsapp': CustomerWhatsApp,
+    'profile': CustomerProfile,
+  }
+
+  const ActiveComponent = modules[activeModule] || CustomerDashboard
+
+  return (
+    <div className="flex h-screen bg-background">
+      <AppSidebar />
+      <div className="flex-1 flex flex-col min-w-0">
+        <AppHeader />
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+          <Suspense fallback={<ModuleFallback />}>
+            <ActiveComponent />
+          </Suspense>
+        </main>
+      </div>
+    </div>
+  )
 }
 
 export default function Home() {
-  const isAuthenticated = useAppStore((s) => s.isAuthenticated);
-  const activeView = useAppStore((s) => s.activeView);
-  const user = useAppStore((s) => s.user);
-  const sidebarOpen = useAppStore((s) => s.sidebarOpen);
-  const mounted = useHydrated();
+  const { user, loading, isAdmin } = useAuth()
+  const [showBootScreen, setShowBootScreen] = useState(true)
 
   useEffect(() => {
-    if (isAuthenticated && (activeView === 'login' || activeView === 'register')) {
-      useAppStore.getState().setActiveView(user?.role === 'admin' ? 'admin' : 'dashboard');
-    }
-  }, [isAuthenticated, activeView, user]);
+    const timer = setTimeout(() => setShowBootScreen(false), 2500)
+    return () => clearTimeout(timer)
+  }, [])
 
-  if (!mounted) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#001a33] via-[#003366] to-[#001a33]">
-        <div className="w-12 h-12 border-4 border-white border-t-transparent rounded-full animate-spin" />
-      </div>
-    );
+  if (showBootScreen && loading) {
+    return <PremiumBootScreen />
   }
 
-  // Auth pages (not authenticated)
-  if (!isAuthenticated) {
-    return (
-      <>
-        <AnimatePresence mode="wait">
-          {activeView === 'register' ? (
-            <motion.div key="register" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <RegisterForm />
-            </motion.div>
-          ) : (
-            <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
-              <LoginForm />
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </>
-    );
+  if (loading) {
+    return <PremiumBootScreen autoHide={false} />
   }
 
-  // Authenticated layout with sidebar + header
-  const renderContent = () => {
-    switch (activeView) {
-      case 'dashboard':
-        return <CustomerDashboard />;
-      case 'admin':
-        return <AdminDashboard />;
-      case 'services':
-        return <ServicesBrowser />;
-      case 'wizard':
-        return <ServiceApplicationWizard />;
-      case 'applications':
-        return <ApplicationsList />;
-      case 'profile':
-        return <ProfileSection />;
-      case 'cv-builder':
-        return <CVBuilder />;
-      case 'success':
-        return <SuccessPage />;
-      default:
-        return <CustomerDashboard />;
+  if (!user) {
+    if (typeof window !== 'undefined') {
+      window.location.href = '/login'
     }
-  };
+    return null
+  }
 
   return (
-    <div className="min-h-screen bg-[#f5f7fa]">
-      <AppSidebar />
-
-      <motion.div
-        animate={{ marginLeft: sidebarOpen ? 280 : 72 }}
-        transition={{ duration: 0.3, ease: 'easeInOut' }}
-        className="hidden lg:block"
-      >
-        <div className="min-h-screen">
-          <AppHeader />
-          <main className="p-4 lg:p-6 max-w-7xl mx-auto">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeView}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
-      </motion.div>
-
-      {/* Mobile layout - no sidebar offset */}
-      <div className="lg:hidden">
-        <div className="min-h-screen">
-          <AppHeader />
-          <main className="p-4 max-w-7xl mx-auto">
-            <AnimatePresence mode="wait">
-              <motion.div
-                key={activeView}
-                initial={{ opacity: 0, y: 10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-              >
-                {renderContent()}
-              </motion.div>
-            </AnimatePresence>
-          </main>
-        </div>
-      </div>
-
-    </div>
-  );
+    <QueryClientProvider client={queryClient}>
+      <ErrorBoundary>
+        {isAdmin ? <AdminContent /> : <CustomerContent />}
+      </ErrorBoundary>
+    </QueryClientProvider>
+  )
 }

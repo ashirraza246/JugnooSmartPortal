@@ -1,7 +1,8 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import "./globals.css";
-import { Toaster } from "@/components/ui/sonner";
+import { Toaster } from "@/components/ui/toaster";
+import { AuthProvider } from "@/lib/auth";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -13,12 +14,33 @@ const geistMono = Geist_Mono({
   subsets: ["latin"],
 });
 
+export const viewport: Viewport = {
+  themeColor: "#003366",
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+};
+
 export const metadata: Metadata = {
-  title: "Jugnoo Smart Portal - Pakistani Government Services",
-  description: "Access Pakistani government services, apply for loans, subsidies, and more. Jugnoo Smart Portal makes it easy.",
-  keywords: ["Jugnoo", "Pakistan", "Government Services", "Ehsaas", "BISP", "Loans", "Subsidies"],
+  title: "Jugnoo Smart Portal — AI-Powered Business Management",
+  description: "Smart portal for Jugnoo Photostate, Chowk Azam. Manage orders, WhatsApp templates, customers, government services, notarisation, and payments — all in one place.",
+  keywords: ["Jugnoo", "Photostate", "Chowk Azam", "Smart Portal", "Business Management", "WhatsApp Templates", "Notarisation"],
+  authors: [{ name: "Jugnoo Smart Portal" }],
   icons: {
-    icon: "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🇵🇰</text></svg>",
+    icon: "/jugnoo-logo.png",
+    apple: "/jugnoo-logo.png",
+  },
+  manifest: "/manifest.json",
+  openGraph: {
+    title: "Jugnoo Smart Portal",
+    description: "AI-Powered Business Management for Jugnoo Photostate",
+    type: "website",
+    images: ["/jugnoo-logo.png"],
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: "black-translucent",
+    title: "Jugnoo Smart Portal",
   },
 };
 
@@ -29,11 +51,31 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
+      <head>
+        <link rel="manifest" href="/manifest.json" />
+        <link rel="apple-touch-icon" href="/jugnoo-logo.png" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="mobile-web-app-capable" content="yes" />
+      </head>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased bg-background text-foreground`}
       >
-        {children}
-        <Toaster richColors position="top-right" />
+        <AuthProvider>
+          {children}
+        </AuthProvider>
+        <Toaster />
+        <script
+          dangerouslySetInnerHTML={{
+            __html: `
+              if ('serviceWorker' in navigator) {
+                window.addEventListener('load', function() {
+                  navigator.serviceWorker.register('/sw.js').catch(function() {});
+                });
+              }
+            `,
+          }}
+        />
       </body>
     </html>
   );

@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;800;900&display=swap" rel="stylesheet">
+<style>
+  @page { size: 794px 1123px; margin: 0; }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 794px; height: 1123px; background: #f2f3f3; overflow: hidden; font-family: 'Inter', sans-serif; }
+
+  .cover { position: relative; width: 794px; height: 1123px; }
+
+  /* Layer 0: Background */
+  .bg-layer { position: absolute; inset: 0; z-index: 0; background: #f2f3f3; }
+
+  /* Layer 1: Decorative - Right watermark */
+  .layer-1 { position: absolute; inset: 0; z-index: 1; overflow: hidden; }
+  .watermark {
+    position: absolute;
+    right: -20px;
+    top: 50%;
+    transform: translateY(-50%) rotate(90deg);
+    font-family: 'Inter', sans-serif;
+    font-size: 160pt;
+    font-weight: 900;
+    color: rgba(75, 102, 115, 0.04);
+    white-space: nowrap;
+    letter-spacing: 8pt;
+  }
+
+  /* Layer 2: Structure */
+  .layer-2 { position: absolute; inset: 0; z-index: 2; }
+  .color-dash {
+    position: absolute;
+    left: 95px;
+    top: 145px;
+    width: 50px;
+    height: 5px;
+    background: #4b6673;
+  }
+  .meta-accent-line {
+    position: absolute;
+    left: 95px;
+    top: 710px;
+    width: 2px;
+    height: 100px;
+    background: rgba(75, 102, 115, 0.5);
+  }
+
+  /* Layer 3: Content */
+  .layer-3 { position: absolute; inset: 0; z-index: 3; }
+
+  .kicker {
+    position: absolute;
+    left: 95px;
+    top: 205px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16pt;
+    font-weight: 400;
+    letter-spacing: 3pt;
+    text-transform: uppercase;
+    color: rgba(32, 34, 36, 0.6);
+  }
+
+  .hero-title {
+    position: absolute;
+    left: 95px;
+    top: 255px;
+    font-family: 'Playfair Display', serif;
+    font-size: 52pt;
+    font-weight: 900;
+    color: #202224;
+    line-height: 1.15;
+    max-width: 520px;
+  }
+
+  .summary {
+    position: absolute;
+    left: 95px;
+    top: 480px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16pt;
+    font-weight: 400;
+    line-height: 1.6;
+    color: rgba(32, 34, 36, 0.85);
+    max-width: 440px;
+  }
+
+  .meta {
+    position: absolute;
+    left: 145px;
+    top: 718px;
+    font-family: 'Inter', sans-serif;
+    font-size: 18pt;
+    font-weight: 400;
+    line-height: 2.0;
+    color: #202224;
+  }
+
+  .footer {
+    position: absolute;
+    right: 95px;
+    bottom: 100px;
+    font-family: 'Inter', sans-serif;
+    font-size: 16pt;
+    font-weight: 400;
+    letter-spacing: 2pt;
+    text-transform: uppercase;
+    color: rgba(32, 34, 36, 0.6);
+  }
+</style>
+</head>
+<body>
+<div class="cover">
+  <div class="bg-layer"></div>
+  <div class="layer-1">
+    <div class="watermark">SMART</div>
+  </div>
+  <div class="layer-2">
+    <div class="color-dash"></div>
+    <div class="meta-accent-line"></div>
+  </div>
+  <div class="layer-3">
+    <div class="kicker">AI-POWERED APP PROPOSAL</div>
+    <div class="hero-title">Jugnoo<br>Smart</div>
+    <div class="summary">A comprehensive AI-powered management application designed to automate and streamline operations for Jugnoo Photos & Printing Services at Chowk Azam, Layyah.</div>
+    <div class="meta">
+      Prepared for: Jugnoo Photos & Printing<br>
+      Location: Chowk Azam, Layyah<br>
+      Date: May 2026
+    </div>
+    <div class="footer">2026</div>
+  </div>
+</div>
+</body>
+</html>

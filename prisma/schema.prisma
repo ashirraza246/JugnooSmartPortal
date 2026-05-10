@@ -1,3 +1,6 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
 generator client {
   provider = "prisma-client-js"
 }
@@ -10,64 +13,184 @@ datasource db {
 model User {
   id        String   @id @default(cuid())
   email     String   @unique
-  name      String
-  password  String
-  role      String   @default("customer")
+  fullName  String
+  role      String   @default("staff") // admin, staff
   phone     String?
-  cnic      String?
-  city      String?
-  income    Int?
-  age       Int?
-  gender    String?
-  avatar    String?
+  avatarUrl String?
+  isActive  Boolean  @default(true)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
-  applications  Application[]
-  notifications Notification[]
+
+  orders      Order[]
+  payments    Payment[]
+  sentMessages WhatsappMessage[]
 }
 
-model Application {
-  id          String   @id @default(cuid())
-  userId      String
-  serviceId   String
-  serviceName String
-  status      String   @default("pending")
-  amount      Int?
-  paymentStatus String @default("unpaid")
-  paymentMethod String?
-  formData    String
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  user        User     @relation(fields: [userId], references: [id])
-}
-
-model Notification {
+model Customer {
   id        String   @id @default(cuid())
-  userId    String
-  title     String
-  message   String
-  type      String
-  isRead    Boolean  @default(false)
+  fullName  String
+  whatsapp  String?
+  cnic      String?
+  email     String?
+  address   String?
+  tags      String?  // comma-separated tags
+  notes     String?
+  isVip     Boolean  @default(false)
   createdAt DateTime @default(now())
-  user      User     @relation(fields: [userId], references: [id])
+  updatedAt DateTime @updatedAt
+
+  orders        Order[]
+  payments      Payment[]
+  govtServices  GovtService[]
+  notarisations Notarisation[]
+  sentMessages  WhatsappMessage[]
 }
 
-model ServiceConfig {
+model Order {
+  id           String   @id @default(cuid())
+  orderNumber  String   @unique
+  customerId   String?
+  orderType    String   // printing, scanning, copying, custom_print, photo_print, poster, form, other
+  status       String   @default("pending") // pending, in_progress, ready, delivered, cancelled
+  priority     String   @default("normal") // normal, urgent, vip
+  description  String?
+  specifications String? // JSON string: {pages, copies, size, color, paperType}
+  totalAmount  Float    @default(0)
+  paidAmount   Float    @default(0)
+  paymentStatus String  @default("unpaid") // unpaid, partial, paid
+  assignedToId String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+  completedAt  DateTime?
+
+  customer   Customer? @relation(fields: [customerId], references: [id])
+  assignedTo User?     @relation(fields: [assignedToId], references: [id])
+  items      OrderItem[]
+  payments   Payment[]
+}
+
+model OrderItem {
+  id            String  @id @default(cuid())
+  orderId       String
+  serviceType   String
+  description   String?
+  quantity      Int     @default(1)
+  unitPrice     Float   @default(0)
+  totalPrice    Float   @default(0)
+  specifications String? // JSON string
+
+  order Order @relation(fields: [orderId], references: [id], onDelete: Cascade)
+}
+
+model WhatsappTemplate {
+  id         String   @id @default(cuid())
+  name       String
+  category   String   // order, payment, govt, scholarship, loan, bisp, followup, promo, general, notarisation
+  content    String   // Template body with {variables}
+  variables  String?  // comma-separated variable names
+  isFavorite Boolean  @default(false)
+  usageCount Int      @default(0)
+  createdAt  DateTime @default(now())
+  updatedAt  DateTime @updatedAt
+
+  messages WhatsappMessage[]
+}
+
+model WhatsappMessage {
+  id             String   @id @default(cuid())
+  templateId     String?
+  customerId     String?
+  messageContent String
+  sentAt         DateTime @default(now())
+  sentById       String?
+  status         String   @default("sent") // sent, delivered, read, failed
+
+  template WhatsappTemplate? @relation(fields: [templateId], references: [id])
+  customer Customer?         @relation(fields: [customerId], references: [id])
+  sentBy   User?             @relation(fields: [sentById], references: [id])
+}
+
+model GovtService {
+  id             String   @id @default(cuid())
+  customerId     String?
+  serviceType    String   // scheme, scholarship, bisp, loan
+  serviceName    String   // Ehsaas, Benazir, Akhuwat, etc.
+  applicationId  String?
+  status         String   @default("applied") // applied, under_review, approved, rejected
+  documents      String?  // JSON string: {docName: url}
+  feeAmount      Float    @default(0)
+  feePaid        Boolean  @default(false)
+  notes          String?
+  appliedDate    DateTime?
+  statusUpdatedAt DateTime?
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+}
+
+model Notarisation {
+  id             String    @id @default(cuid())
+  customerId     String?
+  serviceType    String    // deed, demand_payment, divorce, e_notary, general
+  description    String?
+  documents      String?   // JSON string: {docName: url}
+  feeAmount      Float     @default(0)
+  feePaid        Boolean   @default(false)
+  status         String    @default("pending") // pending, in_process, completed
+  appointmentDate DateTime?
+  completedAt    DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  customer Customer? @relation(fields: [customerId], references: [id])
+}
+
+model Payment {
+  id             String   @id @default(cuid())
+  orderId        String?
+  customerId     String?
+  amount         Float
+  paymentMethod  String   // cash, online, partial
+  receiptNumber  String?
+  notes          String?
+  receivedById   String?
+  createdAt      DateTime @default(now())
+
+  order     Order?    @relation(fields: [orderId], references: [id])
+  customer  Customer? @relation(fields: [customerId], references: [id])
+  receivedBy User?    @relation(fields: [receivedById], references: [id])
+}
+
+model PricingRule {
   id          String   @id @default(cuid())
-  serviceId   String   @unique
-  price       Int      @default(0)
+  serviceType String
+  serviceName String
+  unit        String   // per_page, per_document, per_service
+  price       Float
   isActive    Boolean  @default(true)
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
 }
 
-model PaymentConfig {
-  id              String   @id @default(cuid())
-  jazzCashNumber  String   @default("")
-  easyPaisaNumber String   @default("")
-  bankName        String   @default("")
-  bankAccount     String   @default("")
-  bankTitle       String   @default("")
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
+model Inventory {
+  id            String   @id @default(cuid())
+  itemName      String
+  category      String   // paper, ink, form, supply
+  currentStock  Int      @default(0)
+  minimumStock  Int      @default(5)
+  unit          String   // ream, piece, cartridge
+  lastRestocked DateTime?
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+}
+
+model ServiceCategory {
+  id          String   @id @default(cuid())
+  name        String
+  icon        String?
+  description String?
+  sortOrder   Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
 }

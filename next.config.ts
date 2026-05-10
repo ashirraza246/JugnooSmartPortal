@@ -7,11 +7,6 @@ const nextConfig: NextConfig = {
     ignoreBuildErrors: true,
   },
   reactStrictMode: false,
-  allowedDevOrigins: [
-    '.space-z.ai',
-    '.chatglm.site',
-    '.z.ai',
-  ],
 };
 
 export default nextConfig;
