@@ -25,6 +25,7 @@ export type AdminModuleKey =
   | 'inventory'
   | 'team'
   | 'settings'
+  | 'help'
 
 export type CustomerModuleKey =
   | 'customer-dashboard'
@@ -36,6 +37,7 @@ export type CustomerModuleKey =
   | 'profile'
   | 'notifications'
   | 'support-chat'
+  | 'help'
 
 export type ModuleKey = AdminModuleKey | CustomerModuleKey
 

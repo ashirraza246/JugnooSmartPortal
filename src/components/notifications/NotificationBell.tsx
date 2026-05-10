@@ -2,7 +2,7 @@
 
 import { useState, useRef, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell, Check, CheckCheck, X, Trash2 } from 'lucide-react';
+import { Bell, CheckCheck, X, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
@@ -32,10 +32,10 @@ export default function NotificationBell() {
 
   const getTypeColor = (type: string) => {
     switch (type) {
-      case 'status': return 'bg-blue-100 text-blue-700';
-      case 'payment': return 'bg-green-100 text-green-700';
-      case 'deadline': return 'bg-orange-100 text-orange-700';
-      case 'info': return 'bg-purple-100 text-purple-700';
+      case 'status': return 'bg-[#E8F0FE] text-[#1A3C5E]';
+      case 'payment': return 'bg-[#E8F5E9] text-[#2E7D32]';
+      case 'deadline': return 'bg-[#FFF3D6] text-[#F5A623]';
+      case 'info': return 'bg-[#F3E5F5] text-[#7B1FA2]';
       default: return 'bg-gray-100 text-gray-700';
     }
   };
@@ -62,10 +62,9 @@ export default function NotificationBell() {
     return date.toLocaleDateString('en-PK');
   };
 
-  // Customer header is navy blue, so bell should be white/gold for contrast
-  // Admin header is white, so bell should be navy
-  const bellColor = isAdmin ? 'text-[#003366]' : 'text-white';
-  const bellHoverBg = isAdmin ? 'hover:bg-gray-100' : 'hover:bg-white/10';
+  // Both admin and customer headers are now navy blue, so bell is always white
+  const bellColor = 'text-white';
+  const bellHoverBg = 'hover:bg-white/10';
 
   return (
     <div className="relative" ref={ref}>
@@ -88,21 +87,20 @@ export default function NotificationBell() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Mobile backdrop */}
+            {/* Mobile backdrop - click to close */}
             <div
-              className="fixed inset-0 bg-black/30 backdrop-blur-sm z-40 sm:hidden"
+              className="fixed inset-0 bg-black/30 z-40 sm:hidden"
               onClick={() => setIsOpen(false)}
             />
 
+            {/* Notification panel */}
             <motion.div
               initial={{ opacity: 0, y: 8, scale: 0.95 }}
               animate={{ opacity: 1, y: 0, scale: 1 }}
               exit={{ opacity: 0, y: 8, scale: 0.95 }}
               transition={{ duration: 0.2 }}
-              className="absolute right-0 top-full mt-2 sm:w-96 bg-white rounded-2xl shadow-2xl border border-gray-100/80 overflow-hidden z-50
-                fixed sm:absolute left-2 right-2 sm:left-auto sm:right-0 top-auto sm:top-full bottom-0 sm:bottom-auto mb-0 sm:mb-0 sm:mt-2
-                max-h-[85vh] sm:max-h-none"
-              style={{ borderTopLeftRadius: '20px', borderTopRightRadius: '20px' }}
+              className="absolute right-0 top-full mt-2 bg-white rounded-2xl shadow-2xl border border-gray-100/80 overflow-hidden z-50
+                w-[calc(100vw-16px)] sm:w-96 max-h-[80vh]"
             >
               {/* Mobile drag handle */}
               <div className="flex justify-center pt-2 pb-0 sm:hidden">
@@ -110,7 +108,7 @@ export default function NotificationBell() {
               </div>
 
               {/* Header */}
-              <div className="p-4 bg-gradient-to-r from-[#001a33] to-[#003366] flex items-center justify-between">
+              <div className="p-4 bg-gradient-to-r from-[#1A3C5E] to-[#003E6B] flex items-center justify-between">
                 <div>
                   <h3 className="text-white font-semibold text-sm">Notifications / اطلاعات</h3>
                   <p className="text-blue-200 text-xs">{unreadCount} padhi nahi / unread</p>
@@ -138,12 +136,12 @@ export default function NotificationBell() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
-                  {/* Mobile close button */}
+                  {/* Close button - visible on all screens */}
                   <Button
                     size="sm"
                     variant="ghost"
                     onClick={() => setIsOpen(false)}
-                    className="text-blue-200 hover:text-white hover:bg-white/10 sm:hidden h-8"
+                    className="text-blue-200 hover:text-white hover:bg-white/10 h-8"
                   >
                     <X className="w-4 h-4" />
                   </Button>
@@ -151,7 +149,7 @@ export default function NotificationBell() {
               </div>
 
               {/* Notification list */}
-              <ScrollArea className="max-h-[60vh] sm:max-h-96">
+              <ScrollArea className="max-h-[60vh]">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-gray-400">
                     <Bell className="w-10 h-10 mx-auto mb-2 opacity-30" />
@@ -162,8 +160,8 @@ export default function NotificationBell() {
                     {notifications.slice(0, 10).map((notif) => (
                       <motion.div
                         key={notif.id}
-                        className={`p-3 cursor-pointer hover:bg-gray-50 transition-colors group relative ${
-                          !notif.isRead ? 'bg-blue-50/50' : ''
+                        className={`p-3 cursor-pointer hover:bg-[#F5F7FA] transition-colors group relative ${
+                          !notif.isRead ? 'bg-[#E8F0FE]/30' : ''
                         }`}
                         onClick={() => markNotificationRead(notif.id)}
                         whileTap={{ scale: 0.98 }}
@@ -173,22 +171,22 @@ export default function NotificationBell() {
                             {getTypeLabel(notif.type)}
                           </div>
                           <div className="flex-1 min-w-0">
-                            <p className={`text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#003366]' : 'text-gray-700'}`}>
+                            <p className={`text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>
                               {notif.title}
                             </p>
-                            <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{notif.message}</p>
+                            <p className="text-xs text-[#6B7280] mt-0.5 line-clamp-2">{notif.message}</p>
                             <p className="text-[10px] text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
                           </div>
                           <div className="flex items-center gap-1">
                             {!notif.isRead && (
-                              <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#2980b9] mt-2" />
+                              <div className="flex-shrink-0 w-2 h-2 rounded-full bg-[#F5A623] mt-2" />
                             )}
                             <button
                               onClick={(e) => {
                                 e.stopPropagation();
                                 clearNotification(notif.id);
                               }}
-                              className="opacity-0 group-hover:opacity-100 transition-opacity p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 sm:opacity-0"
+                              className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-opacity"
                               title="Hatao / Dismiss"
                             >
                               <X className="w-3.5 h-3.5" />

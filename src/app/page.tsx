@@ -38,6 +38,7 @@ const CustomerPayments = dynamic(() => import('@/components/customer/CustomerPay
 const CustomerWhatsApp = dynamic(() => import('@/components/customer/CustomerWhatsApp').then(m => ({ default: m.CustomerWhatsApp })), { ssr: false })
 const CustomerProfile = dynamic(() => import('@/components/customer/CustomerProfile').then(m => ({ default: m.CustomerProfile })), { ssr: false })
 const SupportChat = dynamic(() => import('@/components/customer/SupportChat').then(m => ({ default: m.SupportChat })), { ssr: false })
+const HelpPage = dynamic(() => import('@/components/customer/HelpPage').then(m => ({ default: m.HelpPage })), { ssr: false })
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -81,6 +82,7 @@ function AdminContent() {
     settings: SettingsModule,
     documents: DocumentServicesModule,
     cvbuilder: CVBuilderModule,
+    help: HelpPage,
   }
 
   const ActiveComponent = modules[activeModule] || DashboardModule
@@ -193,6 +195,7 @@ function CustomerContent() {
     'profile': CustomerProfile,
     'notifications': NotificationList,
     'support-chat': SupportChat,
+    help: HelpPage,
   }
 
   const ActiveComponent = modules[activeModule] || CustomerDashboard
