@@ -29,7 +29,6 @@ const moduleTitles: Record<string, string> = {
   'my-orders': 'My Orders',
   profile: 'Profile',
   notifications: 'Notifications',
-  cvbuilder: 'CV Builder',
 }
 
 const moduleTitlesUrdu: Record<string, string> = {
@@ -53,7 +52,6 @@ const moduleTitlesUrdu: Record<string, string> = {
   'my-orders': 'میرے آرڈرز',
   profile: 'پروفائل',
   notifications: 'اطلاعات',
-  cvbuilder: 'سی وی بنائیں',
 }
 
 export function AppHeader() {
@@ -62,6 +60,51 @@ export function AppHeader() {
 
   const titles = isUrdu ? moduleTitlesUrdu : moduleTitles
 
+  // Customer portal header - Dark navy UBL style
+  if (!isAdmin) {
+    const userName = user?.full_name || user?.email?.split('@')[0] || 'User'
+    return (
+      <header className="sticky top-0 z-30 bg-[#1A3C5E] px-4 sm:px-6 py-3 shadow-sm relative">
+        <div className="flex items-center gap-3">
+          {/* Hamburger for desktop sidebar on mobile */}
+          <Button variant="ghost" size="icon" className="lg:hidden hover:bg-white/10 text-white" onClick={() => setSidebarOpen(true)}>
+            <Menu className="w-5 h-5" />
+          </Button>
+
+          {/* Greeting */}
+          <div className="flex-1 min-w-0">
+            <h2 className="text-white font-semibold text-base truncate">
+              {isUrdu ? 'السلام علیکم' : 'Hello'}, {userName} 👋
+            </h2>
+          </div>
+
+          {/* Urdu Toggle - styled for dark background */}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={toggleUrdu}
+            className={`gap-1 font-medium transition-all rounded-lg border-0 ${
+              isUrdu
+                ? 'bg-[#F5A623] text-[#1A3C5E] hover:bg-[#FFB300]'
+                : 'bg-white/10 text-white hover:bg-white/20'
+            }`}
+          >
+            <Globe className="w-4 h-4" />
+            {isUrdu ? 'EN' : 'اردو'}
+          </Button>
+
+          <NotificationBell />
+
+          {/* Profile avatar */}
+          <div className="w-8 h-8 rounded-full bg-[#F5A623] flex items-center justify-center text-[#1A3C5E] font-semibold text-sm shrink-0">
+            {userName.charAt(0).toUpperCase()}
+          </div>
+        </div>
+      </header>
+    )
+  }
+
+  // Admin header - keep original style
   return (
     <header className="sticky top-0 z-30 bg-white/90 backdrop-blur-lg border-b border-blue-100/60 px-4 sm:px-6 py-3 shadow-sm relative">
       <div className="absolute bottom-0 left-0 right-0 h-px bg-gradient-to-r from-transparent via-[#2980b9]/30 to-transparent" />
@@ -75,7 +118,7 @@ export function AppHeader() {
             {titles[activeModule] || 'Dashboard'}
           </h2>
           <Badge variant="outline" className="hidden sm:flex items-center gap-1 text-[10px] border-[#003366]/30 text-[#003366] bg-[#003366]/5">
-            {isAdmin ? <><Shield className="w-3 h-3 text-[#2980b9]" /> Admin</> : <><UserCircle className="w-3 h-3 text-[#2980b9]" /> Customer</>}
+            <><Shield className="w-3 h-3 text-[#2980b9]" /> Admin</>
           </Badge>
         </div>
 

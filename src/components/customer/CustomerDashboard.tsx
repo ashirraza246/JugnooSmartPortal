@@ -9,7 +9,7 @@ import { Badge } from '@/components/ui/badge'
 import {
   Package, FileText, MessageSquare, ArrowRight,
   Clock, CheckCircle2, AlertCircle, Loader2, Sparkles, CreditCard,
-  Shield, Zap, Heart, GraduationCap
+  Shield, Zap, UserCircle, ClipboardList
 } from 'lucide-react'
 
 export function CustomerDashboard() {
@@ -33,172 +33,195 @@ export function CustomerDashboard() {
   const stats = data?.stats || { totalApplications: 0, pendingApplications: 0, completedApplications: 0, availableServices: 0 }
 
   const t = isUrdu ? {
-    welcome: 'السلام علیکم',
-    subtitle: 'جگنو فوٹو اسٹیٹ کی تمام سروسز اب آپ کی انگلیوں پر ہیں۔ گھر بیٹھے درخواست دیں اور ٹریک کریں۔',
     totalApps: 'کل درخواستیں',
     pending: 'زیر التوا',
     completed: 'مکمل',
     available: 'دستیاب سروسز',
     quickActions: 'فوری عمل',
-    browseServices: 'سروسز دیکھیں',
-    applyNow: 'درخواست دیں',
-    whatsappMsg: 'واٹس ایپ',
-    paymentHistory: 'پیمنٹ ہسٹری',
-    myProfile: 'میرا پروفائل',
+    browseServices: 'سروسز',
+    myApplications: 'درخواستیں',
+    payments: 'پیمنٹس',
+    profile: 'پروفائل',
     recentApps: 'حالیہ درخواستیں',
     viewAll: 'سب دیکھیں',
     noApps: 'ابھی تک کوئی درخواست نہیں',
     firstApp: 'پہلی درخواست جمع کرائیں',
+    applyNow: 'درخواست دیں',
+    trackStatus: 'ٹریک کریں',
   } : {
-    welcome: 'Assalam-o-Alaikum',
-    subtitle: 'Jugnoo Photostate ke saare services ab aapke fingertips par hain. Ghar bethy apply karein aur track karein.',
     totalApps: 'Total Applications',
     pending: 'Pending',
     completed: 'Completed',
     available: 'Available Services',
     quickActions: 'Quick Actions',
-    browseServices: 'Services Browse Karein',
-    applyNow: 'Application Apply Karein',
-    whatsappMsg: 'WhatsApp Message',
-    paymentHistory: 'Payment History',
-    myProfile: 'My Profile',
+    browseServices: 'Services',
+    myApplications: 'Applications',
+    payments: 'Payments',
+    profile: 'Profile',
     recentApps: 'Recent Applications',
-    viewAll: 'Sab dekhein',
-    noApps: 'Abhi tak koi application nahi hai',
-    firstApp: 'Pehli application submit karein',
+    viewAll: 'View All',
+    noApps: 'No applications yet',
+    firstApp: 'Submit your first application',
+    applyNow: 'Apply Now',
+    trackStatus: 'Track Status',
   }
 
   const quickActions = [
-    { label: t.browseServices, subLabel: isUrdu ? 'سروسز دیکھیں' : 'Govt & Private Services', icon: Sparkles, module: 'services' as const, color: 'from-blue-500 to-blue-700' },
-    { label: t.applyNow, subLabel: isUrdu ? 'درخواست دیں' : 'Abhi apply karein', icon: FileText, module: 'services' as const, color: 'from-[#003366] to-[#1a5276]' },
-    { label: t.whatsappMsg, subLabel: isUrdu ? 'واٹس ایپ' : 'Message bhejein', icon: MessageSquare, module: 'whatsapp' as const, color: 'from-emerald-500 to-teal-600' },
-    { label: t.paymentHistory, subLabel: isUrdu ? 'پیمنٹ ہسٹری' : 'Payment record dekhein', icon: CreditCard, module: 'payments' as const, color: 'from-indigo-500 to-purple-600' },
-    { label: t.myProfile, subLabel: isUrdu ? 'میرا پروفائل' : 'Profile update karein', icon: Package, module: 'profile' as const, color: 'from-cyan-500 to-blue-600' },
+    { label: t.browseServices, icon: Sparkles, module: 'services' as const, bgColor: '#E8F0FE', iconColor: '#1A3C5E' },
+    { label: t.myApplications, icon: FileText, module: 'my-applications' as const, bgColor: '#FFF3D6', iconColor: '#F5A623' },
+    { label: t.payments, icon: CreditCard, module: 'payments' as const, bgColor: '#E8F5E9', iconColor: '#2E7D32' },
+    { label: t.profile, icon: UserCircle, module: 'profile' as const, bgColor: '#F3E5F5', iconColor: '#7B1FA2' },
   ]
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': case 'approved': return <CheckCircle2 className="w-4 h-4 text-emerald-500" />
-      case 'submitted': case 'pending': case 'in_progress': case 'under_review': return <Clock className="w-4 h-4 text-amber-500" />
-      case 'rejected': return <AlertCircle className="w-4 h-4 text-red-500" />
+      case 'completed': case 'approved': return <CheckCircle2 className="w-4 h-4 text-[#2E7D32]" />
+      case 'submitted': case 'pending': case 'in_progress': case 'under_review': return <Clock className="w-4 h-4 text-[#F5A623]" />
+      case 'rejected': return <AlertCircle className="w-4 h-4 text-[#E53935]" />
       default: return <Clock className="w-4 h-4 text-muted-foreground" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': case 'approved': return 'bg-emerald-100 text-emerald-700'
-      case 'submitted': case 'pending': case 'in_progress': case 'under_review': return 'bg-amber-100 text-amber-700'
-      case 'rejected': return 'bg-red-100 text-red-700'
-      default: return 'bg-gray-100 text-gray-700'
+      case 'completed': case 'approved': return 'bg-emerald-50 text-[#2E7D32]'
+      case 'submitted': case 'pending': case 'in_progress': case 'under_review': return 'bg-amber-50 text-[#F5A623]'
+      case 'rejected': return 'bg-red-50 text-[#E53935]'
+      default: return 'bg-gray-50 text-gray-700'
+    }
+  }
+
+  const getServiceIcon = (type: string) => {
+    switch (type) {
+      case 'government': return <Shield className="w-4 h-4" />
+      case 'notarisation': return <Zap className="w-4 h-4" />
+      default: return <FileText className="w-4 h-4" />
+    }
+  }
+
+  const getServiceBg = (type: string) => {
+    switch (type) {
+      case 'government': return { bg: '#E8F0FE', color: '#1A3C5E' }
+      case 'notarisation': return { bg: '#FFF3D6', color: '#F5A623' }
+      default: return { bg: '#F3F4F6', color: '#6B7280' }
     }
   }
 
   return (
     <div className="space-y-6">
-      {/* Welcome Banner - UBL Premium Style */}
-      <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-[#001829] via-[#003366] to-[#2980b9] p-6 sm:p-8 text-white shadow-lg">
-        <div className="absolute top-0 right-0 w-80 h-80 bg-gradient-to-br from-blue-400/20 to-transparent rounded-full -translate-y-1/2 translate-x-1/4" />
-        <div className="absolute bottom-0 left-0 w-60 h-60 bg-gradient-to-tr from-cyan-400/10 to-transparent rounded-full translate-y-1/3 -translate-x-1/4" />
-        <div className="absolute top-1/2 left-1/2 w-96 h-96 bg-blue-500/5 rounded-full -translate-x-1/2 -translate-y-1/2" />
+      {/* HERO CARD - UBL Style */}
+      <div className="relative overflow-hidden rounded-[20px] bg-gradient-to-br from-[#1A3C5E] to-[#003E6B] p-6 sm:p-8 text-white shadow-lg">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-gradient-to-br from-white/10 to-transparent rounded-full -translate-y-1/2 translate-x-1/4" />
+        <div className="absolute bottom-0 left-0 w-48 h-48 bg-gradient-to-tr from-[#F5A623]/10 to-transparent rounded-full translate-y-1/3 -translate-x-1/4" />
         <div className="relative z-10">
-          <div className="flex items-center gap-2 mb-3">
-            <Sparkles className="w-5 h-5 text-blue-300" />
-            <span className="text-sm font-medium text-blue-200">{t.welcome}</span>
-          </div>
-          <h1 className="text-2xl sm:text-3xl font-bold mb-2">{user?.full_name || (isUrdu ? 'کسٹمر' : 'Customer')}!</h1>
-          <p className="text-white/70 max-w-md text-sm leading-relaxed">{t.subtitle}</p>
-          <div className="mt-4 flex items-center gap-3">
+          <p className="text-[#F5A623] text-sm font-medium mb-1">{t.totalApps}</p>
+          <p className="text-4xl sm:text-5xl font-bold mb-6">
+            {isLoading ? '...' : stats.totalApplications}
+          </p>
+          <div className="flex items-center gap-3">
             <Button
               size="sm"
-              className="bg-white/15 hover:bg-white/25 text-white border border-white/20 backdrop-blur-sm shadow-sm"
+              className="bg-[#F5A623] hover:bg-[#FFB300] text-[#1A3C5E] font-semibold rounded-xl h-11 px-6 shadow-sm"
               onClick={() => setActiveModule('services')}
             >
               <Sparkles className="w-4 h-4 mr-2" />
-              {isUrdu ? 'سروسز دیکھیں' : 'Browse Services'}
+              {t.applyNow}
+            </Button>
+            <Button
+              size="sm"
+              className="bg-white/10 hover:bg-white/20 text-white border border-white/20 backdrop-blur-sm rounded-xl h-11 px-6"
+              onClick={() => setActiveModule('my-applications')}
+            >
+              <ClipboardList className="w-4 h-4 mr-2" />
+              {t.trackStatus}
             </Button>
           </div>
         </div>
       </div>
 
-      {/* Stats Cards - Premium UBL Style */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+      {/* Stats Cards Row */}
+      <div className="grid grid-cols-3 gap-3">
         {[
-          { label: t.totalApps, value: stats.totalApplications, icon: FileText, gradient: 'from-blue-500 to-blue-700' },
-          { label: t.pending, value: stats.pendingApplications, icon: Clock, gradient: 'from-amber-500 to-orange-600' },
-          { label: t.completed, value: stats.completedApplications, icon: CheckCircle2, gradient: 'from-emerald-500 to-teal-600' },
-          { label: t.available, value: stats.availableServices || 0, icon: Sparkles, gradient: 'from-[#003366] to-[#2980b9]' },
+          { label: t.pending, value: stats.pendingApplications, color: '#F5A623', bgColor: '#FFF3D6' },
+          { label: t.completed, value: stats.completedApplications, color: '#2E7D32', bgColor: '#E8F5E9' },
+          { label: t.available, value: stats.availableServices || 0, color: '#1A3C5E', bgColor: '#E8F0FE' },
         ].map((stat) => (
-          <Card key={stat.label} className="border-0 shadow-sm hover:shadow-md transition-all duration-200 overflow-hidden group">
-            <div className={`h-1 bg-gradient-to-r ${stat.gradient}`} />
-            <CardContent className="p-4">
-              <div className="flex items-center gap-3">
-                <div className={`p-2.5 rounded-xl bg-gradient-to-br ${stat.gradient} text-white shadow-sm`}>
-                  <stat.icon className="w-4 h-4" />
-                </div>
-                <div>
-                  <p className="text-[10px] text-muted-foreground uppercase tracking-wide font-medium">{stat.label}</p>
-                  <p className="text-xl font-bold text-[#003366]">{isLoading ? '...' : stat.value}</p>
-                </div>
-              </div>
+          <Card key={stat.label} className="border-0 shadow-sm rounded-2xl overflow-hidden">
+            <CardContent className="p-4 text-center">
+              <p className="text-2xl font-bold" style={{ color: stat.color }}>
+                {isLoading ? '...' : stat.value}
+              </p>
+              <p className="text-[11px] text-[#6B7280] font-medium mt-1">{stat.label}</p>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      {/* Quick Actions - UBL Card Style */}
+      {/* Quick Action Icons - UBL Style */}
       <div>
-        <h3 className="text-lg font-semibold text-[#003366] mb-3">{t.quickActions}</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <h3 className="text-base font-semibold text-[#1C1C1E] mb-3">{t.quickActions}</h3>
+        <div className="grid grid-cols-4 gap-3">
           {quickActions.map((action) => (
-            <Button
+            <button
               key={action.label}
-              variant="outline"
-              className="h-auto py-5 px-3 flex flex-col items-center gap-2.5 hover:shadow-md transition-all border-2 border-[#003366]/10 hover:border-transparent hover:bg-[#003366]/5 group rounded-xl"
               onClick={() => setActiveModule(action.module)}
+              className="flex flex-col items-center gap-2 py-3 min-h-[44px]"
             >
-              <div className={`w-14 h-14 rounded-xl bg-gradient-to-br ${action.color} flex items-center justify-center text-white group-hover:scale-110 transition-transform shadow-sm`}>
-                <action.icon className="w-6 h-6" />
+              <div
+                className="w-12 h-12 rounded-full flex items-center justify-center shadow-sm"
+                style={{ backgroundColor: action.bgColor }}
+              >
+                <action.icon className="w-5 h-5" style={{ color: action.iconColor }} />
               </div>
-              <span className="text-sm font-medium text-center text-[#003366]">{action.label}</span>
-              <span className="text-[10px] text-muted-foreground text-center leading-tight">{action.subLabel}</span>
-            </Button>
+              <span className="text-[11px] font-medium text-[#6B7280] text-center leading-tight">{action.label}</span>
+            </button>
           ))}
         </div>
       </div>
 
-      {/* Recent Applications */}
+      {/* Recent Applications - UBL Style List */}
       <div>
         <div className="flex items-center justify-between mb-3">
-          <h3 className="text-lg font-semibold text-[#003366]">{t.recentApps}</h3>
-          <Button variant="ghost" size="sm" className="text-[#2980b9] hover:text-[#003366]" onClick={() => setActiveModule('my-applications')}>
+          <h3 className="text-base font-semibold text-[#1C1C1E]">{t.recentApps}</h3>
+          <Button variant="ghost" size="sm" className="text-[#1A3C5E] hover:text-[#1A3C5E]/70" onClick={() => setActiveModule('my-applications')}>
             {t.viewAll} <ArrowRight className="w-4 h-4 ml-1" />
           </Button>
         </div>
-        <Card className="border-0 shadow-sm overflow-hidden">
+        <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
           <CardContent className="p-0">
             {isLoading ? (
-              <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#2980b9]" /></div>
+              <div className="flex items-center justify-center py-8"><Loader2 className="w-6 h-6 animate-spin text-[#1A3C5E]" /></div>
             ) : (data?.recentApplications || []).length === 0 ? (
-              <div className="text-center py-10 text-muted-foreground">
-                <FileText className="w-12 h-12 mx-auto mb-3 text-[#003366]/15" />
+              <div className="text-center py-10 text-[#6B7280]">
+                <FileText className="w-12 h-12 mx-auto mb-3 text-[#1A3C5E]/10" />
                 <p className="text-sm">{t.noApps}</p>
-                <Button variant="link" className="text-[#2980b9] mt-1" onClick={() => setActiveModule('services')}>{t.firstApp}</Button>
+                <Button variant="link" className="text-[#F5A623] mt-1" onClick={() => setActiveModule('services')}>{t.firstApp}</Button>
               </div>
             ) : (
-              <div className="divide-y divide-blue-50">
-                {(data?.recentApplications || []).slice(0, 5).map((app: { id: string; service_name: string; service_type: string; status: string; created_at: string }) => (
-                  <div key={app.id} className="flex items-center gap-3 px-4 py-3 hover:bg-[#003366]/3 transition-colors">
-                    {getStatusIcon(app.status)}
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium truncate text-[#003366]">{app.service_name}</p>
-                      <p className="text-xs text-muted-foreground">{app.service_type} - {new Date(app.created_at).toLocaleDateString()}</p>
+              <div className="divide-y divide-gray-50">
+                {(data?.recentApplications || []).slice(0, 5).map((app: { id: string; service_name: string; service_type: string; status: string; created_at: string }) => {
+                  const svcStyle = getServiceBg(app.service_type)
+                  return (
+                    <div key={app.id} className="flex items-center gap-3 px-4 py-3.5 hover:bg-[#F5F7FA] transition-colors">
+                      {/* Colored icon in rounded square */}
+                      <div
+                        className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0"
+                        style={{ backgroundColor: svcStyle.bg, color: svcStyle.color }}
+                      >
+                        {getServiceIcon(app.service_type)}
+                      </div>
+                      {/* Center: Title + subtitle */}
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold text-[#1C1C1E] truncate">{app.service_name}</p>
+                        <p className="text-xs text-[#6B7280]">{app.service_type} · {new Date(app.created_at).toLocaleDateString()}</p>
+                      </div>
+                      {/* Right: Status badge */}
+                      <Badge className={`text-[10px] font-medium rounded-lg px-2.5 py-0.5 border-0 ${getStatusColor(app.status)}`}>
+                        {app.status}
+                      </Badge>
                     </div>
-                    <Badge className={`text-[10px] ${getStatusColor(app.status)}`}>
-                      {app.status}
-                    </Badge>
-                  </div>
-                ))}
+                  )
+                })}
               </div>
             )}
           </CardContent>

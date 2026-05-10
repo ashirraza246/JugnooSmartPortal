@@ -7,7 +7,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import {
-  FileText, Clock, CheckCircle2, AlertCircle, XCircle,
+  FileText, Clock, CheckCircle2, AlertCircle, XCircle, Shield, Zap,
   Loader2, RefreshCw, Filter
 } from 'lucide-react'
 import { useState } from 'react'
@@ -85,21 +85,21 @@ export function MyApplications() {
 
   const getStatusIcon = (status: string) => {
     switch (status) {
-      case 'completed': case 'approved': return <CheckCircle2 className="w-5 h-5 text-emerald-500" />
-      case 'submitted': return <FileText className="w-5 h-5 text-blue-500" />
-      case 'pending': case 'in_progress': case 'under_review': return <Clock className="w-5 h-5 text-amber-500" />
-      case 'rejected': return <XCircle className="w-5 h-5 text-red-500" />
-      default: return <AlertCircle className="w-5 h-5 text-muted-foreground" />
+      case 'completed': case 'approved': return <CheckCircle2 className="w-5 h-5 text-[#2E7D32]" />
+      case 'submitted': return <FileText className="w-5 h-5 text-[#1A3C5E]" />
+      case 'pending': case 'in_progress': case 'under_review': return <Clock className="w-5 h-5 text-[#F5A623]" />
+      case 'rejected': return <XCircle className="w-5 h-5 text-[#E53935]" />
+      default: return <AlertCircle className="w-5 h-5 text-[#6B7280]" />
     }
   }
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'completed': case 'approved': return 'bg-emerald-100 text-emerald-700 border-emerald-200'
-      case 'submitted': return 'bg-blue-100 text-blue-700 border-blue-200'
-      case 'pending': case 'in_progress': case 'under_review': return 'bg-amber-100 text-amber-700 border-amber-200'
-      case 'rejected': return 'bg-red-100 text-red-700 border-red-200'
-      default: return 'bg-gray-100 text-gray-700 border-gray-200'
+      case 'completed': case 'approved': return 'bg-emerald-50 text-[#2E7D32] border-0'
+      case 'submitted': return 'bg-[#E8F0FE] text-[#1A3C5E] border-0'
+      case 'pending': case 'in_progress': case 'under_review': return 'bg-[#FFF3D6] text-[#F5A623] border-0'
+      case 'rejected': return 'bg-red-50 text-[#E53935] border-0'
+      default: return 'bg-gray-50 text-[#6B7280] border-0'
     }
   }
 
@@ -118,9 +118,25 @@ export function MyApplications() {
 
   const getPaymentBadge = (paymentStatus: string) => {
     switch (paymentStatus) {
-      case 'paid': return <Badge className="bg-emerald-100 text-emerald-700 text-[10px]">{t.paid}</Badge>
-      case 'partial': return <Badge className="bg-amber-100 text-amber-700 text-[10px]">{t.partial}</Badge>
-      default: return <Badge className="bg-red-100 text-red-700 text-[10px]">{t.unpaid}</Badge>
+      case 'paid': return <Badge className="bg-emerald-50 text-[#2E7D32] text-[10px] border-0">{t.paid}</Badge>
+      case 'partial': return <Badge className="bg-[#FFF3D6] text-[#F5A623] text-[10px] border-0">{t.partial}</Badge>
+      default: return <Badge className="bg-red-50 text-[#E53935] text-[10px] border-0">{t.unpaid}</Badge>
+    }
+  }
+
+  const getServiceIcon = (type: string) => {
+    switch (type) {
+      case 'government': return <Shield className="w-4 h-4" />
+      case 'notarisation': return <Zap className="w-4 h-4" />
+      default: return <FileText className="w-4 h-4" />
+    }
+  }
+
+  const getServiceStyle = (type: string) => {
+    switch (type) {
+      case 'government': return { bg: '#E8F0FE', color: '#1A3C5E' }
+      case 'notarisation': return { bg: '#FFF3D6', color: '#F5A623' }
+      default: return { bg: '#F3F4F6', color: '#6B7280' }
     }
   }
 
@@ -128,13 +144,13 @@ export function MyApplications() {
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[#003366]">{t.title}</h2>
-          <p className="text-muted-foreground">{t.subtitle}</p>
+          <h2 className="text-2xl font-bold text-[#1C1C1E]">{t.title}</h2>
+          <p className="text-[#6B7280] text-sm">{t.subtitle}</p>
         </div>
         <div className="flex gap-2">
           <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 border-blue-100">
-              <Filter className="w-4 h-4 mr-1" />
+            <SelectTrigger className="w-40 border-gray-200">
+              <Filter className="w-4 h-4 mr-1 text-[#6B7280]" />
               <SelectValue placeholder="Filter" />
             </SelectTrigger>
             <SelectContent>
@@ -146,19 +162,19 @@ export function MyApplications() {
               <SelectItem value="rejected">{t.rejected}</SelectItem>
             </SelectContent>
           </Select>
-          <Button variant="outline" size="icon" className="border-blue-100" onClick={() => refetch()}>
-            <RefreshCw className="w-4 h-4" />
+          <Button variant="outline" size="icon" className="border-gray-200" onClick={() => refetch()}>
+            <RefreshCw className="w-4 h-4 text-[#6B7280]" />
           </Button>
         </div>
       </div>
 
       {isLoading ? (
-        <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-blue-600" /></div>
+        <div className="flex items-center justify-center py-16"><Loader2 className="w-8 h-8 animate-spin text-[#1A3C5E]" /></div>
       ) : (data || []).length === 0 ? (
         <div className="text-center py-16">
-          <FileText className="w-20 h-20 mx-auto mb-4 opacity-15" />
-          <h3 className="text-xl font-semibold mb-2">{t.noApps}</h3>
-          <p className="text-muted-foreground mb-4">{t.noAppsSub}</p>
+          <FileText className="w-20 h-20 mx-auto mb-4 opacity-10 text-[#1A3C5E]" />
+          <h3 className="text-xl font-semibold text-[#1C1C1E]">{t.noApps}</h3>
+          <p className="text-[#6B7280] mb-4">{t.noAppsSub}</p>
         </div>
       ) : (
         <div className="space-y-3">
@@ -174,36 +190,39 @@ export function MyApplications() {
             created_at: string
             updated_at: string
             notes: string
-          }) => (
-            <Card key={app.id} className="border-0 shadow-sm hover:shadow-md transition-shadow overflow-hidden">
-              <div className="flex">
-                <div className="w-1.5 bg-gradient-to-b from-[#003366] to-[#2980b9]" />
-                <CardContent className="flex-1 p-4">
-                  <div className="flex items-start justify-between gap-3">
-                    <div className="flex items-start gap-3">
-                      {getStatusIcon(app.status)}
-                      <div>
-                        <h4 className="font-semibold">{app.service_name}</h4>
-                        <p className="text-sm text-muted-foreground">{app.service_type} {t.service}</p>
-                        <div className="flex items-center gap-2 mt-1">
-                          <span className="text-xs text-muted-foreground">{t.applied}: {new Date(app.created_at).toLocaleDateString()}</span>
-                          {app.applicant_cnic && <span className="text-xs text-muted-foreground">CNIC: {app.applicant_cnic}</span>}
-                        </div>
-                        {app.notes && (
-                          <p className="text-xs text-muted-foreground mt-1 bg-blue-50/50 px-2 py-1 rounded">{t.note}: {app.notes}</p>
-                        )}
-                      </div>
+          }) => {
+            const svcStyle = getServiceStyle(app.service_type)
+            return (
+              <Card key={app.id} className="border-0 shadow-sm hover:shadow-md transition-shadow rounded-2xl overflow-hidden bg-white">
+                <CardContent className="p-4">
+                  <div className="flex items-center gap-3">
+                    {/* Left: colored icon in rounded square */}
+                    <div
+                      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                      style={{ backgroundColor: svcStyle.bg, color: svcStyle.color }}
+                    >
+                      {getServiceIcon(app.service_type)}
                     </div>
-                    <div className="flex flex-col items-end gap-2">
-                      <Badge className={`${getStatusColor(app.status)} text-xs`}>{getStatusLabel(app.status)}</Badge>
+                    {/* Center: Title + subtitle */}
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-semibold text-[#1C1C1E] truncate">{app.service_name}</p>
+                      <p className="text-xs text-[#6B7280] mt-0.5">{app.service_type} {t.service} · {new Date(app.created_at).toLocaleDateString()}</p>
+                      {app.applicant_cnic && <p className="text-[10px] text-[#6B7280]/60 mt-0.5">CNIC: {app.applicant_cnic}</p>}
+                      {app.notes && (
+                        <p className="text-xs text-[#6B7280] mt-1 bg-[#F5F7FA] px-2 py-1 rounded-lg inline-block">{t.note}: {app.notes}</p>
+                      )}
+                    </div>
+                    {/* Right: Status badge + amount */}
+                    <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      <Badge className={`${getStatusColor(app.status)} text-xs rounded-lg px-2.5`}>{getStatusLabel(app.status)}</Badge>
                       {getPaymentBadge(app.payment_status)}
-                      <span className="text-sm font-bold text-[#003366]">Rs {app.fee_amount?.toLocaleString()}</span>
+                      <span className="text-sm font-bold text-[#1A3C5E]">Rs {app.fee_amount?.toLocaleString()}</span>
                     </div>
                   </div>
                 </CardContent>
-              </div>
-            </Card>
-          ))}
+              </Card>
+            )
+          })}
         </div>
       )}
     </div>

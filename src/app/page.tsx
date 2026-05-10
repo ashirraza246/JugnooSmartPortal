@@ -55,7 +55,7 @@ function ModuleFallback() {
   return (
     <div className="flex items-center justify-center h-64">
       <div className="text-center space-y-3">
-        <Loader2 className="w-8 h-8 animate-spin text-blue-600 mx-auto" />
+        <Loader2 className="w-8 h-8 animate-spin text-[#1A3C5E] mx-auto" />
         <p className="text-muted-foreground text-sm">Loading...</p>
       </div>
     </div>
@@ -107,12 +107,12 @@ function NotificationList() {
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
-          <h2 className="text-2xl font-bold text-[#003366]">{isUrdu ? 'اطلاعات' : 'Notifications'}</h2>
-          <p className="text-muted-foreground">{isUrdu ? 'اپنی تمام اطلاعات دیکھیں' : 'Dekhein apni saari notifications'}</p>
+          <h2 className="text-2xl font-bold text-[#1C1C1E]">{isUrdu ? 'اطلاعات' : 'Notifications'}</h2>
+          <p className="text-[#6B7280]">{isUrdu ? 'اپنی تمام اطلاعات دیکھیں' : 'Dekhein apni saari notifications'}</p>
         </div>
         <div className="flex items-center gap-2">
           {notifications.filter(n => !n.isRead).length > 0 && (
-            <Button size="sm" onClick={markAllNotificationsRead} className="bg-[#003366] text-white">
+            <Button size="sm" onClick={markAllNotificationsRead} className="bg-[#1A3C5E] text-white rounded-xl">
               <CheckCheck className="w-4 h-4 mr-1" />
               {isUrdu ? 'سب پڑھیں' : 'Sab Parhein'}
             </Button>
@@ -127,30 +127,30 @@ function NotificationList() {
 
       {notifications.length === 0 ? (
         <div className="text-center py-16">
-          <Bell className="w-16 h-16 mx-auto mb-4 opacity-15" />
-          <h3 className="text-lg font-semibold">{isUrdu ? 'کوئی اطلاع نہیں' : 'Koi notification nahi'}</h3>
+          <Bell className="w-16 h-16 mx-auto mb-4 opacity-10 text-[#1A3C5E]" />
+          <h3 className="text-lg font-semibold text-[#1C1C1E]">{isUrdu ? 'کوئی اطلاع نہیں' : 'Koi notification nahi'}</h3>
         </div>
       ) : (
         <div className="space-y-3">
           {notifications.map((notif) => (
-            <Card key={notif.id} className={`border-0 shadow-sm overflow-hidden cursor-pointer group relative ${!notif.isRead ? 'bg-blue-50/30' : ''}`} onClick={() => markNotificationRead(notif.id)}>
+            <Card key={notif.id} className={`border-0 shadow-sm overflow-hidden cursor-pointer group relative rounded-2xl ${!notif.isRead ? 'bg-[#E8F0FE]/30' : ''}`} onClick={() => markNotificationRead(notif.id)}>
               <div className="flex">
                 <div className={`w-1.5 ${
-                  notif.type === 'status' ? 'bg-blue-500' :
-                  notif.type === 'payment' ? 'bg-emerald-500' :
-                  notif.type === 'deadline' ? 'bg-amber-500' : 'bg-purple-500'
+                  notif.type === 'status' ? 'bg-[#1A3C5E]' :
+                  notif.type === 'payment' ? 'bg-[#2E7D32]' :
+                  notif.type === 'deadline' ? 'bg-[#F5A623]' : 'bg-purple-500'
                 }`} />
                 <CardContent className="flex-1 p-4">
                   <div className="flex items-start justify-between">
                     <div className="flex-1 min-w-0">
-                      <p className={`text-sm ${!notif.isRead ? 'font-semibold text-[#003366]' : 'text-gray-700'}`}>{notif.title}</p>
-                      <p className="text-xs text-muted-foreground mt-1">{notif.message}</p>
+                      <p className={`text-sm ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>{notif.title}</p>
+                      <p className="text-xs text-[#6B7280] mt-1">{notif.message}</p>
                     </div>
                     <div className="flex items-center gap-2 ml-2">
-                      <Badge className={`text-[10px] ${
-                        notif.type === 'status' ? 'bg-blue-100 text-blue-700' :
-                        notif.type === 'payment' ? 'bg-emerald-100 text-emerald-700' :
-                        notif.type === 'deadline' ? 'bg-amber-100 text-amber-700' : 'bg-purple-100 text-purple-700'
+                      <Badge className={`text-[10px] border-0 ${
+                        notif.type === 'status' ? 'bg-[#E8F0FE] text-[#1A3C5E]' :
+                        notif.type === 'payment' ? 'bg-emerald-50 text-[#2E7D32]' :
+                        notif.type === 'deadline' ? 'bg-[#FFF3D6] text-[#F5A623]' : 'bg-purple-50 text-purple-700'
                       }`}>{notif.type}</Badge>
                       <button
                         onClick={(e) => { e.stopPropagation(); clearNotification(notif.id) }}
@@ -161,7 +161,7 @@ function NotificationList() {
                       </button>
                     </div>
                   </div>
-                  <p className="text-[10px] text-muted-foreground mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
+                  <p className="text-[10px] text-[#6B7280] mt-2">{new Date(notif.createdAt).toLocaleString()}</p>
                 </CardContent>
               </div>
             </Card>
@@ -196,11 +196,11 @@ function CustomerContent() {
   const ActiveComponent = modules[activeModule] || CustomerDashboard
 
   return (
-    <div className="flex h-screen bg-background">
+    <div className="flex h-screen bg-[#F5F7FA]">
       <AppSidebar />
       <div className="flex-1 flex flex-col min-w-0">
         <AppHeader />
-        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8 pb-20 lg:pb-8">
           <Suspense fallback={<ModuleFallback />}>
             <ActiveComponent />
           </Suspense>

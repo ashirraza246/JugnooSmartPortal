@@ -35,7 +35,7 @@ export default function LoginForm() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#001a33] via-[#003366] to-[#001a33] p-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-[#1A3C5E] via-[#003E6B] to-[#1A3C5E] p-4">
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
@@ -48,25 +48,25 @@ export default function LoginForm() {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-[#2980b9] to-[#003366] shadow-2xl mb-4"
+            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-[#F5A623]/20 shadow-2xl mb-4"
           >
-            <Shield className="w-10 h-10 text-white" />
+            <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-14 h-14 object-cover rounded-xl" />
           </motion.div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Jugnoo Smart Portal</h1>
-          <p className="text-blue-200 mt-2 text-lg">Pakistani Government Services</p>
-          <p className="text-blue-300 text-sm mt-1">پاکستانی حکومتی خدمات</p>
+          <p className="text-[#F5A623] mt-2 text-lg font-medium">Pakistani Government Services</p>
+          <p className="text-white/50 text-sm mt-1">پاکستانی حکومتی خدمات</p>
         </div>
 
-        <Card className="premium-card border-0 shadow-2xl">
-          <CardHeader className="pb-4">
-            <CardTitle className="text-2xl text-center text-[#003366]">
-              <LogIn className="w-6 h-6 inline mr-2" />
+        <Card className="border-0 shadow-2xl rounded-2xl overflow-hidden">
+          <CardHeader className="pb-4 bg-white">
+            <CardTitle className="text-xl text-center text-[#1A3C5E]">
+              <LogIn className="w-5 h-5 inline mr-2" />
               Login / لاگ ان
             </CardTitle>
           </CardHeader>
-          <CardContent className="space-y-5">
+          <CardContent className="space-y-5 bg-white">
             <div className="space-y-2">
-              <Label htmlFor="email" className="text-base font-medium">
+              <Label htmlFor="email" className="text-sm font-medium text-[#1C1C1E]">
                 Email / ای میل
               </Label>
               <Input
@@ -75,13 +75,13 @@ export default function LoginForm() {
                 placeholder="aap@email.com"
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
-                className="h-12 text-lg"
+                className="h-12 text-base bg-[#F3F4F6] border-transparent focus:border-[#1A3C5E] focus:bg-white rounded-xl focus:ring-0 focus:ring-offset-0 placeholder:text-[#6B7280]/50"
                 onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
               />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password" className="text-base font-medium">
+              <Label htmlFor="password" className="text-sm font-medium text-[#1C1C1E]">
                 Password / پاسورڈ
               </Label>
               <div className="relative">
@@ -91,13 +91,13 @@ export default function LoginForm() {
                   placeholder="••••••••"
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="h-12 text-lg pr-12"
+                  className="h-12 text-base pr-12 bg-[#F3F4F6] border-transparent focus:border-[#1A3C5E] focus:bg-white rounded-xl focus:ring-0 focus:ring-offset-0 placeholder:text-[#6B7280]/50"
                   onKeyDown={(e) => e.key === 'Enter' && handleLogin()}
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-500 hover:text-[#003366]"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-[#6B7280] hover:text-[#1A3C5E]"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -107,7 +107,7 @@ export default function LoginForm() {
             <Button
               onClick={handleLogin}
               disabled={isLoading}
-              className="w-full h-12 text-lg font-semibold bg-[#003366] hover:bg-[#001a33] text-white"
+              className="w-full h-[52px] text-base font-semibold bg-[#1A3C5E] hover:bg-[#0F2A42] text-white rounded-xl shadow-sm"
             >
               {isLoading ? (
                 <motion.div
@@ -124,23 +124,23 @@ export default function LoginForm() {
             </Button>
 
             {/* Demo credentials */}
-            <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">
-              <p className="text-sm font-semibold text-[#003366] mb-2">Demo Login / ڈیمو لاگ ان:</p>
-              <div className="space-y-1 text-sm text-gray-600">
+            <div className="bg-[#F5F7FA] rounded-xl p-4 mt-4">
+              <p className="text-sm font-semibold text-[#1A3C5E] mb-2">Demo Login / ڈیمو لاگ ان:</p>
+              <div className="space-y-1 text-sm text-[#6B7280]">
                 <p className="flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-[#003366]" />
-                  <span className="font-medium">Admin:</span> admin@jugnoo.pk / jugnoo123
+                  <Shield className="w-4 h-4 text-[#1A3C5E]" />
+                  <span className="font-medium text-[#1C1C1E]">Admin:</span> admin@jugnoo.pk / jugnoo123
                 </p>
-                <p className="text-xs text-gray-400 mt-1">Ya register karein neeche / Or register below</p>
+                <p className="text-xs text-[#6B7280]/60 mt-1">Ya register karein neeche / Or register below</p>
               </div>
             </div>
 
             <div className="text-center pt-2">
-              <p className="text-gray-500 text-base">
+              <p className="text-[#6B7280] text-sm">
                 Account nahi hai?{' '}
                 <button
                   onClick={() => setActiveView('register')}
-                  className="text-[#2980b9] hover:text-[#003366] font-semibold underline"
+                  className="text-[#F5A623] hover:text-[#FFB300] font-semibold"
                 >
                   Register karein / Sign Up
                 </button>
