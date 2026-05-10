@@ -1,0 +1,73 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String
+  password  String
+  role      String   @default("customer")
+  phone     String?
+  cnic      String?
+  city      String?
+  income    Int?
+  age       Int?
+  gender    String?
+  avatar    String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  applications  Application[]
+  notifications Notification[]
+}
+
+model Application {
+  id          String   @id @default(cuid())
+  userId      String
+  serviceId   String
+  serviceName String
+  status      String   @default("pending")
+  amount      Int?
+  paymentStatus String @default("unpaid")
+  paymentMethod String?
+  formData    String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  user        User     @relation(fields: [userId], references: [id])
+}
+
+model Notification {
+  id        String   @id @default(cuid())
+  userId    String
+  title     String
+  message   String
+  type      String
+  isRead    Boolean  @default(false)
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id])
+}
+
+model ServiceConfig {
+  id          String   @id @default(cuid())
+  serviceId   String   @unique
+  price       Int      @default(0)
+  isActive    Boolean  @default(true)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+}
+
+model PaymentConfig {
+  id              String   @id @default(cuid())
+  jazzCashNumber  String   @default("")
+  easyPaisaNumber String   @default("")
+  bankName        String   @default("")
+  bankAccount     String   @default("")
+  bankTitle       String   @default("")
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
