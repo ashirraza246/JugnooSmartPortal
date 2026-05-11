@@ -51,7 +51,9 @@ const queryClient = new QueryClient({
 })
 
 // Admin-only module keys - customers can NEVER access these
-const ADMIN_ONLY_MODULES = ['dashboard', 'whatsapp', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'payments', 'pricing', 'inventory', 'team', 'settings']
+// Only modules that are EXCLUSIVELY admin (not shared with customer portal)
+// 'payments' and 'whatsapp' are SHARED between admin & customer, so NOT in this list
+const ADMIN_ONLY_MODULES = ['dashboard', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'pricing', 'inventory', 'team', 'settings']
 
 function ModuleFallback() {
   return (
