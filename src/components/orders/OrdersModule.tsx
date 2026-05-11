@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { useState } from 'react'
+import { useState, useRef } from 'react'
 import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -27,8 +27,12 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
+  DialogFooter,
+  DialogDescription,
 } from '@/components/ui/dialog'
-import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
+import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard, Printer, MessageCircle, Upload, Download, Link as LinkIcon } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 
@@ -47,6 +51,13 @@ export function OrdersModule() {
   const [selectedOrder, setSelectedOrder] = useState<Record<string, unknown> | null>(null)
   const [selectedApp, setSelectedApp] = useState<ServiceApplication | null>(null)
   const [appStatusFilter, setAppStatusFilter] = useState('all')
+  const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
+  const [uploadApp, setUploadApp] = useState<ServiceApplication | null>(null)
+  const [documentUrl, setDocumentUrl] = useState('')
+  const [isUploading, setIsUploading] = useState(false)
+  const [detailDialogOpen, setDetailDialogOpen] = useState(false)
+  const [detailApp, setDetailApp] = useState<ServiceApplication | null>(null)
+  const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Service Applications types
   interface ServiceApplication {
@@ -202,6 +213,187 @@ export function OrdersModule() {
     return idx >= 0 && idx < flow.length - 1 ? flow[idx + 1] : null
   }
 
+  // Generate and print invoice for admin
+  const handleAdminInvoice = (app: ServiceApplication) => {
+    const printContent = `
+      <html><head><title>Invoice - ${app.service_name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #1C1C1E; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #003366; padding-bottom: 15px; margin-bottom: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #003366; }
+        .invoice-label { font-size: 14px; color: #6B7280; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .field { margin-bottom: 8px; }
+        .field-label { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field-value { font-size: 14px; font-weight: 500; }
+        .amount-section { background: #F5F7FA; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right; }
+        .amount { font-size: 28px; font-weight: bold; color: #003366; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-submitted { background: #E8F0FE; color: #1A3C5E; }
+        .status-pending { background: #FFF3D6; color: #F5A623; }
+        .status-in_progress { background: #E8F0FE; color: #003366; }
+        .status-completed { background: #E8F5E9; color: #2E7D32; }
+        .footer { margin-top: 40px; font-size: 11px; color: #6B7280; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 15px; }
+        .stamp { position: fixed; bottom: 80px; right: 60px; font-size: 48px; color: rgba(0,51,102,0.08); font-weight: bold; transform: rotate(-15deg); }
+      </style></head><body>
+      <div class="header">
+        <div><div class="logo">JUGNOO PHOTOSTATE</div><div style="font-size:12px;color:#6B7280;">Chowk Azam, Layyah, Punjab</div></div>
+        <div style="text-align:right"><div class="invoice-label">INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="field"><div class="field-label">Customer</div><div class="field-value">${app.applicant_name || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">CNIC</div><div class="field-value">${app.applicant_cnic || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">Phone</div><div class="field-value">${app.applicant_phone || 'N/A'}</div></div>
+          ${app.applicant_whatsapp ? `<div class="field"><div class="field-label">WhatsApp</div><div class="field-value">${app.applicant_whatsapp}</div></div>` : ''}
+        </div>
+        <div>
+          <div class="field"><div class="field-label">Service</div><div class="field-value">${app.service_name}</div></div>
+          <div class="field"><div class="field-label">Type</div><div class="field-value">${app.service_type}</div></div>
+          <div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status-badge status-${app.status}">${app.status.replace(/_/g, ' ').toUpperCase()}</span></div></div>
+          <div class="field"><div class="field-label">Payment</div><div class="field-value">${app.payment_status === 'paid' ? 'PAID' : 'UNPAID'}</div></div>
+          ${app.transaction_id ? `<div class="field"><div class="field-label">Transaction ID</div><div class="field-value">${app.transaction_id}</div></div>` : ''}
+          ${app.payment_method ? `<div class="field"><div class="field-label">Payment Method</div><div class="field-value">${app.payment_method}</div></div>` : ''}
+        </div>
+      </div>
+      ${app.description ? `<div class="field"><div class="field-label">Description</div><div class="field-value">${app.description}</div></div>` : ''}
+      ${app.personal_info && Object.keys(app.personal_info).length > 0 ? `<div style="margin-top:15px;padding:10px;background:#F9FAFB;border-radius:8px;"><div class="field-label" style="margin-bottom:8px;">Service Details</div>${Object.entries(app.personal_info).filter(([,v]) => v).map(([k,v]) => `<div style="font-size:12px;margin-bottom:4px;"><strong>${k}:</strong> ${v}</div>`).join('')}</div>` : ''}
+      <div class="amount-section">
+        <div style="font-size:12px;color:#6B7280;margin-bottom:5px;">Service Fee</div>
+        <div class="amount">Rs. ${app.fee_amount?.toLocaleString()}</div>
+      </div>
+      <div class="stamp">ADMIN COPY</div>
+      <div class="footer">Jugnoo Photostate · AI-Powered Business Management · Chowk Azam · ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+      </body></html>
+    `
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      printWindow.print()
+    }
+  }
+
+  // Share invoice via WhatsApp
+  const handleWhatsAppInvoice = (app: ServiceApplication) => {
+    const phone = app.applicant_whatsapp || app.applicant_phone || ''
+    const cleanPhone = phone.replace(/[^0-9]/g, '')
+    // Format: if starts with 0, replace with 92 (Pakistan)
+    const formattedPhone = cleanPhone.startsWith('0') ? '92' + cleanPhone.substring(1) : cleanPhone.startsWith('92') ? cleanPhone : cleanPhone
+
+    const invoiceText = `🧾 *JUGNOO PHOTOSTATE - Invoice*
+━━━━━━━━━━━━━━━━━━━━━
+📋 Invoice: #${app.id.slice(0,8).toUpperCase()}
+📅 Date: ${new Date(app.created_at).toLocaleDateString()}
+
+👤 *Customer:* ${app.applicant_name || 'N/A'}
+🪪 CNIC: ${app.applicant_cnic || 'N/A'}
+📱 Phone: ${app.applicant_phone || 'N/A'}
+
+🔧 *Service:* ${app.service_name}
+📂 Type: ${app.service_type}
+📊 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
+💰 Payment: ${app.payment_status === 'paid' ? '✅ PAID' : '❌ UNPAID'}
+${app.transaction_id ? `🔑 Trx ID: ${app.transaction_id}` : ''}
+
+💵 *Amount: Rs. ${app.fee_amount?.toLocaleString()}*
+
+━━━━━━━━━━━━━━━━━━━━━
+_Jugnoo Photostate_
+_Chowk Azam, Layyah, Punjab_
+_AI-Powered Business Management_`
+
+    const url = formattedPhone
+      ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(invoiceText)}`
+      : `https://wa.me/?text=${encodeURIComponent(invoiceText)}`
+    window.open(url, '_blank')
+  }
+
+  // Open WhatsApp chat with customer
+  const handleWhatsAppChat = (app: ServiceApplication) => {
+    const phone = app.applicant_whatsapp || app.applicant_phone || ''
+    const cleanPhone = phone.replace(/[^0-9]/g, '')
+    const formattedPhone = cleanPhone.startsWith('0') ? '92' + cleanPhone.substring(1) : cleanPhone.startsWith('92') ? cleanPhone : cleanPhone
+    const url = formattedPhone
+      ? `https://wa.me/${formattedPhone}`
+      : 'https://wa.me/'
+    window.open(url, '_blank')
+  }
+
+  // Upload file to Supabase Storage
+  const handleFileUpload = async (file: File, appId: string) => {
+    setIsUploading(true)
+    try {
+      const formData = new FormData()
+      formData.append('file', file)
+      formData.append('appId', appId)
+
+      const res = await fetch('/api/upload', {
+        method: 'POST',
+        body: formData,
+      })
+      const result = await res.json()
+      if (!res.ok) {
+        toast({ title: 'Upload failed', description: result.error, variant: 'destructive' })
+        return null
+      }
+      return result.url
+    } catch (err) {
+      toast({ title: 'Upload failed', variant: 'destructive' })
+      return null
+    } finally {
+      setIsUploading(false)
+    }
+  }
+
+  // Handle upload dialog submit
+  const handleUploadSubmit = async () => {
+    if (!uploadApp) return
+
+    let finalUrl = documentUrl
+
+    // If user selected a file, upload it
+    const fileInput = fileInputRef.current
+    if (fileInput?.files && fileInput.files.length > 0) {
+      const uploadedUrl = await handleFileUpload(fileInput.files[0], uploadApp.id)
+      if (uploadedUrl) {
+        finalUrl = uploadedUrl
+      } else {
+        return
+      }
+    }
+
+    if (!finalUrl) {
+      toast({ title: 'Please provide a document URL or upload a file', variant: 'destructive' })
+      return
+    }
+
+    // Update the application with the document URL and mark as completed
+    updateAppMutation.mutate({
+      id: uploadApp.id,
+      status: 'completed',
+      resultDocumentUrl: finalUrl,
+    })
+    setUploadDialogOpen(false)
+    setUploadApp(null)
+    setDocumentUrl('')
+  }
+
+  // Handle advancing status with upload option on completion
+  const handleAdvanceStatus = (app: ServiceApplication) => {
+    const nextStatus = getNextAppStatus(app.status)
+    if (!nextStatus) return
+
+    if (nextStatus === 'completed') {
+      // Open upload dialog instead of directly completing
+      setUploadApp(app)
+      setDocumentUrl('')
+      setUploadDialogOpen(true)
+    } else {
+      updateAppMutation.mutate({ id: app.id, status: nextStatus })
+    }
+  }
+
   return (
     <div className="space-y-4">
       {/* Tab Switcher */}
@@ -269,8 +461,9 @@ export function OrdersModule() {
             <div className="space-y-3">
               {applications.map((app: ServiceApplication) => (
                 <Card key={app.id} className="border-0 shadow-sm hover:shadow-md transition-shadow rounded-xl overflow-hidden">
-                  <CardContent className="p-4">
-                    <div className="flex items-start gap-3">
+                  <CardContent className="p-3 sm:p-4">
+                    {/* Top row: icon + info + badges */}
+                    <div className="flex items-start gap-2.5 sm:gap-3">
                       {/* Icon */}
                       <div className="w-10 h-10 rounded-xl bg-[#E8F0FE] text-[#003366] flex items-center justify-center shrink-0">
                         <FileText className="w-5 h-5" />
@@ -291,8 +484,8 @@ export function OrdersModule() {
                           <p className="text-[10px] text-[#6B7280]">Payment: {app.payment_method}</p>
                         )}
                       </div>
-                      {/* Right side - Status + Payment + Amount + Actions */}
-                      <div className="flex flex-col items-end gap-1.5 shrink-0">
+                      {/* Right side - Status + Payment + Amount */}
+                      <div className="flex flex-col items-end gap-1 shrink-0">
                         <Badge className={`${getAppStatusColor(app.status)} text-[10px] border-0 rounded-lg px-2`}>
                           {getAppStatusLabel(app.status)}
                         </Badge>
@@ -302,34 +495,98 @@ export function OrdersModule() {
                           {app.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                         </Badge>
                         <span className="text-sm font-bold text-[#003366]">Rs {app.fee_amount?.toLocaleString()}</span>
-                        <div className="flex items-center gap-1 mt-1">
-                          {/* Mark as Paid button */}
-                          {app.payment_status !== 'paid' && (
-                            <Button
-                              size="sm"
-                              className="h-7 px-2 text-[10px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1"
-                              onClick={() => updateAppMutation.mutate({ id: app.id, paymentStatus: 'paid' })}
-                            >
-                              <DollarSign className="w-3 h-3" /> Mark Paid
-                            </Button>
-                          )}
-                          {/* Advance Status */}
-                          {getNextAppStatus(app.status) && (
-                            <Button
-                              size="sm"
-                              variant="outline"
-                              className="h-7 px-2 text-[10px] border-[#003366] text-[#003366] gap-1"
-                              onClick={() => updateAppMutation.mutate({ id: app.id, status: getNextAppStatus(app.status) })}
-                            >
-                              <ArrowRight className="w-3 h-3" /> {getNextAppStatus(app.status)}
-                            </Button>
-                          )}
-                        </div>
                       </div>
                     </div>
+
+                    {/* Action buttons row */}
+                    <div className="mt-3 flex items-center gap-1.5 flex-wrap pl-0 sm:pl-[52px]">
+                      {/* Mark as Paid button */}
+                      {app.payment_status !== 'paid' && (
+                        <Button
+                          size="sm"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] bg-emerald-600 hover:bg-emerald-700 text-white gap-1 rounded-lg"
+                          onClick={() => updateAppMutation.mutate({ id: app.id, paymentStatus: 'paid' })}
+                        >
+                          <DollarSign className="w-3.5 h-3.5" /> Mark Paid
+                        </Button>
+                      )}
+
+                      {/* Advance Status */}
+                      {getNextAppStatus(app.status) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] border-[#003366] text-[#003366] gap-1 rounded-lg"
+                          onClick={() => handleAdvanceStatus(app)}
+                        >
+                          <ArrowRight className="w-3.5 h-3.5" /> {getNextAppStatus(app.status)}
+                        </Button>
+                      )}
+
+                      {/* Invoice - Print */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 min-w-[44px] px-2.5 text-[11px] border-[#003366]/20 text-[#003366] hover:bg-[#003366] hover:text-white gap-1 rounded-lg"
+                        onClick={() => handleAdminInvoice(app)}
+                      >
+                        <Printer className="w-3.5 h-3.5" /> Invoice
+                      </Button>
+
+                      {/* WhatsApp Invoice */}
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-8 min-w-[44px] px-2.5 text-[11px] border-green-300 text-green-700 hover:bg-green-600 hover:text-white gap-1 rounded-lg"
+                        onClick={() => handleWhatsAppInvoice(app)}
+                      >
+                        <MessageCircle className="w-3.5 h-3.5" /> WhatsApp
+                      </Button>
+
+                      {/* WhatsApp Chat - direct chat */}
+                      {(app.applicant_whatsapp || app.applicant_phone) && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] border-green-200 text-green-600 hover:bg-green-500 hover:text-white gap-1 rounded-lg"
+                          onClick={() => handleWhatsAppChat(app)}
+                          title="Open WhatsApp Chat"
+                        >
+                          <MessageCircle className="w-3.5 h-3.5" /> Chat
+                        </Button>
+                      )}
+
+                      {/* Upload / Deliver - only when in_progress or completed without document */}
+                      {(app.status === 'in_progress' || (app.status === 'completed' && !app.result_document_url)) && (
+                        <Button
+                          size="sm"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] bg-[#003366] hover:bg-[#002244] text-white gap-1 rounded-lg"
+                          onClick={() => {
+                            setUploadApp(app)
+                            setDocumentUrl(app.result_document_url || '')
+                            setUploadDialogOpen(true)
+                          }}
+                        >
+                          <Upload className="w-3.5 h-3.5" /> Upload Work
+                        </Button>
+                      )}
+
+                      {/* View/Download delivered document */}
+                      {app.result_document_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white gap-1 rounded-lg"
+                          onClick={() => window.open(app.result_document_url!, '_blank')}
+                        >
+                          <Download className="w-3.5 h-3.5" /> View File
+                        </Button>
+                      )}
+                    </div>
+
                     {/* Personal Info Preview */}
                     {app.personal_info && Object.keys(app.personal_info).length > 0 && (
-                      <div className="mt-2 pt-2 border-t border-gray-100">
+                      <div className="mt-2 pt-2 border-t border-gray-100 pl-0 sm:pl-[52px]">
                         <details className="text-xs">
                           <summary className="cursor-pointer text-[#6B7280] hover:text-[#003366]">View Details</summary>
                           <div className="mt-1.5 grid grid-cols-2 gap-1">
@@ -341,7 +598,7 @@ export function OrdersModule() {
                       </div>
                     )}
                     {app.notes && (
-                      <p className="text-xs text-[#6B7280] mt-2 bg-[#F5F7FA] px-2 py-1 rounded">Notes: {app.notes}</p>
+                      <p className="text-xs text-[#6B7280] mt-2 bg-[#F5F7FA] px-2 py-1 rounded pl-0 sm:pl-[52px]">Notes: {app.notes}</p>
                     )}
                   </CardContent>
                 </Card>
@@ -545,6 +802,87 @@ export function OrdersModule() {
           />
         </div>
       )}
+
+      {/* Upload Document Dialog */}
+      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle className="text-[#003366]">Upload Completed Work</DialogTitle>
+            <DialogDescription>
+              {uploadApp ? `Upload or link the completed work for: ${uploadApp.service_name}` : ''}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-2">
+            {/* Option 1: Upload file */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#1C1C1E]">Upload File (PDF, Image, Document)</Label>
+              <div className="flex items-center gap-2">
+                <input
+                  ref={fileInputRef}
+                  type="file"
+                  accept=".pdf,.jpg,.jpeg,.png,.doc,.docx,.xls,.xlsx"
+                  className="block w-full text-sm text-gray-500
+                    file:mr-2 file:py-2 file:px-3
+                    file:rounded-lg file:border-0
+                    file:text-sm file:font-medium
+                    file:bg-[#003366] file:text-white
+                    hover:file:bg-[#002244]
+                    file:cursor-pointer file:min-h-[44px]"
+                />
+              </div>
+              <p className="text-[10px] text-[#6B7280]">Max 10MB. Supported: PDF, Images, Word, Excel</p>
+            </div>
+
+            {/* Divider */}
+            <div className="flex items-center gap-2">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-[#6B7280]">OR</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* Option 2: Paste URL */}
+            <div className="space-y-2">
+              <Label className="text-sm font-medium text-[#1C1C1E]">Paste Document URL</Label>
+              <div className="flex items-center gap-2">
+                <LinkIcon className="w-4 h-4 text-[#6B7280] shrink-0" />
+                <Input
+                  placeholder="https://example.com/document.pdf"
+                  value={documentUrl}
+                  onChange={(e) => setDocumentUrl(e.target.value)}
+                  className="border-gray-200 focus:border-[#003366]"
+                />
+              </div>
+              <p className="text-[10px] text-[#6B7280]">Google Drive, Dropbox, or any direct link</p>
+            </div>
+
+            {/* WhatsApp delivery option */}
+            {uploadApp && (uploadApp.applicant_whatsapp || uploadApp.applicant_phone) && (
+              <div className="bg-green-50 rounded-lg p-3 flex items-center gap-2">
+                <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
+                <p className="text-xs text-green-700">
+                  After uploading, you can share this with the customer on WhatsApp using the WhatsApp button.
+                </p>
+              </div>
+            )}
+          </div>
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => { setUploadDialogOpen(false); setUploadApp(null); setDocumentUrl('') }} className="border-gray-200">
+              Cancel
+            </Button>
+            <Button
+              onClick={handleUploadSubmit}
+              disabled={isUploading}
+              className="bg-[#003366] hover:bg-[#002244] text-white min-w-[120px]"
+            >
+              {isUploading ? (
+                <><span className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin mr-2 inline-block" /> Uploading...</>
+              ) : (
+                <><Upload className="w-4 h-4 mr-1.5" /> Upload & Complete</>
+              )}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }

@@ -99,7 +99,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json()
-    const { id, status, paymentStatus, notes, applicantName, applicantCnic, applicantPhone, description } = body
+    const { id, status, paymentStatus, notes, applicantName, applicantCnic, applicantPhone, description, resultDocumentUrl } = body
 
     if (!id) {
       return Response.json({ error: 'Application ID chahiye' }, { status: 400 })
@@ -109,6 +109,7 @@ export async function PUT(req: Request) {
     if (status) updates.status = status
     if (paymentStatus) updates.payment_status = paymentStatus
     if (notes) updates.notes = notes
+    if (resultDocumentUrl !== undefined) updates.result_document_url = resultDocumentUrl
 
     // If this is a customer edit (has applicant fields), check if the application is paid
     if (applicantName !== undefined || applicantCnic !== undefined || applicantPhone !== undefined || description !== undefined) {
