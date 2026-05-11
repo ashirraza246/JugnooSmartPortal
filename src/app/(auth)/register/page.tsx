@@ -96,8 +96,8 @@ export default function RegisterPage() {
       </div>
       <div className="relative w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-2xl" style={{ boxShadow: '0 0 30px rgba(52,152,219,0.3)' }}>
-            <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover rounded-2xl" />
+          <div className="w-auto max-w-[180px] h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-2xl bg-white" style={{ boxShadow: '0 0 30px rgba(52,152,219,0.3)' }}>
+            <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-white">Jugnoo Smart Portal</h1>
           <p className="text-amber-200/70 text-sm">Naya Account Banayein</p>

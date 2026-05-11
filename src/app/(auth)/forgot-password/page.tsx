@@ -67,8 +67,8 @@ export default function ForgotPasswordPage() {
       </div>
       <div className="relative w-full max-w-md">
         <div className="text-center mb-6">
-          <div className="w-16 h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-2xl shadow-amber-500/20">
-            <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover rounded-2xl" />
+          <div className="w-auto max-w-[180px] h-16 rounded-2xl overflow-hidden mx-auto mb-3 shadow-2xl shadow-amber-500/20 bg-white">
+            <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-2xl font-bold text-white">Jugnoo Smart Portal</h1>
         </div>

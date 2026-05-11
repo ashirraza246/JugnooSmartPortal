@@ -48,9 +48,9 @@ export default function LoginForm() {
             initial={{ scale: 0.8 }}
             animate={{ scale: 1 }}
             transition={{ duration: 0.5, delay: 0.2 }}
-            className="inline-flex items-center justify-center w-20 h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-[#F5A623]/20 shadow-2xl mb-4"
+            className="inline-flex items-center justify-center w-auto max-w-[200px] h-20 rounded-2xl bg-white/10 backdrop-blur-sm border border-[#F5A623]/20 shadow-2xl mb-4 px-2"
           >
-            <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-14 h-14 object-cover rounded-xl" />
+            <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
           </motion.div>
           <h1 className="text-3xl font-bold text-white tracking-tight">Jugnoo Smart Portal</h1>
           <p className="text-[#F5A623] mt-2 text-lg font-medium">Pakistani Government Services</p>

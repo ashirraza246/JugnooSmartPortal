@@ -195,7 +195,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
 
         {/* Logo container with 3D perspective - SQUARE with spring border effect */}
         <div
-          className="relative w-28 h-28 rounded-2xl overflow-hidden"
+          className="relative w-36 h-36 rounded-2xl overflow-hidden bg-white"
           style={{
             boxShadow: `0 0 40px rgba(26,60,94,${0.15 * glowIntensity}), 0 0 20px rgba(245,166,35,${0.08 * glowIntensity}), 0 20px 40px rgba(0,0,0,0.1)`,
             animation: 'float 3s ease-in-out infinite',
@@ -204,7 +204,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
           }}
         >
           <img
-            src="/jugnoo-photos-logo.png"
+            src="/jugnoo-photos-logo.jpg"
             alt="Jugnoo Photos"
             className="w-full h-full object-contain"
           />
@@ -305,7 +305,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
       {/* Bottom branding - navy with gold */}
       <div className="absolute bottom-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-1">
-          <img src="/jugnoo-photos-logo.png" alt="" className="w-4 h-4 rounded opacity-30" />
+          <img src="/jugnoo-photos-logo.jpg" alt="" className="w-5 h-5 rounded opacity-30" />
           <p className="text-[10px] text-[#1A3C5E]/25 tracking-wider font-medium">JUGNOO PHOTOSTATE &bull; CHOWK AZAM</p>
         </div>
         <p className="text-[9px] text-[#F5A623]/30">AI-Powered Business Management System v3.0</p>

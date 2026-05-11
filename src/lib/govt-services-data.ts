@@ -26,13 +26,19 @@ export interface RequiredDoc {
   description: string
 }
 
+export interface SelectOption {
+  value: string
+  label: string
+  label_urdu?: string
+}
+
 export interface PersonalInfoField {
   id: string
   label: string
   field_type: 'text' | 'cnic' | 'phone' | 'date' | 'select' | 'number' | 'textarea'
   is_required: boolean
   placeholder?: string
-  options?: string[]
+  options?: string[] | SelectOption[]
   validation?: string
 }
 
@@ -880,7 +886,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
       { id: 'cv-d3', name: 'Experience Letters / References', is_mandatory: false, description: 'For work experience verification. Upload or N/A if fresher.' },
     ],
     personal_info_fields: [
-      { id: 'cv-tone', label: 'CV Tone / Style', field_type: 'select', is_required: true, options: ['Normal (Rs. 500)', 'Professional (Rs. 1,000)'], placeholder: 'Select CV tone' },
+      { id: 'cv-tone', label: 'CV Tone / Style', field_type: 'select', is_required: true, options: [{ value: 'normal', label: 'Normal (Rs. 500)' }, { value: 'professional', label: 'Professional (Rs. 1,000)' }], placeholder: 'Select CV tone' },
       { id: 'cv-p1', label: 'Full Name', field_type: 'text', is_required: true, placeholder: 'Your full name as it should appear on CV' },
       { id: 'cv-p2', label: 'CNIC Number', field_type: 'cnic', is_required: false, placeholder: 'XXXXX-XXXXXXX-X (or N/A)' },
       { id: 'cv-p3', label: 'Date of Birth', field_type: 'date', is_required: false },
@@ -892,8 +898,8 @@ export const GOVT_SERVICES: ServiceInfo[] = [
       { id: 'cv-p9', label: 'Work Experience', field_type: 'textarea', is_required: false, placeholder: 'Company name, role, duration — or N/A if fresher' },
       { id: 'cv-p10', label: 'Skills', field_type: 'textarea', is_required: false, placeholder: 'e.g., MS Office, Communication, Python (or N/A)' },
       { id: 'cv-p11', label: 'Languages', field_type: 'text', is_required: false, placeholder: 'e.g., Urdu, English (or N/A)' },
-      { id: 'cv-p12', label: 'CV Language Preference', field_type: 'select', is_required: true, options: ['English', 'Urdu', 'Both English & Urdu'] },
-      { id: 'cv-p13', label: 'CV Style / Template', field_type: 'select', is_required: true, options: ['Professional (Corporate)', 'Creative (Design)', 'Simple (Clean)', 'Let the expert decide'] },
+      { id: 'cv-p12', label: 'CV Language Preference', field_type: 'select', is_required: true, options: [{ value: 'english', label: 'English' }, { value: 'urdu', label: 'Urdu' }, { value: 'both', label: 'Both English & Urdu' }] },
+      { id: 'cv-p13', label: 'CV Style / Template', field_type: 'select', is_required: true, options: [{ value: 'professional-corporate', label: 'Professional (Corporate)' }, { value: 'creative-design', label: 'Creative (Design)' }, { value: 'simple-clean', label: 'Simple (Clean)' }, { value: 'expert-decide', label: 'Let the expert decide' }] },
       { id: 'cv-p14', label: 'Additional Details / Requirements', field_type: 'textarea', is_required: false, placeholder: 'Any specific requirement? Certifications, projects, references, etc. (or N/A)' },
     ],
     official_url: '',

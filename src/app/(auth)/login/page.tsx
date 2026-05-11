@@ -70,10 +70,10 @@ export default function LoginPage() {
       <div className="relative w-full max-w-md">
         {/* Logo */}
         <div className="text-center mb-8">
-          <div className="w-20 h-20 rounded-2xl overflow-hidden mx-auto mb-4 shadow-2xl"
+          <div className="w-auto max-w-[200px] h-20 rounded-2xl overflow-hidden mx-auto mb-4 shadow-2xl bg-white"
             style={{ animation: 'logoFloat 4s ease-in-out infinite', boxShadow: '0 0 40px rgba(52,152,219,0.3)' }}
           >
-            <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover rounded-2xl" />
+            <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
           </div>
           <h1 className="text-3xl font-bold text-white">Jugnoo Smart Portal</h1>
           <p className="text-white/60 mt-1">AI-Powered Business Management</p>
