@@ -880,7 +880,7 @@ export function ServicesBrowser() {
           applicantPhone: getPhone(),
           applicantWhatsapp: personalInfo.applicantWhatsapp || '',
           description: personalInfo.description || '',
-          feeAmount: selectedService.category === 'cv_builder' && personalInfo['cv-tone'] === 'professional' ? 1000 : selectedService.base_price,
+          feeAmount: selectedService.category === 'cv_builder' && personalInfo['cv-tone']?.includes('Professional') ? 1000 : selectedService.base_price,
           paymentMethod: paymentMethod,
           paymentScreenshotUploaded: !!paymentScreenshot,
           personalInfo: personalInfoPayload,
@@ -1158,7 +1158,7 @@ export function ServicesBrowser() {
               <div className="space-y-4">
                 {/* Service Fee Info - always visible */}
                 <div className="p-3 bg-gradient-to-r from-[#003366]/5 to-[#2980b9]/5 rounded-lg border border-blue-200">
-                  <p className="text-xs text-[#003366] font-semibold">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && personalInfo['cv-tone'] === 'professional' ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
+                  <p className="text-xs text-[#003366] font-semibold">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && personalInfo['cv-tone']?.includes('Professional') ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
                   {selectedService?.category === 'cv_builder' && (
                     <p className="text-xs text-[#F5A623] mt-1 font-medium">Normal: Rs 500 | Professional: Rs 1,000</p>
                   )}
@@ -1657,7 +1657,7 @@ export function ServicesBrowser() {
                             <p className="font-semibold text-[#003366]">{t.accountDetails}:</p>
                             <p className="text-muted-foreground">{isUrdu ? selectedPaymentInfo.accountInfoUrdu : selectedPaymentInfo.accountInfo}</p>
                             <p className="text-muted-foreground">{t.accountName}: {selectedPaymentInfo.accountName}</p>
-                            <p className="font-semibold text-[#003366] mt-1">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && personalInfo['cv-tone'] === 'professional' ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
+                            <p className="font-semibold text-[#003366] mt-1">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && personalInfo['cv-tone']?.includes('Professional') ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
                           </div>
                         )}
 

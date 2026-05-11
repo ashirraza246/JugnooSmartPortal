@@ -178,8 +178,9 @@ export function CVBuilderModule() {
         <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
           {cvOrders.map((order) => {
             const tone = order.personal_info?.['cv-tone']
-            const toneLabel = tone === 'professional' ? 'Professional' : 'Normal'
-            const tonePrice = tone === 'professional' ? 'Rs. 1,000' : 'Rs. 500'
+            const isProfessional = tone?.includes('Professional') || tone === 'professional'
+            const toneLabel = isProfessional ? 'Professional' : 'Normal'
+            const tonePrice = isProfessional ? 'Rs. 1,000' : 'Rs. 500'
             const isCompleted = order.status === 'completed'
             const isPaid = order.payment_status === 'paid'
             return (

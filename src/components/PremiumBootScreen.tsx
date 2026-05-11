@@ -140,14 +140,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
         }}
       />
 
-      {/* Animated rings - navy */}
-      {showRings && (
-        <>
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[200px] h-[200px] rounded-full border border-[#1A3C5E]/8" style={{ animation: 'spinRing 8s linear infinite' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[320px] h-[320px] rounded-full border border-[#1A3C5E]/[0.04]" style={{ animation: 'spinRing 14s linear infinite reverse' }} />
-          <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[460px] h-[460px] rounded-full border border-[#1A3C5E]/[0.02]" style={{ animation: 'spinRing 22s linear infinite' }} />
-        </>
-      )}
+
 
       {/* Ambient glow behind logo - navy with gold */}
       <div
@@ -205,8 +198,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
           className="relative w-28 h-28 rounded-2xl overflow-hidden"
           style={{
             boxShadow: `0 0 40px rgba(26,60,94,${0.15 * glowIntensity}), 0 0 20px rgba(245,166,35,${0.08 * glowIntensity}), 0 20px 40px rgba(0,0,0,0.1)`,
-            animation: 'logo3d 4s ease-in-out infinite, float 3s ease-in-out infinite',
-            transform: 'perspective(1000px)',
+            animation: 'float 3s ease-in-out infinite',
             border: '3px solid',
             borderImage: 'linear-gradient(135deg, #1A3C5E, #F5A623, #1A3C5E) 1',
           }}
@@ -216,13 +208,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
             alt="Jugnoo Photos"
             className="w-full h-full object-cover"
           />
-          {/* Reflective overlay sweep */}
-          <div
-            className="absolute inset-0 bg-gradient-to-br from-white/30 via-transparent to-transparent rounded-2xl"
-            style={{
-              animation: 'shineSweep 3s ease-in-out infinite',
-            }}
-          />
+
         </div>
       </div>
 
@@ -331,28 +317,17 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
           0%, 100% { transform: translateY(0px); }
           50% { transform: translateY(-8px); }
         }
-        @keyframes logo3d {
-          0%, 100% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg); }
-          25% { transform: perspective(1000px) rotateX(2deg) rotateY(4deg); }
-          50% { transform: perspective(1000px) rotateX(0deg) rotateY(0deg); }
-          75% { transform: perspective(1000px) rotateX(-1deg) rotateY(-3deg); }
-        }
+
         @keyframes shimmer {
           0% { transform: translateX(-100%); }
           100% { transform: translateX(300%); }
         }
-        @keyframes spinRing {
-          from { transform: translate(-50%, -50%) rotate(0deg); }
-          to { transform: translate(-50%, -50%) rotate(360deg); }
-        }
+
         @keyframes dotPulse {
           0%, 100% { opacity: 0.3; transform: scale(1); }
           50% { opacity: 1; transform: scale(1.3); }
         }
-        @keyframes shineSweep {
-          0%, 100% { opacity: 0.5; transform: translateX(-50%); }
-          50% { opacity: 0.8; transform: translateX(50%); }
-        }
+
         @keyframes fadeInUp {
           from { opacity: 0; transform: translateY(20px); }
           to { opacity: 1; transform: translateY(0); }

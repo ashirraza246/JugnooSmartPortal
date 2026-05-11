@@ -103,7 +103,7 @@ export default function NotificationBell() {
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               transition={{ duration: 0.15 }}
-              className="fixed inset-0 bg-black/40 z-40"
+              className="fixed inset-0 bg-black/40 z-[60]"
               onClick={() => setIsOpen(false)}
             />
 
@@ -113,7 +113,7 @@ export default function NotificationBell() {
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="fixed inset-x-0 bottom-[72px] z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:bottom-auto sm:w-96
+              className="fixed inset-x-0 bottom-[72px] z-[70] sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:bottom-auto sm:w-96
                 mx-2 sm:mx-0 bg-white rounded-2xl sm:rounded-2xl shadow-2xl border border-gray-100/80 overflow-hidden
                 max-h-[70vh] sm:max-h-[80vh] flex flex-col"
             >

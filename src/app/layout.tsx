@@ -28,15 +28,15 @@ export const metadata: Metadata = {
   keywords: ["Jugnoo", "Photostate", "Chowk Azam", "Smart Portal", "Business Management", "WhatsApp Templates", "Notarisation"],
   authors: [{ name: "Jugnoo Smart Portal" }],
   icons: {
-    icon: "/jugnoo-logo.png",
-    apple: "/jugnoo-logo.png",
+    icon: "/jugnoo-photos-logo.jpg",
+    apple: "/jugnoo-photos-logo.jpg",
   },
   manifest: "/manifest.json",
   openGraph: {
     title: "Jugnoo Smart Portal",
     description: "AI-Powered Business Management for Jugnoo Photostate",
     type: "website",
-    images: ["/jugnoo-logo.png"],
+    images: ["/jugnoo-photos-logo.jpg"],
   },
   appleWebApp: {
     capable: true,
@@ -54,7 +54,7 @@ export default function RootLayout({
     <html lang="en" suppressHydrationWarning>
       <head>
         <link rel="manifest" href="/manifest.json" />
-        <link rel="apple-touch-icon" href="/jugnoo-logo.png" />
+        <link rel="apple-touch-icon" href="/jugnoo-photos-logo.jpg" />
         <meta name="apple-mobile-web-app-capable" content="yes" />
         <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
         <meta name="mobile-web-app-capable" content="yes" />

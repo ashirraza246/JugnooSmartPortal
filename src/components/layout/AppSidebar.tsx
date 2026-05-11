@@ -98,14 +98,14 @@ export function AppSidebar() {
           )}
 
           <aside className={cn(
-            'fixed top-0 left-0 z-50 h-full w-[280px] bg-gradient-to-b from-[#1A3C5E] via-[#003E6B] to-[#1A3C5E] text-slate-300 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-xl',
+            'fixed top-0 left-0 z-[60] h-full w-[280px] bg-gradient-to-b from-[#1A3C5E] via-[#003E6B] to-[#1A3C5E] text-slate-300 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-xl',
             sidebarOpen ? 'translate-x-0' : '-translate-x-full'
           )}>
             {/* Logo - UBL Style */}
             <div className="flex items-center justify-between px-5 py-5 shrink-0">
               <div className="flex items-center gap-3">
                 <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm">
-                  <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover" />
+                  <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo" className="w-full h-full object-cover" />
                 </div>
                 <div>
                   <h1 className="text-white font-bold text-lg leading-tight tracking-tight">Jugnoo</h1>
@@ -182,7 +182,10 @@ export function AppSidebar() {
         </>
 
         {/* Mobile Bottom Navigation - Customer UBL Style */}
-        <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+        <nav className={cn(
+          "fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] transition-transform duration-300",
+          sidebarOpen ? "translate-y-full" : "translate-y-0"
+        )} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
           <div className="flex items-center justify-around h-16">
             {mobileNavItems.map((item) => {
               const Icon = item.icon
@@ -225,14 +228,14 @@ export function AppSidebar() {
       )}
 
       <aside className={cn(
-        'fixed top-0 left-0 z-50 h-full w-[280px] bg-gradient-to-b from-[#1A3C5E] via-[#003E6B] to-[#1A3C5E] text-slate-300 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-xl',
+        'fixed top-0 left-0 z-[60] h-full w-[280px] bg-gradient-to-b from-[#1A3C5E] via-[#003E6B] to-[#1A3C5E] text-slate-300 flex flex-col transition-transform duration-300 lg:translate-x-0 lg:static lg:z-auto shadow-xl',
         sidebarOpen ? 'translate-x-0' : '-translate-x-full'
       )}>
         {/* Logo - Premium UBL Style */}
         <div className="flex items-center justify-between px-5 py-5 shrink-0">
           <div className="flex items-center gap-3">
             <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm">
-              <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover" />
+              <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo" className="w-full h-full object-cover" />
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight tracking-tight">Jugnoo</h1>
@@ -308,7 +311,10 @@ export function AppSidebar() {
       </aside>
 
       {/* Mobile Bottom Navigation - Admin UBL Style */}
-      <nav className="fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.06)]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+      <nav className={cn(
+        "fixed bottom-0 left-0 right-0 z-50 lg:hidden bg-white border-t border-gray-100 shadow-[0_-2px_10px_rgba(0,0,0,0.06)] transition-transform duration-300",
+        sidebarOpen ? "translate-y-full" : "translate-y-0"
+      )} style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
         <div className="flex items-center justify-around h-16">
           {adminBottomNavItems.map((item) => {
             const Icon = item.icon

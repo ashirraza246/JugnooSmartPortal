@@ -861,7 +861,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
   {
     id: 'cv-builder-service',
     name: 'Professional CV / Resume Builder',
-    category: 'other',
+    category: 'cv_builder',
     subcategory: 'cv_builder',
     description: 'Get a professionally designed CV / Resume built by Jugnoo Photostate. Our expert team creates professional, ATS-friendly resumes tailored to your career goals. Just provide your details and we handle the rest — from formatting to design.',
     icon: 'FilePlus2',
@@ -880,6 +880,7 @@ export const GOVT_SERVICES: ServiceInfo[] = [
       { id: 'cv-d3', name: 'Experience Letters / References', is_mandatory: false, description: 'For work experience verification. Upload or N/A if fresher.' },
     ],
     personal_info_fields: [
+      { id: 'cv-tone', label: 'CV Tone / Style', field_type: 'select', is_required: true, options: ['Normal (Rs. 500)', 'Professional (Rs. 1,000)'], placeholder: 'Select CV tone' },
       { id: 'cv-p1', label: 'Full Name', field_type: 'text', is_required: true, placeholder: 'Your full name as it should appear on CV' },
       { id: 'cv-p2', label: 'CNIC Number', field_type: 'cnic', is_required: false, placeholder: 'XXXXX-XXXXXXX-X (or N/A)' },
       { id: 'cv-p3', label: 'Date of Birth', field_type: 'date', is_required: false },
