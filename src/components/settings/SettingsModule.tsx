@@ -381,8 +381,8 @@ export function SettingsModule() {
         <CardContent>
           <div className="space-y-2 text-sm">
             <div className="flex items-center gap-2">
-              <div className="w-10 h-10 rounded-xl overflow-hidden shadow-md">
-                <img src="/jugnoo-logo.png" alt="Jugnoo" className="w-full h-full object-cover" />
+              <div className="w-auto max-w-[140px] h-12 rounded-xl overflow-hidden shadow-md bg-white flex items-center justify-center px-1">
+                <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
               </div>
               <div>
                 <p className="font-semibold">Jugnoo Smart Portal</p>
