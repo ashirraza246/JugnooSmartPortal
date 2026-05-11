@@ -989,24 +989,25 @@ export function ServicesBrowser() {
             className="border-blue-100 focus-visible:ring-blue-200"
           />
         ) : field.field_type === 'select' && field.options ? (
-          <div className="relative">
-            <select
-              value={value}
-              onChange={(e) => handlePersonalInfoChange(field.id, e.target.value, field.field_type)}
-              className="w-full h-9 rounded-md border border-blue-100 bg-white px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-200 appearance-none cursor-pointer"
-            >
-              <option value="" disabled>{placeholder || 'Select an option'}</option>
-              {field.options.map((opt) => (
-                <option key={opt.value} value={opt.value}>
-                  {isUrdu && opt.label_urdu ? opt.label_urdu : opt.label}
-                </option>
-              ))}
-            </select>
-            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
-              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-              </svg>
-            </div>
+          <div className="flex flex-wrap gap-2">
+            {field.options.map((opt) => {
+              const isSelected = value === opt.value
+              const optLabel = isUrdu && opt.label_urdu ? opt.label_urdu : opt.label
+              return (
+                <button
+                  key={opt.value}
+                  type="button"
+                  onClick={() => handlePersonalInfoChange(field.id, opt.value, field.field_type)}
+                  className={`px-3 py-2 rounded-lg text-xs font-medium transition-all duration-200 border-2 ${
+                    isSelected
+                      ? 'bg-[#003366] text-white border-[#003366] shadow-md shadow-[#003366]/20'
+                      : 'bg-white text-[#003366] border-blue-100 hover:border-[#003366]/40 hover:bg-blue-50'
+                  }`}
+                >
+                  {optLabel}
+                </button>
+              )
+            })}
           </div>
         ) : (
           <Input
