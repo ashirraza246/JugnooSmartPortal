@@ -93,6 +93,7 @@ const categoryConfig: Record<string, { label: string; labelUrdu: string; icon: R
   scanning: { label: 'Scanning & Copy', labelUrdu: 'اسکیننگ و کاپی', icon: Scan, color: 'text-cyan-600', gradient: 'from-cyan-500 to-blue-600' },
   notarisation: { label: 'Notarisation', labelUrdu: 'نٹریزیشن', icon: Scale, color: 'text-rose-600', gradient: 'from-rose-500 to-red-600' },
   other: { label: 'Other Services', labelUrdu: 'دیگر سروسز', icon: MoreHorizontal, color: 'text-gray-600', gradient: 'from-gray-500 to-slate-600' },
+  cv_builder: { label: 'CV Builder', labelUrdu: 'سی وی بلڈر', icon: Briefcase, color: 'text-orange-600', gradient: 'from-orange-500 to-amber-600' },
 }
 
 // Default personal info fields when service doesn't define custom ones

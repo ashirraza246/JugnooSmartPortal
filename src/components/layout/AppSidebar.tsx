@@ -163,7 +163,7 @@ export function AppSidebar() {
             <Separator className="bg-white/10 shrink-0" />
 
             {/* User Info & Logout */}
-            <div className="shrink-0 p-4 space-y-3">
+            <div className="shrink-0 p-4 space-y-3 lg:pb-4 pb-20">
               <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5">
                 <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F5A623] to-[#FFB300] flex items-center justify-center text-[#1A3C5E] font-semibold text-sm shadow-sm shrink-0">
                   {userInitial}
@@ -290,7 +290,7 @@ export function AppSidebar() {
         <Separator className="bg-white/10 shrink-0" />
 
         {/* User Info & Logout */}
-        <div className="shrink-0 p-4 space-y-3">
+        <div className="shrink-0 p-4 space-y-3 lg:pb-4 pb-20">
           <div className="flex items-center gap-3 px-2 py-2 rounded-xl bg-white/5">
             <div className="w-9 h-9 rounded-full bg-gradient-to-br from-[#F5A623] to-[#FFB300] flex items-center justify-center text-[#1A3C5E] font-semibold text-sm shadow-sm shrink-0">
               {userInitial}

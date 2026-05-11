@@ -6,7 +6,6 @@ import { Bell, CheckCheck, X, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
 import { Button } from '@/components/ui/button';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
@@ -74,7 +73,6 @@ export default function NotificationBell() {
     return date.toLocaleDateString('en-PK');
   };
 
-  // Both admin and customer headers are now navy blue, so bell is always white
   const bellColor = 'text-white';
   const bellHoverBg = 'hover:bg-white/10';
 
@@ -99,7 +97,7 @@ export default function NotificationBell() {
       <AnimatePresence>
         {isOpen && (
           <>
-            {/* Backdrop - covers entire screen on both mobile and desktop */}
+            {/* Backdrop */}
             <motion.div
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
@@ -109,23 +107,22 @@ export default function NotificationBell() {
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Mobile: Bottom Sheet style / Desktop: Dropdown style */}
-            {/* Mobile panel - slides up from bottom */}
+            {/* Notification Panel: Mobile = Bottom sheet above navbar, Desktop = Dropdown */}
             <motion.div
-              initial={{ opacity: 0, y: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : 8, scale: typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 0.95 }}
-              animate={{ opacity: 1, y: 0, scale: 1 }}
-              exit={{ opacity: 0, y: typeof window !== 'undefined' && window.innerWidth < 640 ? '100%' : 8, scale: typeof window !== 'undefined' && window.innerWidth < 640 ? 1 : 0.95 }}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: 20 }}
               transition={{ duration: 0.25, ease: 'easeOut' }}
-              className="fixed inset-x-0 bottom-0 z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:w-96
-                bg-white sm:rounded-2xl rounded-t-2xl shadow-2xl border border-gray-100/80 overflow-hidden
-                sm:max-h-[80vh] max-h-[85vh] flex flex-col"
+              className="fixed inset-x-0 bottom-[72px] z-50 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 sm:bottom-auto sm:w-96
+                mx-2 sm:mx-0 bg-white rounded-2xl sm:rounded-2xl shadow-2xl border border-gray-100/80 overflow-hidden
+                max-h-[70vh] sm:max-h-[80vh] flex flex-col"
             >
               {/* Drag handle for mobile */}
               <div className="flex justify-center pt-3 pb-1 sm:hidden shrink-0 cursor-grab"
                 onTouchStart={(e) => {
                   const startY = e.touches[0].clientY;
                   const handleTouchMove = (ev: TouchEvent) => {
-                    if (ev.touches[0].clientY - startY > 80) {
+                    if (startY - ev.touches[0].clientY > 60) {
                       setIsOpen(false);
                       document.removeEventListener('touchmove', handleTouchMove);
                     }
@@ -168,7 +165,6 @@ export default function NotificationBell() {
                       <Trash2 className="w-4 h-4" />
                     </Button>
                   )}
-                  {/* Close button */}
                   <Button
                     size="sm"
                     variant="ghost"
@@ -232,7 +228,7 @@ export default function NotificationBell() {
               </div>
 
               {/* Bottom safe area for mobile */}
-              <div className="h-safe-area-inset-bottom shrink-0 sm:hidden" />
+              <div className="shrink-0 sm:hidden" style={{ height: 'env(safe-area-inset-bottom, 8px)' }} />
             </motion.div>
           </>
         )}

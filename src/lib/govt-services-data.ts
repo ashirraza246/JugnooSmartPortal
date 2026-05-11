@@ -854,6 +854,59 @@ export const GOVT_SERVICES: ServiceInfo[] = [
     sort_order: 61,
     deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'This service is available throughout the year.' },
   },
+
+  // ─────────────────────────────────────────────
+  // 11. CV Builder Service (Professional Resume)
+  // ─────────────────────────────────────────────
+  {
+    id: 'cv-builder-service',
+    name: 'Professional CV / Resume Builder',
+    category: 'other',
+    subcategory: 'cv_builder',
+    description: 'Get a professionally designed CV / Resume built by Jugnoo Photostate. Our expert team creates professional, ATS-friendly resumes tailored to your career goals. Just provide your details and we handle the rest — from formatting to design.',
+    icon: 'FilePlus2',
+    base_price: 500,
+    features: [
+      'Professional ATS-friendly CV design',
+      'Multiple CV templates to choose from',
+      'Tailored for your industry / career level',
+      'Delivered as PDF document via app',
+      'Unlimited revisions until satisfied',
+      'Both English and Urdu CV available',
+    ],
+    required_documents: [
+      { id: 'cv-d1', name: 'Existing CV / Resume (if any)', is_mandatory: false, description: 'If you have an old CV, upload it so we can improve it. Otherwise provide details below.' },
+      { id: 'cv-d2', name: 'Educational Certificates / Degrees', is_mandatory: false, description: 'For verifying qualification details. Upload photos or N/A if not available.' },
+      { id: 'cv-d3', name: 'Experience Letters / References', is_mandatory: false, description: 'For work experience verification. Upload or N/A if fresher.' },
+    ],
+    personal_info_fields: [
+      { id: 'cv-p1', label: 'Full Name', field_type: 'text', is_required: true, placeholder: 'Your full name as it should appear on CV' },
+      { id: 'cv-p2', label: 'CNIC Number', field_type: 'cnic', is_required: false, placeholder: 'XXXXX-XXXXXXX-X (or N/A)' },
+      { id: 'cv-p3', label: 'Date of Birth', field_type: 'date', is_required: false },
+      { id: 'cv-p4', label: 'Email Address', field_type: 'text', is_required: true, placeholder: 'your@email.com (or N/A)' },
+      { id: 'cv-p5', label: 'Phone / WhatsApp Number', field_type: 'phone', is_required: true, placeholder: '923001234567' },
+      { id: 'cv-p6', label: 'City / Location', field_type: 'text', is_required: true, placeholder: 'e.g., Lahore, Islamabad' },
+      { id: 'cv-p7', label: 'Target Job Title / Position', field_type: 'text', is_required: true, placeholder: 'e.g., Software Developer, Teacher, Accountant' },
+      { id: 'cv-p8', label: 'Education (Most Recent)', field_type: 'text', is_required: true, placeholder: 'e.g., MBA from LUMS, 2022 (or N/A)' },
+      { id: 'cv-p9', label: 'Work Experience', field_type: 'textarea', is_required: false, placeholder: 'Company name, role, duration — or N/A if fresher' },
+      { id: 'cv-p10', label: 'Skills', field_type: 'textarea', is_required: false, placeholder: 'e.g., MS Office, Communication, Python (or N/A)' },
+      { id: 'cv-p11', label: 'Languages', field_type: 'text', is_required: false, placeholder: 'e.g., Urdu, English (or N/A)' },
+      { id: 'cv-p12', label: 'CV Language Preference', field_type: 'select', is_required: true, options: ['English', 'Urdu', 'Both English & Urdu'] },
+      { id: 'cv-p13', label: 'CV Style / Template', field_type: 'select', is_required: true, options: ['Professional (Corporate)', 'Creative (Design)', 'Simple (Clean)', 'Let the expert decide'] },
+      { id: 'cv-p14', label: 'Additional Details / Requirements', field_type: 'textarea', is_required: false, placeholder: 'Any specific requirement? Certifications, projects, references, etc. (or N/A)' },
+    ],
+    official_url: '',
+    apply_process: '1. Fill in your personal and career details above\n2. Upload any existing CV or documents (or skip if N/A)\n3. Make payment and upload screenshot\n4. Our team will build your professional CV\n5. You will receive the CV as a document in the app\n6. Request revisions if needed — unlimited until satisfied',
+    cnic_required: false,
+    cnic_format_note: 'CNIC is optional for CV service. Enter N/A if you do not want to include it on your CV.',
+    fee_info: 'Basic CV: Rs. 500. Premium CV (cover letter + CV): Rs. 800. Both English & Urdu: Rs. 1,000. Unlimited revisions included.',
+    eligibility: 'Anyone can apply. Whether you are a student, fresh graduate, experienced professional, or switching careers — we build CVs for all levels.',
+    processing_time: '1-3 business days. Express delivery (same day) available for Rs. 200 extra.',
+    special_notes: 'Mark any field as N/A if you do not have the information or document. Our team will build the best CV possible with the details you provide. CV is delivered as a PDF document through the app — you can download it anytime.',
+    is_active: true,
+    sort_order: 70,
+    deadlines: { start_date: 'Open Year-Round', end_date: 'Open Year-Round', is_rolling: true, note: 'CV Builder service is available throughout the year. Orders processed on first-come, first-served basis.' },
+  },
 ]
 
 // ============================================================
