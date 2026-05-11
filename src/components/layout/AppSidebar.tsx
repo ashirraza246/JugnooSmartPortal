@@ -104,8 +104,8 @@ export function AppSidebar() {
             {/* Logo - UBL Style */}
             <div className="flex items-center justify-between px-5 py-5 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm">
-                  <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo" className="w-full h-full object-cover" />
+                <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm flex items-center justify-center p-1">
+                  <img src="/jugnoo-photos-logo.png" alt="Jugnoo" className="w-full h-full object-contain" />
                 </div>
                 <div>
                   <h1 className="text-white font-bold text-lg leading-tight tracking-tight">Jugnoo</h1>
@@ -234,8 +234,8 @@ export function AppSidebar() {
         {/* Logo - Premium UBL Style */}
         <div className="flex items-center justify-between px-5 py-5 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm">
-              <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo" className="w-full h-full object-cover" />
+            <div className="w-11 h-11 rounded-2xl overflow-hidden shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 bg-white/10 backdrop-blur-sm flex items-center justify-center p-1">
+              <img src="/jugnoo-photos-logo.png" alt="Jugnoo" className="w-full h-full object-contain" />
             </div>
             <div>
               <h1 className="text-white font-bold text-lg leading-tight tracking-tight">Jugnoo</h1>

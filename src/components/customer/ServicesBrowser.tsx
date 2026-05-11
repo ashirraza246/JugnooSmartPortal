@@ -880,7 +880,7 @@ export function ServicesBrowser() {
           applicantPhone: getPhone(),
           applicantWhatsapp: personalInfo.applicantWhatsapp || '',
           description: personalInfo.description || '',
-          feeAmount: selectedService.category === 'cv_builder' && personalInfo['cv-tone']?.includes('Professional') ? 1000 : selectedService.base_price,
+          feeAmount: selectedService.category === 'cv_builder' && (personalInfo['cv-tone']?.includes('Professional') || personalInfo['cv-tone']?.includes('professional')) ? 1000 : selectedService.base_price,
           paymentMethod: paymentMethod,
           paymentScreenshotUploaded: !!paymentScreenshot,
           personalInfo: personalInfoPayload,
@@ -990,7 +990,7 @@ export function ServicesBrowser() {
             <SelectTrigger className="border-blue-100 focus:ring-blue-200">
               <SelectValue placeholder={placeholder} />
             </SelectTrigger>
-            <SelectContent>
+            <SelectContent position="popper" className="z-[9999]">
               {field.options.map((opt) => (
                 <SelectItem key={opt.value} value={opt.value}>
                   {isUrdu && opt.label_urdu ? opt.label_urdu : opt.label}
@@ -1158,7 +1158,7 @@ export function ServicesBrowser() {
               <div className="space-y-4">
                 {/* Service Fee Info - always visible */}
                 <div className="p-3 bg-gradient-to-r from-[#003366]/5 to-[#2980b9]/5 rounded-lg border border-blue-200">
-                  <p className="text-xs text-[#003366] font-semibold">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && personalInfo['cv-tone']?.includes('Professional') ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
+                  <p className="text-xs text-[#003366] font-semibold">{t.serviceFee}: Rs {selectedService?.category === 'cv_builder' && (personalInfo['cv-tone']?.includes('Professional') || personalInfo['cv-tone']?.includes('professional')) ? 1000 : selectedService?.base_price?.toLocaleString()}</p>
                   {selectedService?.category === 'cv_builder' && (
                     <p className="text-xs text-[#F5A623] mt-1 font-medium">Normal: Rs 500 | Professional: Rs 1,000</p>
                   )}

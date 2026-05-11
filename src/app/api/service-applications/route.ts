@@ -9,11 +9,13 @@ export async function GET(req: Request) {
     const { searchParams } = new URL(req.url)
     const userId = searchParams.get('userId')
     const status = searchParams.get('status')
+    const serviceType = searchParams.get('serviceType')
 
     let query = supabase.from('service_applications').select('*').order('created_at', { ascending: false })
 
     if (userId) query = query.eq('user_id', userId)
     if (status) query = query.eq('status', status)
+    if (serviceType) query = query.eq('service_type', serviceType)
 
     const { data, error } = await query
 
@@ -93,7 +95,7 @@ export async function PUT(req: Request) {
     }
 
     const body = await req.json()
-    const { id, status, paymentStatus, notes } = body
+    const { id, status, paymentStatus, notes, applicantName, applicantCnic, applicantPhone, description } = body
 
     if (!id) {
       return Response.json({ error: 'Application ID chahiye' }, { status: 400 })
@@ -103,6 +105,24 @@ export async function PUT(req: Request) {
     if (status) updates.status = status
     if (paymentStatus) updates.payment_status = paymentStatus
     if (notes) updates.notes = notes
+
+    // If this is a customer edit (has applicant fields), check if the application is paid
+    if (applicantName !== undefined || applicantCnic !== undefined || applicantPhone !== undefined || description !== undefined) {
+      const { data: existingApp } = await supabase
+        .from('service_applications')
+        .select('payment_status')
+        .eq('id', id)
+        .single()
+
+      if (existingApp?.payment_status === 'paid') {
+        return Response.json({ error: 'Paid applications cannot be edited' }, { status: 403 })
+      }
+
+      if (applicantName !== undefined) updates.applicant_name = applicantName
+      if (applicantCnic !== undefined) updates.applicant_cnic = applicantCnic
+      if (applicantPhone !== undefined) updates.applicant_phone = applicantPhone
+      if (description !== undefined) updates.description = description
+    }
 
     const { error } = await supabase.from('service_applications').update(updates).eq('id', id)
 
@@ -114,5 +134,42 @@ export async function PUT(req: Request) {
   } catch (error) {
     console.error('Service applications PUT error:', error)
     return Response.json({ error: 'Application update nahi ho saki.' }, { status: 500 })
+  }
+}
+
+export async function DELETE(req: Request) {
+  try {
+    if (!isSupabaseConfigured()) {
+      return Response.json({ error: 'Supabase not configured' }, { status: 500 })
+    }
+
+    const { searchParams } = new URL(req.url)
+    const id = searchParams.get('id')
+
+    if (!id) {
+      return Response.json({ error: 'Application ID chahiye' }, { status: 400 })
+    }
+
+    // First check if the application is paid - don't allow deletion of paid applications
+    const { data: app } = await supabase
+      .from('service_applications')
+      .select('payment_status')
+      .eq('id', id)
+      .single()
+
+    if (app?.payment_status === 'paid') {
+      return Response.json({ error: 'Paid applications cannot be deleted' }, { status: 403 })
+    }
+
+    const { error } = await supabase.from('service_applications').delete().eq('id', id)
+
+    if (error) {
+      return Response.json({ error: error.message }, { status: 400 })
+    }
+
+    return Response.json({ message: 'Application delete ho gayi!' })
+  } catch (error) {
+    console.error('Service applications DELETE error:', error)
+    return Response.json({ error: 'Application delete nahi ho saki.' }, { status: 500 })
   }
 }

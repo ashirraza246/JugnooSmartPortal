@@ -22,9 +22,9 @@ import {
   Users, Eye, ChevronLeft, ChevronRight, Wand2, Download,
   FileText, Layout, Sparkles, Languages, Plus, Trash2,
   Loader2, CheckCircle2, Palette, Zap, ClipboardList,
-  Phone, CreditCard, Calendar, RefreshCw,
+  Phone, CreditCard, Calendar, RefreshCw, DollarSign, Save,
 } from 'lucide-react'
-import type { CVData, TemplateStyle, WizardStep } from './types'
+import type { CVData, TemplateStyle, WizardStep, Language } from './types'
 import { defaultCVData, translations, WIZARD_STEPS } from './types'
 import { CVTemplateRenderer } from './CVTemplates'
 
@@ -39,7 +39,7 @@ const stepIcons: Record<WizardStep, React.ElementType> = {
   preview: Eye,
 }
 
-type CVBuilderTab = 'builder' | 'orders'
+type CVBuilderTab = 'builder' | 'orders' | 'pricing'
 
 interface CVOrder {
   id: string
@@ -58,7 +58,7 @@ interface CVOrder {
 export function CVBuilderModule() {
   const { toast } = useToast()
   const [lang, setLang] = useState<Language>('en')
-  const [activeTab, setActiveTab] = useState<CVBuilderTab>('builder')
+  const [activeTab, setActiveTab] = useState<CVBuilderTab>('orders')
   const [cvOrders, setCvOrders] = useState<CVOrder[]>([])
   const [ordersLoading, setOrdersLoading] = useState(false)
   const [selectedOrder, setSelectedOrder] = useState<CVOrder | null>(null)
@@ -70,6 +70,9 @@ export function CVBuilderModule() {
   const [aiLoading, setAiLoading] = useState(false)
   const [showPreviewPanel, setShowPreviewPanel] = useState(true)
   const previewRef = useRef<HTMLDivElement>(null)
+  const [pricing, setPricing] = useState({ normalPrice: 500, professionalPrice: 1000, expressSurcharge: 200 })
+  const [pricingLoading, setPricingLoading] = useState(false)
+  const [pricingSaving, setPricingSaving] = useState(false)
 
   const t = translations[lang]
   const isUrdu = lang === 'ur'
@@ -97,6 +100,68 @@ export function CVBuilderModule() {
       fetchCVOrders()
     }
   }, [activeTab, fetchCVOrders])
+
+  // Fetch CV Pricing
+  const fetchPricing = useCallback(async () => {
+    setPricingLoading(true)
+    try {
+      const res = await fetch('/api/settings')
+      if (res.ok) {
+        const data = await res.json()
+        if (data.cv_pricing) {
+          setPricing({
+            normalPrice: data.cv_pricing.normalPrice ?? 500,
+            professionalPrice: data.cv_pricing.professionalPrice ?? 1000,
+            expressSurcharge: data.cv_pricing.expressSurcharge ?? 200,
+          })
+        }
+      }
+    } catch {
+      console.error('Failed to fetch pricing')
+    } finally {
+      setPricingLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'pricing') {
+      fetchPricing()
+    }
+  }, [activeTab, fetchPricing])
+
+  // Save CV Pricing
+  const handleSavePricing = async () => {
+    setPricingSaving(true)
+    try {
+      // First get existing settings to merge
+      const getRes = await fetch('/api/settings')
+      let existingSettings = {}
+      if (getRes.ok) {
+        existingSettings = await getRes.json()
+      }
+      const res = await fetch('/api/settings', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          ...existingSettings,
+          cv_pricing: {
+            normalPrice: pricing.normalPrice,
+            professionalPrice: pricing.professionalPrice,
+            expressSurcharge: pricing.expressSurcharge,
+          },
+        }),
+      })
+      if (res.ok) {
+        toast({ title: isUrdu ? 'قیمتیں محفوظ ہو گئیں!' : 'Pricing saved successfully!' })
+      } else {
+        toast({ title: 'Error saving pricing', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error saving pricing', variant: 'destructive' })
+    } finally {
+      setPricingSaving(false)
+    }
+  }
 
   // Load customer data from order into CV Builder
   const handleBuildFromOrder = (order: CVOrder) => {
@@ -143,6 +208,25 @@ export function CVBuilderModule() {
     }
   }
 
+  // Mark order as paid
+  const handleMarkAsPaid = async (orderId: string) => {
+    try {
+      const res = await fetch('/api/service-applications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, paymentStatus: 'paid' }),
+      })
+      if (res.ok) {
+        toast({ title: isUrdu ? 'ادائیگی مکمل ہو گئی!' : 'Order marked as paid!' })
+        fetchCVOrders()
+      } else {
+        toast({ title: 'Error', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error updating payment', variant: 'destructive' })
+    }
+  }
+
   // Render CV Orders tab
   const renderCVOrders = () => (
     <div className="space-y-6">
@@ -180,7 +264,7 @@ export function CVBuilderModule() {
             const tone = order.personal_info?.['cv-tone']
             const isProfessional = tone?.includes('Professional') || tone === 'professional'
             const toneLabel = isProfessional ? 'Professional' : 'Normal'
-            const tonePrice = isProfessional ? 'Rs. 1,000' : 'Rs. 500'
+            const tonePrice = isProfessional ? `Rs. ${pricing.professionalPrice.toLocaleString()}` : `Rs. ${pricing.normalPrice.toLocaleString()}`
             const isCompleted = order.status === 'completed'
             const isPaid = order.payment_status === 'paid'
             return (
@@ -227,6 +311,12 @@ export function CVBuilderModule() {
                         <Button size="sm" onClick={() => handleBuildFromOrder(order)} className="bg-gradient-to-r from-[#003366] to-[#1a5276] text-white shadow-sm gap-1.5">
                           <FileText className="w-3.5 h-3.5" />
                           {isUrdu ? 'سی وی بنائیں' : 'Build CV'}
+                        </Button>
+                      )}
+                      {!isCompleted && !isPaid && (
+                        <Button size="sm" variant="outline" onClick={() => handleMarkAsPaid(order.id)} className="border-amber-200 text-amber-600 hover:bg-amber-50 gap-1.5">
+                          <DollarSign className="w-3.5 h-3.5" />
+                          {isUrdu ? 'ادائیگی' : 'Mark Paid'}
                         </Button>
                       )}
                       {!isCompleted && isPaid && (
@@ -1147,6 +1237,15 @@ Target role: ${cvData.experience?.[0]?.position || 'Professional'}`,
                   <ClipboardList className="w-3.5 h-3.5" />
                   {isUrdu ? 'سی وی آرڈرز' : 'CV Orders'}
                 </button>
+                <button
+                  onClick={() => setActiveTab('pricing')}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    activeTab === 'pricing' ? 'bg-gradient-to-r from-[#003366] to-[#1a5276] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <DollarSign className="w-3.5 h-3.5" />
+                  {isUrdu ? 'قیمتیں' : 'Pricing'}
+                </button>
               </div>
               {/* Language Toggle */}
               <Button
@@ -1212,6 +1311,85 @@ Target role: ${cvData.experience?.[0]?.position || 'Professional'}`,
       {activeTab === 'orders' && (
         <div className="p-4 sm:p-6 max-w-4xl mx-auto">
           {renderCVOrders()}
+        </div>
+      )}
+
+      {/* Pricing Tab */}
+      {activeTab === 'pricing' && (
+        <div className="p-4 sm:p-6 max-w-2xl mx-auto">
+          <div className="space-y-6">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003366] to-[#1a5276] flex items-center justify-center shadow-lg shadow-blue-900/20">
+                <DollarSign className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <h3 className="text-lg font-bold text-slate-800">{isUrdu ? 'سی وی قیمتیں' : 'CV Pricing'}</h3>
+                <p className="text-xs text-slate-400">{isUrdu ? 'سی وی سروسز کی قیمتیں سیٹ کریں' : 'Set prices for CV services'}</p>
+              </div>
+            </div>
+
+            {pricingLoading ? (
+              <div className="flex items-center justify-center py-16">
+                <Loader2 className="w-8 h-8 animate-spin text-[#2980b9]" />
+              </div>
+            ) : (
+              <Card className="border-0 shadow-sm">
+                <CardContent className="p-6 space-y-6">
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700">{isUrdu ? 'نارمل سی وی قیمت (Rs.)' : 'Normal CV Price (Rs.)'}</Label>
+                    <Input
+                      type="number"
+                      value={pricing.normalPrice}
+                      onChange={(e) => setPricing({ ...pricing, normalPrice: Number(e.target.value) })}
+                      className="h-11 border-slate-200 focus:border-[#2980b9] focus:ring-[#2980b9]/20 transition-all"
+                      dir="ltr"
+                      min={0}
+                    />
+                    <p className="text-xs text-slate-400">{isUrdu ? 'بنیادی سی وی سروس کی قیمت' : 'Price for basic CV service'}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700">{isUrdu ? 'پروفیشنل سی وی قیمت (Rs.)' : 'Professional CV Price (Rs.)'}</Label>
+                    <Input
+                      type="number"
+                      value={pricing.professionalPrice}
+                      onChange={(e) => setPricing({ ...pricing, professionalPrice: Number(e.target.value) })}
+                      className="h-11 border-slate-200 focus:border-[#2980b9] focus:ring-[#2980b9]/20 transition-all"
+                      dir="ltr"
+                      min={0}
+                    />
+                    <p className="text-xs text-slate-400">{isUrdu ? 'پروفیشنل سی وی سروس کی قیمت' : 'Price for professional CV service'}</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <Label className="text-sm font-semibold text-slate-700">{isUrdu ? 'ایکسپریس ڈیلیوری اضافی (Rs.)' : 'Express Delivery Surcharge (Rs.)'}</Label>
+                    <Input
+                      type="number"
+                      value={pricing.expressSurcharge}
+                      onChange={(e) => setPricing({ ...pricing, expressSurcharge: Number(e.target.value) })}
+                      className="h-11 border-slate-200 focus:border-[#2980b9] focus:ring-[#2980b9]/20 transition-all"
+                      dir="ltr"
+                      min={0}
+                    />
+                    <p className="text-xs text-slate-400">{isUrdu ? 'فوری ڈیلیوری کے لیے اضافی رقم' : 'Extra charge for express delivery'}</p>
+                  </div>
+
+                  <Button
+                    onClick={handleSavePricing}
+                    disabled={pricingSaving}
+                    className="w-full bg-gradient-to-r from-[#003366] to-[#1a5276] text-white shadow-sm hover:from-[#1a5276] hover:to-[#2980b9] transition-all gap-1.5"
+                  >
+                    {pricingSaving ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Save className="w-4 h-4" />
+                    )}
+                    {isUrdu ? 'قیمتیں محفوظ کریں' : 'Save Pricing'}
+                  </Button>
+                </CardContent>
+              </Card>
+            )}
+          </div>
         </div>
       )}
 

@@ -204,9 +204,9 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
           }}
         >
           <img
-            src="/jugnoo-photos-logo.jpg"
+            src="/jugnoo-photos-logo.png"
             alt="Jugnoo Photos"
-            className="w-full h-full object-cover"
+            className="w-full h-full object-contain"
           />
 
         </div>
@@ -305,7 +305,7 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
       {/* Bottom branding - navy with gold */}
       <div className="absolute bottom-6 text-center">
         <div className="flex items-center justify-center gap-2 mb-1">
-          <img src="/jugnoo-photos-logo.jpg" alt="" className="w-4 h-4 rounded opacity-30" />
+          <img src="/jugnoo-photos-logo.png" alt="" className="w-4 h-4 rounded opacity-30" />
           <p className="text-[10px] text-[#1A3C5E]/25 tracking-wider font-medium">JUGNOO PHOTOSTATE &bull; CHOWK AZAM</p>
         </div>
         <p className="text-[9px] text-[#F5A623]/30">AI-Powered Business Management System v3.0</p>
