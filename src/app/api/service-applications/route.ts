@@ -38,7 +38,7 @@ export async function POST(req: Request) {
     }
 
     const body = await req.json()
-    const { userId, serviceType, serviceName, applicantName, applicantCnic, applicantPhone, applicantWhatsapp, description, feeAmount } = body
+    const { userId, serviceType, serviceName, applicantName, applicantCnic, applicantPhone, applicantWhatsapp, description, feeAmount, paymentMethod, transactionId, personalInfo, uploadedDocuments } = body
 
     if (!serviceName || !serviceType) {
       return Response.json({ error: 'Service name aur type chahiye' }, { status: 400 })
@@ -56,6 +56,10 @@ export async function POST(req: Request) {
       description: description || null,
       fee_amount: feeAmount || 0,
       payment_status: 'unpaid',
+      payment_method: paymentMethod || null,
+      transaction_id: transactionId || null,
+      personal_info: personalInfo || null,
+      uploaded_documents: uploadedDocuments || null,
       status: 'submitted',
     }]).select().single()
 

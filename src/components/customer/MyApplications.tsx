@@ -18,10 +18,10 @@ import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import {
   FileText, Clock, CheckCircle2, AlertCircle, XCircle, Shield, Zap,
-  Loader2, RefreshCw, Filter, Edit, Trash2, Lock,
+  Loader2, RefreshCw, Filter, Edit, Trash2, Lock, Printer, Download,
+  CircleDot, ArrowRight,
 } from 'lucide-react'
-import { useState } from 'react'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { useState, useRef } from 'react'
 
 interface ServiceApplication {
   id: string
@@ -29,15 +29,26 @@ interface ServiceApplication {
   service_type: string
   status: string
   payment_status: string
+  payment_method: string | null
+  transaction_id: string | null
   fee_amount: number
   applicant_name: string
   applicant_cnic: string
   applicant_phone: string
   description: string
+  personal_info: Record<string, string> | null
+  notes: string
+  result_document_url: string | null
   created_at: string
   updated_at: string
-  notes: string
 }
+
+const statusSteps = [
+  { key: 'submitted', label: 'Submitted', labelUrdu: 'جمع شدہ' },
+  { key: 'pending', label: 'Pending', labelUrdu: 'زیر التوا' },
+  { key: 'in_progress', label: 'In Progress', labelUrdu: 'جاری' },
+  { key: 'completed', label: 'Completed', labelUrdu: 'مکمل' },
+]
 
 export function MyApplications() {
   const { user } = useAuth()
@@ -54,6 +65,7 @@ export function MyApplications() {
     applicantCnic: '',
     description: '',
   })
+  const invoiceRef = useRef<HTMLDivElement>(null)
 
   const t = isUrdu ? {
     title: 'میری درخواستیں',
@@ -83,7 +95,7 @@ export function MyApplications() {
     locked: 'ادائیگی شدہ - تبدیلی نہیں ہو سکتی',
     editTitle: 'درخواست میں ترمیم',
     deleteTitle: 'درخواست حذف کریں',
-    deleteConfirm: 'کیا آپ واقعی یہ درخواست حذف کرنا چاہتے ہیں؟ یہ عمل واپس نہیں ہو سکتا۔',
+    deleteConfirm: 'کیا آپ واقعی یہ درخواست حذف کرنا چاہتے ہیں؟',
     save: 'محفوظ کریں',
     cancel: 'منسوخ',
     confirmDelete: 'ہاں، حذف کریں',
@@ -91,11 +103,18 @@ export function MyApplications() {
     phone: 'فون نمبر',
     cnic: 'شناختی کارڈ نمبر',
     description: 'تفصیل',
-    editSuccess: 'درخواست کامیابی سے اپ ڈیٹ ہو گئی!',
-    deleteSuccess: 'درخواست کامیابی سے حذف ہو گئی!',
+    editSuccess: 'درخواست اپ ڈیٹ ہو گئی!',
+    deleteSuccess: 'درخواست حذف ہو گئی!',
     editError: 'ترمیم نہیں ہو سکی',
     deleteError: 'حذف نہیں ہو سکی',
     paidNoEdit: 'ادائیگی شدہ - تبدیلی نہیں',
+    invoice: 'انوائس',
+    print: 'پرنٹ',
+    download: 'ڈاؤنلوڈ',
+    downloadService: 'سروس ڈاؤنلوڈ',
+    trxId: 'ٹرانزیکشن آئی ڈی',
+    paymentMethod: 'پیمنٹ طریقہ',
+    statusTracking: 'اسٹیٹس ٹریکنگ',
   } : {
     title: 'Meri Applications',
     subtitle: 'Apni saari applications aur unka status dekhein',
@@ -124,7 +143,7 @@ export function MyApplications() {
     locked: 'Paid - No changes allowed',
     editTitle: 'Edit Application',
     deleteTitle: 'Delete Application',
-    deleteConfirm: 'Are you sure you want to delete this application? This action cannot be undone.',
+    deleteConfirm: 'Are you sure you want to delete this application?',
     save: 'Save',
     cancel: 'Cancel',
     confirmDelete: 'Yes, Delete',
@@ -137,6 +156,13 @@ export function MyApplications() {
     editError: 'Could not edit',
     deleteError: 'Could not delete',
     paidNoEdit: 'Paid - No changes',
+    invoice: 'Invoice',
+    print: 'Print',
+    download: 'Download',
+    downloadService: 'Download Service',
+    trxId: 'Transaction ID',
+    paymentMethod: 'Payment Method',
+    statusTracking: 'Status Tracking',
   }
 
   const { data, isLoading, refetch } = useQuery({
@@ -224,6 +250,61 @@ export function MyApplications() {
     }
   }
 
+  const handlePrintInvoice = (app: ServiceApplication) => {
+    const printContent = `
+      <html><head><title>Invoice - ${app.service_name}</title>
+      <style>
+        body { font-family: Arial, sans-serif; padding: 40px; color: #1C1C1E; }
+        .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #003366; padding-bottom: 15px; margin-bottom: 20px; }
+        .logo { font-size: 24px; font-weight: bold; color: #003366; }
+        .invoice-label { font-size: 14px; color: #6B7280; }
+        .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
+        .field { margin-bottom: 8px; }
+        .field-label { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field-value { font-size: 14px; font-weight: 500; }
+        .amount-section { background: #F5F7FA; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right; }
+        .amount { font-size: 28px; font-weight: bold; color: #003366; }
+        .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
+        .status-submitted { background: #E8F0FE; color: #1A3C5E; }
+        .status-pending { background: #FFF3D6; color: #F5A623; }
+        .status-in_progress { background: #E8F0FE; color: #003366; }
+        .status-completed { background: #E8F5E9; color: #2E7D32; }
+        .footer { margin-top: 40px; font-size: 11px; color: #6B7280; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 15px; }
+      </style></head><body>
+      <div class="header">
+        <div><div class="logo">JUGNOO PHOTOSTATE</div><div style="font-size:12px;color:#6B7280;">Chowk Azam, Layyah, Punjab</div></div>
+        <div style="text-align:right"><div class="invoice-label">INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
+      </div>
+      <div class="grid">
+        <div>
+          <div class="field"><div class="field-label">Customer</div><div class="field-value">${app.applicant_name || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">CNIC</div><div class="field-value">${app.applicant_cnic || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">Phone</div><div class="field-value">${app.applicant_phone || 'N/A'}</div></div>
+        </div>
+        <div>
+          <div class="field"><div class="field-label">Service</div><div class="field-value">${app.service_name}</div></div>
+          <div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status-badge status-${app.status}">${app.status.replace(/_/g, ' ').toUpperCase()}</span></div></div>
+          <div class="field"><div class="field-label">Payment</div><div class="field-value">${app.payment_status === 'paid' ? '✅ PAID' : '❌ UNPAID'}</div></div>
+          ${app.transaction_id ? `<div class="field"><div class="field-label">Transaction ID</div><div class="field-value">${app.transaction_id}</div></div>` : ''}
+          ${app.payment_method ? `<div class="field"><div class="field-label">Payment Method</div><div class="field-value">${app.payment_method}</div></div>` : ''}
+        </div>
+      </div>
+      ${app.description ? `<div class="field"><div class="field-label">Description</div><div class="field-value">${app.description}</div></div>` : ''}
+      <div class="amount-section">
+        <div style="font-size:12px;color:#6B7280;margin-bottom:5px;">Service Fee</div>
+        <div class="amount">Rs. ${app.fee_amount?.toLocaleString()}</div>
+      </div>
+      <div class="footer">Jugnoo Photostate · AI-Powered Business Management · Chowk Azam</div>
+      </body></html>
+    `
+    const printWindow = window.open('', '_blank')
+    if (printWindow) {
+      printWindow.document.write(printContent)
+      printWindow.document.close()
+      printWindow.print()
+    }
+  }
+
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'completed': case 'approved': return <CheckCircle2 className="w-5 h-5 text-[#2E7D32]" />
@@ -277,8 +358,41 @@ export function MyApplications() {
     switch (type) {
       case 'government': return { bg: '#E8F0FE', color: '#1A3C5E' }
       case 'notarisation': return { bg: '#FFF3D6', color: '#F5A623' }
+      case 'cv_builder': return { bg: '#FFF3E0', color: '#E65100' }
       default: return { bg: '#F3F4F6', color: '#6B7280' }
     }
+  }
+
+  // Status step progress for an application
+  const renderStatusProgress = (status: string) => {
+    const currentIdx = statusSteps.findIndex(s => s.key === status)
+    const activeIdx = currentIdx >= 0 ? currentIdx : 0
+    return (
+      <div className="flex items-center gap-0.5 mt-2">
+        {statusSteps.map((step, idx) => {
+          const isCompleted = idx < activeIdx
+          const isActive = idx === activeIdx
+          const isRejected = status === 'rejected'
+          return (
+            <div key={step.key} className="flex items-center">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center text-[8px] font-bold transition-all ${
+                isCompleted ? 'bg-emerald-500 text-white' :
+                isActive ? (isRejected ? 'bg-red-500 text-white' : 'bg-[#003366] text-white') :
+                'bg-gray-200 text-gray-400'
+              }`}>
+                {isCompleted ? '✓' : idx + 1}
+              </div>
+              {idx < statusSteps.length - 1 && (
+                <div className={`w-4 h-0.5 ${idx < activeIdx ? 'bg-emerald-400' : 'bg-gray-200'}`} />
+              )}
+            </div>
+          )
+        })}
+        <span className="text-[9px] ml-1 font-medium text-[#003366]">
+          {isUrdu ? statusSteps[activeIdx]?.labelUrdu : statusSteps[activeIdx]?.label}
+        </span>
+      </div>
+    )
   }
 
   return (
@@ -289,20 +403,18 @@ export function MyApplications() {
           <p className="text-[#6B7280] text-sm">{t.subtitle}</p>
         </div>
         <div className="flex gap-2">
-          <Select value={statusFilter} onValueChange={setStatusFilter}>
-            <SelectTrigger className="w-40 border-gray-200">
-              <Filter className="w-4 h-4 mr-1 text-[#6B7280]" />
-              <SelectValue placeholder="Filter" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">{t.allStatus}</SelectItem>
-              <SelectItem value="submitted">{t.submitted}</SelectItem>
-              <SelectItem value="pending">{t.pending}</SelectItem>
-              <SelectItem value="in_progress">{t.inProgress}</SelectItem>
-              <SelectItem value="completed">{t.completed}</SelectItem>
-              <SelectItem value="rejected">{t.rejected}</SelectItem>
-            </SelectContent>
-          </Select>
+          <select
+            value={statusFilter}
+            onChange={(e) => setStatusFilter(e.target.value)}
+            className="h-9 rounded-md border border-gray-200 bg-white px-3 py-1 text-sm focus:outline-none focus:ring-2 focus:ring-blue-200"
+          >
+            <option value="all">{t.allStatus}</option>
+            <option value="submitted">{t.submitted}</option>
+            <option value="pending">{t.pending}</option>
+            <option value="in_progress">{t.inProgress}</option>
+            <option value="completed">{t.completed}</option>
+            <option value="rejected">{t.rejected}</option>
+          </select>
           <Button variant="outline" size="icon" className="border-gray-200" onClick={() => refetch()}>
             <RefreshCw className="w-4 h-4 text-[#6B7280]" />
           </Button>
@@ -322,6 +434,7 @@ export function MyApplications() {
           {(data || []).map((app: ServiceApplication) => {
             const svcStyle = getServiceStyle(app.service_type)
             const unpaid = isUnpaid(app.payment_status)
+            const isCompleted = app.status === 'completed'
             return (
               <Card
                 key={app.id}
@@ -330,59 +443,88 @@ export function MyApplications() {
                 }`}
               >
                 <CardContent className="p-4">
-                  <div className="flex items-center gap-3">
-                    {/* Left: colored icon in rounded square */}
+                  <div className="flex items-start gap-3">
+                    {/* Left: colored icon */}
                     <div
                       className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                       style={{ backgroundColor: svcStyle.bg, color: svcStyle.color }}
                     >
                       {getServiceIcon(app.service_type)}
                     </div>
-                    {/* Center: Title + subtitle */}
+                    {/* Center: Details */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#1C1C1E] truncate">{app.service_name}</p>
                       <p className="text-xs text-[#6B7280] mt-0.5">{app.service_type} {t.service} · {new Date(app.created_at).toLocaleDateString()}</p>
                       {app.applicant_cnic && <p className="text-[10px] text-[#6B7280]/60 mt-0.5">CNIC: {app.applicant_cnic}</p>}
+                      {app.transaction_id && <p className="text-[10px] text-[#F5A623] font-medium mt-0.5">Trx ID: {app.transaction_id}</p>}
+                      {/* Status Progress Bar */}
+                      {renderStatusProgress(app.status)}
                       {app.notes && (
                         <p className="text-xs text-[#6B7280] mt-1 bg-[#F5F7FA] px-2 py-1 rounded-lg inline-block">{t.note}: {app.notes}</p>
                       )}
                     </div>
-                    {/* Right: Status badge + amount + actions */}
+                    {/* Right: Status + Payment + Amount + Actions */}
                     <div className="flex flex-col items-end gap-1.5 shrink-0">
                       <Badge className={`${getStatusColor(app.status)} text-xs rounded-lg px-2.5`}>{getStatusLabel(app.status)}</Badge>
                       {getPaymentBadge(app.payment_status)}
                       <span className="text-sm font-bold text-[#1A3C5E]">Rs {app.fee_amount?.toLocaleString()}</span>
 
-                      {/* Action buttons row */}
-                      {unpaid ? (
-                        <div className="flex items-center gap-1.5 mt-1">
+                      {/* Action buttons */}
+                      <div className="flex items-center gap-1 mt-1 flex-wrap justify-end">
+                        {/* Invoice/Print button - always show when paid */}
+                        {app.payment_status === 'paid' && (
                           <Button
                             variant="outline"
                             size="sm"
-                            className="h-9 min-w-[44px] px-2.5 border-[#1A3C5E]/20 text-[#1A3C5E] hover:bg-[#1A3C5E] hover:text-white transition-colors"
-                            onClick={() => handleEditClick(app)}
+                            className="h-8 min-w-[44px] px-2 border-[#003366]/20 text-[#003366] hover:bg-[#003366] hover:text-white transition-colors text-[10px]"
+                            onClick={() => handlePrintInvoice(app)}
                           >
-                            <Edit className="w-3.5 h-3.5 mr-1" />
-                            <span className="text-xs">{t.edit}</span>
+                            <Printer className="w-3 h-3 mr-1" />
+                            {t.invoice}
                           </Button>
+                        )}
+
+                        {/* Download button - only when completed and has result document */}
+                        {isCompleted && app.result_document_url && (
                           <Button
-                            variant="outline"
                             size="sm"
-                            className="h-9 min-w-[44px] px-2.5 border-red-200 text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors"
-                            onClick={() => handleDeleteClick(app)}
+                            className="h-8 min-w-[44px] px-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] gap-1"
+                            onClick={() => window.open(app.result_document_url!, '_blank')}
                           >
-                            <Trash2 className="w-3.5 h-3.5 mr-1" />
-                            <span className="text-xs">{t.delete}</span>
+                            <Download className="w-3 h-3" />
+                            {t.download}
                           </Button>
-                        </div>
-                      ) : (
-                        <div className="flex items-center gap-1 mt-1">
+                        )}
+
+                        {/* Edit/Delete for unpaid */}
+                        {unpaid ? (
+                          <>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 min-w-[44px] px-2 border-[#1A3C5E]/20 text-[#1A3C5E] hover:bg-[#1A3C5E] hover:text-white transition-colors text-[10px]"
+                              onClick={() => handleEditClick(app)}
+                            >
+                              <Edit className="w-3 h-3 mr-1" />
+                              {t.edit}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 min-w-[44px] px-2 border-red-200 text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors text-[10px]"
+                              onClick={() => handleDeleteClick(app)}
+                            >
+                              <Trash2 className="w-3 h-3 mr-1" />
+                              {t.delete}
+                            </Button>
+                          </>
+                        ) : !isCompleted && (
                           <Badge className="bg-gray-100 text-[#6B7280] text-[9px] border-0 flex items-center gap-1 px-2 py-1">
                             <Lock className="w-3 h-3" />
                             {t.paidNoEdit}
                           </Badge>
-                        </div>
-                      )}
+                        )}
+                      </div>
                     </div>
                   </div>
                 </CardContent>
@@ -397,66 +539,29 @@ export function MyApplications() {
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#1A3C5E]">{t.editTitle}</DialogTitle>
-            <DialogDescription className="sr-only">
-              {t.editTitle}
-            </DialogDescription>
+            <DialogDescription className="sr-only">{t.editTitle}</DialogDescription>
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
               <Label htmlFor="edit-name" className="text-[#1C1C1E] text-sm font-medium">{t.applicantName}</Label>
-              <Input
-                id="edit-name"
-                value={editForm.applicantName}
-                onChange={(e) => setEditForm(prev => ({ ...prev, applicantName: e.target.value }))}
-                className="border-gray-200 focus:border-[#1A3C5E]"
-                placeholder={t.applicantName}
-              />
+              <Input id="edit-name" value={editForm.applicantName} onChange={(e) => setEditForm(prev => ({ ...prev, applicantName: e.target.value }))} className="border-gray-200 focus:border-[#1A3C5E]" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-phone" className="text-[#1C1C1E] text-sm font-medium">{t.phone}</Label>
-              <Input
-                id="edit-phone"
-                value={editForm.applicantPhone}
-                onChange={(e) => setEditForm(prev => ({ ...prev, applicantPhone: e.target.value }))}
-                className="border-gray-200 focus:border-[#1A3C5E]"
-                placeholder={t.phone}
-              />
+              <Input id="edit-phone" value={editForm.applicantPhone} onChange={(e) => setEditForm(prev => ({ ...prev, applicantPhone: e.target.value }))} className="border-gray-200 focus:border-[#1A3C5E]" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-cnic" className="text-[#1C1C1E] text-sm font-medium">{t.cnic}</Label>
-              <Input
-                id="edit-cnic"
-                value={editForm.applicantCnic}
-                onChange={(e) => setEditForm(prev => ({ ...prev, applicantCnic: e.target.value }))}
-                className="border-gray-200 focus:border-[#1A3C5E]"
-                placeholder={t.cnic}
-              />
+              <Input id="edit-cnic" value={editForm.applicantCnic} onChange={(e) => setEditForm(prev => ({ ...prev, applicantCnic: e.target.value }))} className="border-gray-200 focus:border-[#1A3C5E]" />
             </div>
             <div className="space-y-2">
               <Label htmlFor="edit-desc" className="text-[#1C1C1E] text-sm font-medium">{t.description}</Label>
-              <Textarea
-                id="edit-desc"
-                value={editForm.description}
-                onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))}
-                className="border-gray-200 focus:border-[#1A3C5E] min-h-20"
-                placeholder={t.description}
-              />
+              <Textarea id="edit-desc" value={editForm.description} onChange={(e) => setEditForm(prev => ({ ...prev, description: e.target.value }))} className="border-gray-200 focus:border-[#1A3C5E] min-h-20" />
             </div>
           </div>
           <DialogFooter className="gap-2">
-            <Button
-              variant="outline"
-              onClick={() => setEditDialogOpen(false)}
-              disabled={isSaving}
-              className="border-gray-200"
-            >
-              {t.cancel}
-            </Button>
-            <Button
-              onClick={handleEditSave}
-              disabled={isSaving}
-              className="bg-[#1A3C5E] hover:bg-[#15304D] text-white min-w-[44px]"
-            >
+            <Button variant="outline" onClick={() => setEditDialogOpen(false)} disabled={isSaving} className="border-gray-200">{t.cancel}</Button>
+            <Button onClick={handleEditSave} disabled={isSaving} className="bg-[#1A3C5E] hover:bg-[#15304D] text-white min-w-[44px]">
               {isSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : t.save}
             </Button>
           </DialogFooter>
@@ -471,14 +576,8 @@ export function MyApplications() {
             <AlertDialogDescription>{t.deleteConfirm}</AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting} className="border-gray-200">
-              {t.cancel}
-            </AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteConfirm}
-              disabled={isDeleting}
-              className="bg-[#E53935] hover:bg-[#C62828] text-white min-w-[44px]"
-            >
+            <AlertDialogCancel disabled={isDeleting} className="border-gray-200">{t.cancel}</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDeleteConfirm} disabled={isDeleting} className="bg-[#E53935] hover:bg-[#C62828] text-white min-w-[44px]">
               {isDeleting ? <Loader2 className="w-4 h-4 animate-spin" /> : t.confirmDelete}
             </AlertDialogAction>
           </AlertDialogFooter>

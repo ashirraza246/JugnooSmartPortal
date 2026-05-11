@@ -114,6 +114,18 @@ DO $$ BEGIN
   IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_applications' AND column_name = 'personal_info') THEN
     ALTER TABLE service_applications ADD COLUMN personal_info JSONB DEFAULT '{}';
   END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_applications' AND column_name = 'transaction_id') THEN
+    ALTER TABLE service_applications ADD COLUMN transaction_id TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_applications' AND column_name = 'uploaded_documents') THEN
+    ALTER TABLE service_applications ADD COLUMN uploaded_documents JSONB DEFAULT '[]';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_applications' AND column_name = 'payment_method') THEN
+    ALTER TABLE service_applications ADD COLUMN payment_method TEXT DEFAULT '';
+  END IF;
+  IF NOT EXISTS (SELECT 1 FROM information_schema.columns WHERE table_name = 'service_applications' AND column_name = 'result_document_url') THEN
+    ALTER TABLE service_applications ADD COLUMN result_document_url TEXT DEFAULT '';
+  END IF;
 END $$;
 
 INSERT INTO site_settings (id, settings) VALUES ('main', '{"business": {"name": "Jugnoo Photostate", "address": "Chowk Azam, Layyah, Punjab, Pakistan", "phone": "0300-1234567", "whatsapp": "923001234567", "email": "info@jugnoo.pk"}, "payments": {"jazzCash": {"accountNumber": "0300-1234567", "accountHolderName": "Jugnoo Photostate"}, "easyPaisa": {"accountNumber": "0300-7654321", "accountHolderName": "Jugnoo Photostate"}, "bankTransfer": {"bankName": "UBL", "accountNumber": "1234-5678-9012", "accountHolderName": "Jugnoo Photostate", "iban": ""}}}') ON CONFLICT (id) DO NOTHING;`

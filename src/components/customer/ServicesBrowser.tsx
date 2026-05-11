@@ -180,6 +180,7 @@ export function ServicesBrowser() {
   const [paymentMethod, setPaymentMethod] = useState('')
   const [paymentScreenshot, setPaymentScreenshot] = useState<File | null>(null)
   const [paymentPreview, setPaymentPreview] = useState<string | null>(null)
+  const [transactionId, setTransactionId] = useState('')
 
   // New state for loan & eligibility
   const [selectedTier, setSelectedTier] = useState<number | null>(null)
@@ -662,8 +663,9 @@ export function ServicesBrowser() {
       return true
     }
     if (step === 8) {
-      // Payment: must have payment method AND screenshot
+      // Payment: must have payment method, transaction ID AND screenshot
       if (!paymentMethod) return false
+      if (!transactionId.trim()) return false
       if (!paymentScreenshot) return false
       return true
     }
@@ -781,6 +783,7 @@ export function ServicesBrowser() {
     setPaymentMethod('')
     setPaymentScreenshot(null)
     setPaymentPreview(null)
+    setTransactionId('')
     setApplySuccess(false)
     setSelectedTier(null)
     setLoanAmount('')
@@ -832,6 +835,10 @@ export function ServicesBrowser() {
     if (!selectedService || !user) return
     if (!paymentMethod) {
       toast({ title: t.selectPayMethod, variant: 'destructive' })
+      return
+    }
+    if (!transactionId.trim()) {
+      toast({ title: 'Transaction ID is mandatory / Transaction ID lazmi hai', variant: 'destructive' })
       return
     }
     if (!paymentScreenshot) {
@@ -889,6 +896,7 @@ export function ServicesBrowser() {
           feeAmount: selectedService.category === 'cv_builder' && personalInfo['cv-tone'] === 'professional' ? 1000 : selectedService.base_price,
           paymentMethod: paymentMethod,
           paymentScreenshotUploaded: !!paymentScreenshot,
+          transactionId: transactionId.trim(),
           personalInfo: personalInfoPayload,
           uploadedDocuments: Object.keys(documentFiles).filter(k => documentFiles[k]).map(k => ({
             docId: k,
@@ -1703,6 +1711,20 @@ export function ServicesBrowser() {
                           onChange={handlePaymentFileChange}
                           className="hidden"
                         />
+
+                        {/* Transaction ID - MANDATORY */}
+                        <div className="mt-3 space-y-1.5">
+                          <Label className="text-xs font-medium">
+                            Transaction ID / Trx ID <span className="text-red-500">*</span>
+                          </Label>
+                          <p className="text-[10px] text-muted-foreground">Apni payment ki Transaction ID daalein (mandatory hai)</p>
+                          <Input
+                            value={transactionId}
+                            onChange={(e) => setTransactionId(e.target.value)}
+                            placeholder="e.g., TXN123456789 ya Trx ID"
+                            className="border-blue-200 focus-visible:ring-blue-200"
+                          />
+                        </div>
                       </div>
                     )}
                   </div>
