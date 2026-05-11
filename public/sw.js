@@ -1,10 +1,10 @@
-const CACHE_NAME = 'jugnoo-v3';
+const CACHE_NAME = 'jugnoo-v5';
 const STATIC_ASSETS = [
   '/',
   '/login',
   '/register',
   '/forgot-password',
-  '/jugnoo-logo.png',
+  '/jugnoo-photos-logo.jpg',
   '/manifest.json',
 ];
 
