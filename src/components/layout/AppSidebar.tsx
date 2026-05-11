@@ -104,7 +104,7 @@ export function AppSidebar() {
             {/* Logo - UBL Style */}
             <div className="flex items-center justify-between px-5 py-5 shrink-0">
               <div className="flex items-center gap-3">
-                <div className="w-auto max-w-[180px] h-14 rounded-xl overflow-hidden bg-white shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 flex items-center justify-center px-2 py-1">
+                <div className="w-auto max-w-[220px] h-16 rounded-xl overflow-hidden bg-white shadow-lg shadow-[#F5A623]/30 border-2 border-[#F5A623]/40 flex items-center justify-center px-3 py-1.5">
                   <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
                 </div>
               </div>
@@ -230,7 +230,7 @@ export function AppSidebar() {
         {/* Logo - Premium UBL Style */}
         <div className="flex items-center justify-between px-5 py-5 shrink-0">
           <div className="flex items-center gap-3">
-            <div className="w-auto max-w-[180px] h-14 rounded-xl overflow-hidden bg-white shadow-lg shadow-[#F5A623]/20 border-2 border-[#F5A623]/30 flex items-center justify-center px-2 py-1">
+            <div className="w-auto max-w-[220px] h-16 rounded-xl overflow-hidden bg-white shadow-lg shadow-[#F5A623]/30 border-2 border-[#F5A623]/40 flex items-center justify-center px-3 py-1.5">
               <img src="/jugnoo-photos-logo.jpg" alt="Jugnoo Photos" className="w-full h-full object-contain" />
             </div>
           </div>

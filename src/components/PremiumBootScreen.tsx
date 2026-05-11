@@ -195,9 +195,9 @@ export function PremiumBootScreen({ userName, isAdmin, onComplete, autoHide = tr
 
         {/* Logo container with 3D perspective - SQUARE with spring border effect */}
         <div
-          className="relative w-36 h-36 rounded-2xl overflow-hidden bg-white"
+          className="relative w-44 h-44 rounded-2xl overflow-hidden bg-white"
           style={{
-            boxShadow: `0 0 40px rgba(26,60,94,${0.15 * glowIntensity}), 0 0 20px rgba(245,166,35,${0.08 * glowIntensity}), 0 20px 40px rgba(0,0,0,0.1)`,
+            boxShadow: `0 0 50px rgba(26,60,94,${0.2 * glowIntensity}), 0 0 30px rgba(245,166,35,${0.12 * glowIntensity}), 0 20px 40px rgba(0,0,0,0.12)`,
             animation: 'float 3s ease-in-out infinite',
             border: '3px solid',
             borderImage: 'linear-gradient(135deg, #1A3C5E, #F5A623, #1A3C5E) 1',

@@ -12,7 +12,7 @@ import { Badge } from '@/components/ui/badge'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+// Native HTML select used instead of Radix Select for Dialog compatibility
 import { Checkbox } from '@/components/ui/checkbox'
 import { useToast } from '@/hooks/use-toast'
 import {
@@ -989,21 +989,25 @@ export function ServicesBrowser() {
             className="border-blue-100 focus-visible:ring-blue-200"
           />
         ) : field.field_type === 'select' && field.options ? (
-          <Select
-            value={value}
-            onValueChange={(v) => handlePersonalInfoChange(field.id, v, field.field_type)}
-          >
-            <SelectTrigger className="border-blue-100 focus:ring-blue-200">
-              <SelectValue placeholder={placeholder} />
-            </SelectTrigger>
-            <SelectContent position="popper" className="z-[9999]">
+          <div className="relative">
+            <select
+              value={value}
+              onChange={(e) => handlePersonalInfoChange(field.id, e.target.value, field.field_type)}
+              className="w-full h-9 rounded-md border border-blue-100 bg-white px-3 py-1 text-sm shadow-xs focus:outline-none focus:ring-2 focus:ring-blue-200 focus:border-blue-200 appearance-none cursor-pointer"
+            >
+              <option value="" disabled>{placeholder || 'Select an option'}</option>
               {field.options.map((opt) => (
-                <SelectItem key={opt.value} value={opt.value}>
+                <option key={opt.value} value={opt.value}>
                   {isUrdu && opt.label_urdu ? opt.label_urdu : opt.label}
-                </SelectItem>
+                </option>
               ))}
-            </SelectContent>
-          </Select>
+            </select>
+            <div className="absolute inset-y-0 right-0 flex items-center pr-2 pointer-events-none">
+              <svg className="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              </svg>
+            </div>
+          </div>
         ) : (
           <Input
             type={field.field_type === 'date' ? 'date' : field.field_type === 'number' ? 'number' : 'text'}
