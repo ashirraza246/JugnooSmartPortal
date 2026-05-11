@@ -442,90 +442,98 @@ export function MyApplications() {
                   unpaid ? 'ring-1 ring-[#F5A623]/30' : ''
                 }`}
               >
-                <CardContent className="p-4">
-                  <div className="flex items-start gap-3">
+                <CardContent className="p-3 sm:p-4">
+                  {/* Top row: icon + name + badges + amount */}
+                  <div className="flex items-start gap-2.5 sm:gap-3">
                     {/* Left: colored icon */}
                     <div
-                      className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                      className="w-10 h-10 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
                       style={{ backgroundColor: svcStyle.bg, color: svcStyle.color }}
                     >
                       {getServiceIcon(app.service_type)}
                     </div>
-                    {/* Center: Details */}
+                    {/* Center: name + meta info */}
                     <div className="flex-1 min-w-0">
                       <p className="text-sm font-semibold text-[#1C1C1E] truncate">{app.service_name}</p>
                       <p className="text-xs text-[#6B7280] mt-0.5">{app.service_type} {t.service} · {new Date(app.created_at).toLocaleDateString()}</p>
                       {app.applicant_cnic && <p className="text-[10px] text-[#6B7280]/60 mt-0.5">CNIC: {app.applicant_cnic}</p>}
                       {app.transaction_id && <p className="text-[10px] text-[#F5A623] font-medium mt-0.5">Trx ID: {app.transaction_id}</p>}
-                      {/* Status Progress Bar */}
-                      {renderStatusProgress(app.status)}
-                      {app.notes && (
-                        <p className="text-xs text-[#6B7280] mt-1 bg-[#F5F7FA] px-2 py-1 rounded-lg inline-block">{t.note}: {app.notes}</p>
-                      )}
                     </div>
-                    {/* Right: Status + Payment + Amount + Actions */}
-                    <div className="flex flex-col items-end gap-1.5 shrink-0">
-                      <Badge className={`${getStatusColor(app.status)} text-xs rounded-lg px-2.5`}>{getStatusLabel(app.status)}</Badge>
+                    {/* Right: badges + amount only (no action buttons here) */}
+                    <div className="flex flex-col items-end gap-1 shrink-0">
+                      <Badge className={`${getStatusColor(app.status)} text-[10px] sm:text-xs rounded-lg px-2 sm:px-2.5`}>{getStatusLabel(app.status)}</Badge>
                       {getPaymentBadge(app.payment_status)}
                       <span className="text-sm font-bold text-[#1A3C5E]">Rs {app.fee_amount?.toLocaleString()}</span>
-
-                      {/* Action buttons */}
-                      <div className="flex items-center gap-1 mt-1 flex-wrap justify-end">
-                        {/* Invoice/Print button - always show when paid */}
-                        {app.payment_status === 'paid' && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            className="h-8 min-w-[44px] px-2 border-[#003366]/20 text-[#003366] hover:bg-[#003366] hover:text-white transition-colors text-[10px]"
-                            onClick={() => handlePrintInvoice(app)}
-                          >
-                            <Printer className="w-3 h-3 mr-1" />
-                            {t.invoice}
-                          </Button>
-                        )}
-
-                        {/* Download button - only when completed and has result document */}
-                        {isCompleted && app.result_document_url && (
-                          <Button
-                            size="sm"
-                            className="h-8 min-w-[44px] px-2 bg-emerald-600 hover:bg-emerald-700 text-white text-[10px] gap-1"
-                            onClick={() => window.open(app.result_document_url!, '_blank')}
-                          >
-                            <Download className="w-3 h-3" />
-                            {t.download}
-                          </Button>
-                        )}
-
-                        {/* Edit/Delete for unpaid */}
-                        {unpaid ? (
-                          <>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 min-w-[44px] px-2 border-[#1A3C5E]/20 text-[#1A3C5E] hover:bg-[#1A3C5E] hover:text-white transition-colors text-[10px]"
-                              onClick={() => handleEditClick(app)}
-                            >
-                              <Edit className="w-3 h-3 mr-1" />
-                              {t.edit}
-                            </Button>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="h-8 min-w-[44px] px-2 border-red-200 text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors text-[10px]"
-                              onClick={() => handleDeleteClick(app)}
-                            >
-                              <Trash2 className="w-3 h-3 mr-1" />
-                              {t.delete}
-                            </Button>
-                          </>
-                        ) : !isCompleted && (
-                          <Badge className="bg-gray-100 text-[#6B7280] text-[9px] border-0 flex items-center gap-1 px-2 py-1">
-                            <Lock className="w-3 h-3" />
-                            {t.paidNoEdit}
-                          </Badge>
-                        )}
-                      </div>
                     </div>
+                  </div>
+
+                  {/* Status Progress Bar - full width below top row */}
+                  <div className="mt-2.5 pl-0 sm:pl-[52px]">
+                    {renderStatusProgress(app.status)}
+                  </div>
+
+                  {/* Notes */}
+                  {app.notes && (
+                    <div className="mt-2 pl-0 sm:pl-[52px]">
+                      <p className="text-xs text-[#6B7280] bg-[#F5F7FA] px-2 py-1 rounded-lg inline-block">{t.note}: {app.notes}</p>
+                    </div>
+                  )}
+
+                  {/* Action buttons - full width row below status */}
+                  <div className="mt-3 flex items-center gap-1.5 flex-wrap pl-0 sm:pl-[52px]">
+                    {/* Invoice/Print button - always show when paid */}
+                    {app.payment_status === 'paid' && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="h-9 min-w-[44px] px-3 border-[#003366]/20 text-[#003366] hover:bg-[#003366] hover:text-white transition-colors text-[11px] rounded-lg"
+                        onClick={() => handlePrintInvoice(app)}
+                      >
+                        <Printer className="w-3.5 h-3.5 mr-1" />
+                        {t.invoice}
+                      </Button>
+                    )}
+
+                    {/* Download button - only when completed and has result document */}
+                    {isCompleted && app.result_document_url && (
+                      <Button
+                        size="sm"
+                        className="h-9 min-w-[44px] px-3 bg-emerald-600 hover:bg-emerald-700 text-white text-[11px] gap-1 rounded-lg"
+                        onClick={() => window.open(app.result_document_url!, '_blank')}
+                      >
+                        <Download className="w-3.5 h-3.5" />
+                        {t.download}
+                      </Button>
+                    )}
+
+                    {/* Edit/Delete for unpaid */}
+                    {unpaid ? (
+                      <>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 min-w-[44px] px-3 border-[#1A3C5E]/20 text-[#1A3C5E] hover:bg-[#1A3C5E] hover:text-white transition-colors text-[11px] rounded-lg"
+                          onClick={() => handleEditClick(app)}
+                        >
+                          <Edit className="w-3.5 h-3.5 mr-1" />
+                          {t.edit}
+                        </Button>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="h-9 min-w-[44px] px-3 border-red-200 text-[#E53935] hover:bg-[#E53935] hover:text-white transition-colors text-[11px] rounded-lg"
+                          onClick={() => handleDeleteClick(app)}
+                        >
+                          <Trash2 className="w-3.5 h-3.5 mr-1" />
+                          {t.delete}
+                        </Button>
+                      </>
+                    ) : !isCompleted && (
+                      <Badge className="bg-gray-100 text-[#6B7280] text-[9px] border-0 flex items-center gap-1 px-2 py-1">
+                        <Lock className="w-3 h-3" />
+                        {t.paidNoEdit}
+                      </Badge>
+                    )}
                   </div>
                 </CardContent>
               </Card>
