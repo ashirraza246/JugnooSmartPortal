@@ -242,11 +242,11 @@ function getDefaultServices(category: string | null) {
     {
       id: 'cv-builder-service',
       name: 'CV / Resume Builder',
-      category: 'other',
-      description: 'Professional CV banwaein! Hum aapki details se ek premium CV taiyar karenge. Jobs ke liye apply karne ke liye zaroori hai. Multiple templates available hain.',
+      category: 'cv_builder',
+      description: 'Professional CV banwaein! Hum aapki details se ek premium CV taiyar karenge. Jobs ke liye apply karne ke liye zaroori hai. Multiple templates available hain. Normal ya Professional tone select karein.',
       icon: 'FilePlus2',
       base_price: 500,
-      features: ['Professional CV Design', 'Multiple Templates', 'AI-powered Content', 'PDF Download', 'Urdu/English Support'],
+      features: ['Professional CV Design', 'Multiple Templates', 'AI-powered Content', 'PDF Download', 'Urdu/English Support', 'Normal Tone (Rs. 500)', 'Professional Tone (Rs. 1,000)'],
       required_documents: [
         { id: 'cv-d1', name: 'CNIC Copy', is_mandatory: true, description: 'Applicant ki CNIC copy' },
         { id: 'cv-d2', name: 'Educational Certificates', is_mandatory: true, description: 'All degrees and certificates' },
@@ -266,6 +266,7 @@ function getDefaultServices(category: string | null) {
         { id: 'cv-address', label: 'Address / پتہ', label_urdu: 'پتہ', field_type: 'text', is_required: true, placeholder: 'Mukkamal pata likhein', placeholder_urdu: 'مکمل پتہ لکھیں' },
         { id: 'cv-city', label: 'City / شہر', label_urdu: 'شہر', field_type: 'text', is_required: true, placeholder: 'Shehr ka naam', placeholder_urdu: 'شہر کا نام' },
         { id: 'cv-dob', label: 'Date of Birth / تاریخ پیدائش', label_urdu: 'تاریخ پیدائش', field_type: 'date', is_required: true, placeholder: '', placeholder_urdu: '' },
+        { id: 'cv-tone', label: 'CV Tone / سی وی ٹون', label_urdu: 'سی وی ٹون', field_type: 'select', is_required: true, placeholder: 'Select CV tone', placeholder_urdu: 'سی وی ٹون منتخب کریں', options: [{ value: 'normal', label: 'Normal (Rs. 500)', label_urdu: 'نارمل (Rs. 500)' }, { value: 'professional', label: 'Professional (Rs. 1,000)', label_urdu: 'پروفیشنل (Rs. 1,000)' }] },
         { id: 'cv-gender', label: 'Gender / جنس', label_urdu: 'جنس', field_type: 'select', is_required: true, placeholder: 'Select gender', placeholder_urdu: 'جنس منتخب کریں', options: [{ value: 'male', label: 'Male', label_urdu: 'مرد' }, { value: 'female', label: 'Female', label_urdu: 'عورت' }] },
         { id: 'cv-objective', label: 'Career Objective / کیریئر کا مقصد', label_urdu: 'کیریئر کا مقصد', field_type: 'textarea', is_required: false, placeholder: 'Apna career goal likhein...', placeholder_urdu: 'اپنا کیریئر مقصد لکھیں' },
         { id: 'cv-education', label: 'Education / تعلیم (Matric, Inter, BA etc.)', label_urdu: 'تعلیم', field_type: 'textarea', is_required: true, placeholder: 'Matric - ABC School - 2018\nInter - XYZ College - 2020', placeholder_urdu: 'میٹرک - اے بی سی اسکول - 2018' },
@@ -277,8 +278,8 @@ function getDefaultServices(category: string | null) {
       eligibility: 'Koi bhi shaks jo job dhundh raha hai ya CV banwana chahta hai / Anyone looking for a job or needing a professional CV',
       important_details: ['CV 24-48 ghanton mein taiyar hoga / CV ready in 24-48 hours', 'Professional templates available hain / Professional templates available', 'Urdu ya English mein CV ban sakta hai / CV in Urdu or English', 'PDF format mein milega / Delivered in PDF format'],
       processing_time: '24-48 hours',
-      fee_info: 'Rs. 500 - Professional CV with template selection',
-      special_notes: 'CV ke liye sahi details dena zaroori hai. Jitni achi details, utna acha CV banega.',
+      fee_info: 'Normal CV: Rs. 500 | Professional CV: Rs. 1,000',
+      special_notes: 'CV Tone select karein: Normal (Rs. 500) ya Professional (Rs. 1,000). Professional tone mein zyada detailed aur polished CV milta hai. CV ke liye sahi details dena zaroori hai. Jitni achi details, utna acha CV banega.',
     },
   ]
 

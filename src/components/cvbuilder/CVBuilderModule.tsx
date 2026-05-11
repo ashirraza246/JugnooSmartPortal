@@ -1,13 +1,14 @@
 'use client'
 
-import { useState, useCallback, useRef } from 'react'
+import { useState, useCallback, useRef, useEffect } from 'react'
 import {
-  Card, CardContent,
+  Card, CardContent, CardHeader, CardTitle,
 } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
+import { Badge } from '@/components/ui/badge'
 
 import {
   Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
@@ -20,7 +21,8 @@ import {
   User, Target, GraduationCap, Briefcase, Star, Globe,
   Users, Eye, ChevronLeft, ChevronRight, Wand2, Download,
   FileText, Layout, Sparkles, Languages, Plus, Trash2,
-  Loader2, CheckCircle2, Palette, Zap,
+  Loader2, CheckCircle2, Palette, Zap, ClipboardList,
+  Phone, CreditCard, Calendar, RefreshCw,
 } from 'lucide-react'
 import type { CVData, TemplateStyle, WizardStep } from './types'
 import { defaultCVData, translations, WIZARD_STEPS } from './types'
@@ -37,9 +39,29 @@ const stepIcons: Record<WizardStep, React.ElementType> = {
   preview: Eye,
 }
 
+type CVBuilderTab = 'builder' | 'orders'
+
+interface CVOrder {
+  id: string
+  applicant_name: string
+  applicant_cnic: string | null
+  applicant_phone: string | null
+  service_name: string
+  service_type: string
+  status: string
+  payment_status: string
+  fee_amount: number
+  personal_info: Record<string, string> | null
+  created_at: string
+}
+
 export function CVBuilderModule() {
   const { toast } = useToast()
   const [lang, setLang] = useState<Language>('en')
+  const [activeTab, setActiveTab] = useState<CVBuilderTab>('builder')
+  const [cvOrders, setCvOrders] = useState<CVOrder[]>([])
+  const [ordersLoading, setOrdersLoading] = useState(false)
+  const [selectedOrder, setSelectedOrder] = useState<CVOrder | null>(null)
   const [currentStep, setCurrentStep] = useState<number>(0)
   const [cvData, setCvData] = useState<CVData>(defaultCVData)
   const [template, setTemplate] = useState<TemplateStyle>('professional')
@@ -53,6 +75,175 @@ export function CVBuilderModule() {
   const isUrdu = lang === 'ur'
   const currentStepKey = WIZARD_STEPS[currentStep]
   const isLastStep = currentStep === WIZARD_STEPS.length - 1
+
+  // Fetch CV Orders
+  const fetchCVOrders = useCallback(async () => {
+    setOrdersLoading(true)
+    try {
+      const res = await fetch('/api/service-applications?serviceType=cv_builder')
+      if (res.ok) {
+        const data = await res.json()
+        setCvOrders(data)
+      }
+    } catch {
+      console.error('Failed to fetch CV orders')
+    } finally {
+      setOrdersLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    if (activeTab === 'orders') {
+      fetchCVOrders()
+    }
+  }, [activeTab, fetchCVOrders])
+
+  // Load customer data from order into CV Builder
+  const handleBuildFromOrder = (order: CVOrder) => {
+    const info = order.personal_info || {}
+    setCvData({
+      ...defaultCVData,
+      personalInfo: {
+        ...defaultCVData.personalInfo,
+        fullName: info['cv-fullName'] || order.applicant_name || '',
+        email: info['cv-email'] || '',
+        phone: info['cv-phone'] || order.applicant_phone || '',
+        address: info['cv-address'] || '',
+        city: info['cv-city'] || '',
+      },
+      objective: info['cv-objective'] || '',
+      skills: info['cv-skills'] ? info['cv-skills'].split(',').map((s: string) => s.trim()).filter(Boolean) : [],
+      languages: info['cv-languages'] ? info['cv-languages'].split(',').map((l: string) => l.trim()).filter(Boolean) : ['Urdu', 'English'],
+      education: [{ id: '1', degree: '', institution: '', year: '', grade: '' }],
+      experience: [{ id: '1', company: '', position: '', duration: '', description: '' }],
+      references: [{ id: '1', name: '', position: '', contact: '' }],
+    })
+    setSelectedOrder(order)
+    setActiveTab('builder')
+    setCurrentStep(0)
+    toast({ title: isUrdu ? 'کسٹمر ڈیٹا لوڈ ہو گیا!' : 'Customer data loaded into CV Builder!' })
+  }
+
+  // Mark order as completed
+  const handleMarkComplete = async (orderId: string) => {
+    try {
+      const res = await fetch('/api/service-applications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: orderId, status: 'completed' }),
+      })
+      if (res.ok) {
+        toast({ title: isUrdu ? 'آرڈر مکمل ہو گیا!' : 'Order marked as completed!' })
+        fetchCVOrders()
+      } else {
+        toast({ title: 'Error', variant: 'destructive' })
+      }
+    } catch {
+      toast({ title: 'Error updating order', variant: 'destructive' })
+    }
+  }
+
+  // Render CV Orders tab
+  const renderCVOrders = () => (
+    <div className="space-y-6">
+      <div className="flex items-center justify-between">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-[#003366] to-[#1a5276] flex items-center justify-center shadow-lg shadow-blue-900/20">
+            <ClipboardList className="w-5 h-5 text-white" />
+          </div>
+          <div>
+            <h3 className="text-lg font-bold text-slate-800">{isUrdu ? 'سی وی آرڈرز' : 'CV Orders'}</h3>
+            <p className="text-xs text-slate-400">{isUrdu ? 'کسٹمرز کی سی وی درخواستیں' : 'Customer CV service applications'}</p>
+          </div>
+        </div>
+        <Button variant="outline" size="sm" onClick={fetchCVOrders} disabled={ordersLoading} className="gap-1.5 border-[#2980b9]/30 text-[#2980b9]">
+          <RefreshCw className={`w-3.5 h-3.5 ${ordersLoading ? 'animate-spin' : ''}`} />
+          {isUrdu ? 'ریفریش' : 'Refresh'}
+        </Button>
+      </div>
+
+      {ordersLoading ? (
+        <div className="flex items-center justify-center py-16">
+          <Loader2 className="w-8 h-8 animate-spin text-[#2980b9]" />
+        </div>
+      ) : cvOrders.length === 0 ? (
+        <Card className="border-0 shadow-sm">
+          <CardContent className="py-16 text-center">
+            <ClipboardList className="w-16 h-16 mx-auto mb-4 opacity-10 text-[#003366]" />
+            <h3 className="text-lg font-semibold text-slate-700">{isUrdu ? 'کوئی آرڈر نہیں' : 'No CV Orders Yet'}</h3>
+            <p className="text-sm text-slate-400 mt-1">{isUrdu ? 'جب کوئی کسٹمر CV سروس کے لیے اپلائے کرے گا، یہاں دکھائی دے گا' : 'When a customer applies for CV service, orders will appear here'}</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-4 max-h-[calc(100vh-250px)] overflow-y-auto pr-1">
+          {cvOrders.map((order) => {
+            const tone = order.personal_info?.['cv-tone']
+            const toneLabel = tone === 'professional' ? 'Professional' : 'Normal'
+            const tonePrice = tone === 'professional' ? 'Rs. 1,000' : 'Rs. 500'
+            const isCompleted = order.status === 'completed'
+            const isPaid = order.payment_status === 'paid'
+            return (
+              <Card key={order.id} className={`border-0 shadow-sm overflow-hidden ${isCompleted ? 'opacity-70' : ''}`}>
+                <div className={`h-1 ${isCompleted ? 'bg-emerald-500' : isPaid ? 'bg-[#2980b9]' : 'bg-amber-400'}`} />
+                <CardContent className="p-5">
+                  <div className="flex items-start justify-between gap-4">
+                    <div className="flex-1 min-w-0 space-y-3">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <h4 className="text-sm font-bold text-slate-800 truncate">{order.applicant_name || 'Unknown'}</h4>
+                        <Badge className={`text-[10px] border-0 ${isCompleted ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
+                          {isCompleted ? (isUrdu ? 'مکمل' : 'Completed') : (isUrdu ? 'زیر التواء' : 'Pending')}
+                        </Badge>
+                        <Badge className="text-[10px] border-0 bg-[#2980b9]/10 text-[#2980b9]">
+                          {toneLabel} - {tonePrice}
+                        </Badge>
+                      </div>
+                      <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs text-slate-500">
+                        {order.applicant_cnic && (
+                          <div className="flex items-center gap-1.5">
+                            <CreditCard className="w-3 h-3 text-slate-400" />
+                            <span className="truncate">{order.applicant_cnic}</span>
+                          </div>
+                        )}
+                        {order.applicant_phone && (
+                          <div className="flex items-center gap-1.5">
+                            <Phone className="w-3 h-3 text-slate-400" />
+                            <span>{order.applicant_phone}</span>
+                          </div>
+                        )}
+                        <div className="flex items-center gap-1.5">
+                          <Calendar className="w-3 h-3 text-slate-400" />
+                          <span>{new Date(order.created_at).toLocaleDateString()}</span>
+                        </div>
+                      </div>
+                      <div className="flex items-center gap-1.5 text-xs">
+                        <span className={`inline-flex items-center gap-1 px-2 py-0.5 rounded-full ${isPaid ? 'bg-emerald-50 text-emerald-600' : 'bg-red-50 text-red-600'}`}>
+                          {isPaid ? '✓ Paid' : '✗ Unpaid'}
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex flex-col gap-2 shrink-0">
+                      {!isCompleted && (
+                        <Button size="sm" onClick={() => handleBuildFromOrder(order)} className="bg-gradient-to-r from-[#003366] to-[#1a5276] text-white shadow-sm gap-1.5">
+                          <FileText className="w-3.5 h-3.5" />
+                          {isUrdu ? 'سی وی بنائیں' : 'Build CV'}
+                        </Button>
+                      )}
+                      {!isCompleted && isPaid && (
+                        <Button size="sm" variant="outline" onClick={() => handleMarkComplete(order.id)} className="border-emerald-200 text-emerald-600 hover:bg-emerald-50 gap-1.5">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          {isUrdu ? 'مکمل کریں' : 'Mark Complete'}
+                        </Button>
+                      )}
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
 
   // Navigation
   const goNext = () => {
@@ -935,6 +1126,27 @@ Target role: ${cvData.experience?.[0]?.position || 'Professional'}`,
               </div>
             </div>
             <div className="flex items-center gap-2">
+              {/* Tab Switcher */}
+              <div className="flex rounded-lg overflow-hidden border border-slate-200">
+                <button
+                  onClick={() => setActiveTab('builder')}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    activeTab === 'builder' ? 'bg-gradient-to-r from-[#003366] to-[#1a5276] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <FileText className="w-3.5 h-3.5" />
+                  {isUrdu ? 'سی وی بلڈر' : 'CV Builder'}
+                </button>
+                <button
+                  onClick={() => setActiveTab('orders')}
+                  className={`px-3 py-1.5 text-xs font-medium flex items-center gap-1.5 transition-colors ${
+                    activeTab === 'orders' ? 'bg-gradient-to-r from-[#003366] to-[#1a5276] text-white' : 'bg-white text-slate-500 hover:bg-slate-50'
+                  }`}
+                >
+                  <ClipboardList className="w-3.5 h-3.5" />
+                  {isUrdu ? 'سی وی آرڈرز' : 'CV Orders'}
+                </button>
+              </div>
               {/* Language Toggle */}
               <Button
                 variant="outline"
@@ -946,52 +1158,64 @@ Target role: ${cvData.experience?.[0]?.position || 'Professional'}`,
                 {t.langSwitch}
               </Button>
               {/* AI Generate Button */}
-              <Button
-                onClick={() => setAiDialogOpen(true)}
-                className="bg-gradient-to-r from-[#2980b9] to-[#3498db] hover:from-[#1a5276] hover:to-[#2980b9] text-white shadow-md shadow-blue-200/50 transition-all"
-                size="sm"
-              >
-                <Zap className="w-3.5 h-3.5 mr-1.5" />
-                {t.actions.generateAI}
-              </Button>
+              {activeTab === 'builder' && (
+                <Button
+                  onClick={() => setAiDialogOpen(true)}
+                  className="bg-gradient-to-r from-[#2980b9] to-[#3498db] hover:from-[#1a5276] hover:to-[#2980b9] text-white shadow-md shadow-blue-200/50 transition-all"
+                  size="sm"
+                >
+                  <Zap className="w-3.5 h-3.5 mr-1.5" />
+                  {t.actions.generateAI}
+                </Button>
+              )}
             </div>
           </div>
         </div>
 
-        {/* Step Progress Bar */}
-        <div className="px-4 sm:px-6 pb-3">
-          <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
-            {WIZARD_STEPS.map((step, index) => {
-              const Icon = stepIcons[step]
-              const isActive = index === currentStep
-              const isCompleted = index < currentStep
-              return (
-                <button
-                  key={step}
-                  onClick={() => goToStep(index)}
-                  className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-300 ${
-                    isActive
-                      ? 'bg-gradient-to-r from-[#003366] to-[#1a5276] text-white shadow-md shadow-blue-900/20 scale-105'
-                      : isCompleted
-                      ? 'bg-[#2980b9]/10 text-[#2980b9]'
-                      : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
-                  }`}
-                >
-                  {isCompleted ? (
-                    <CheckCircle2 className="w-3.5 h-3.5" />
-                  ) : (
-                    <Icon className="w-3.5 h-3.5" />
-                  )}
-                  <span className="hidden sm:inline">{t.steps[step as keyof typeof t.steps]}</span>
-                  <span className="sm:hidden">{index + 1}</span>
-                </button>
-              )
-            })}
+        {/* Step Progress Bar - only for builder tab */}
+        {activeTab === 'builder' && (
+          <div className="px-4 sm:px-6 pb-3">
+            <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-hide">
+              {WIZARD_STEPS.map((step, index) => {
+                const Icon = stepIcons[step]
+                const isActive = index === currentStep
+                const isCompleted = index < currentStep
+                return (
+                  <button
+                    key={step}
+                    onClick={() => goToStep(index)}
+                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-medium whitespace-nowrap transition-all duration-300 ${
+                      isActive
+                        ? 'bg-gradient-to-r from-[#003366] to-[#1a5276] text-white shadow-md shadow-blue-900/20 scale-105'
+                        : isCompleted
+                        ? 'bg-[#2980b9]/10 text-[#2980b9]'
+                        : 'bg-slate-100 text-slate-400 hover:bg-slate-200'
+                    }`}
+                  >
+                    {isCompleted ? (
+                      <CheckCircle2 className="w-3.5 h-3.5" />
+                    ) : (
+                      <Icon className="w-3.5 h-3.5" />
+                    )}
+                    <span className="hidden sm:inline">{t.steps[step as keyof typeof t.steps]}</span>
+                    <span className="sm:hidden">{index + 1}</span>
+                  </button>
+                )
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </div>
 
-      {/* Main Content */}
+      {/* CV Orders Tab */}
+      {activeTab === 'orders' && (
+        <div className="p-4 sm:p-6 max-w-4xl mx-auto">
+          {renderCVOrders()}
+        </div>
+      )}
+
+      {/* Main Content - only for builder tab */}
+      {activeTab === 'builder' && (
       <div className="flex flex-col lg:flex-row gap-6 p-4 sm:p-6">
         {/* Form Panel */}
         <div className="flex-1 min-w-0">
@@ -1070,6 +1294,7 @@ Target role: ${cvData.experience?.[0]?.position || 'Professional'}`,
           </div>
         </div>
       </div>
+      )}
 
       {/* AI Dialog */}
       <Dialog open={aiDialogOpen} onOpenChange={setAiDialogOpen}>
