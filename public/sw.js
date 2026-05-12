@@ -1,4 +1,4 @@
-const CACHE_NAME = 'jugnoo-v6';
+const CACHE_NAME = 'jugnoo-v7';
 const STATIC_ASSETS = [
   '/',
   '/login',
