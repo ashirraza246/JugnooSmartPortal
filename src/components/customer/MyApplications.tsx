@@ -251,28 +251,42 @@ export function MyApplications() {
   }
 
   const handlePrintInvoice = (app: ServiceApplication) => {
+    const logoUrl = window.location.origin + '/jugnoo-photos-logo.jpg'
     const printContent = `
       <html><head><title>Invoice - ${app.service_name}</title>
       <style>
         body { font-family: Arial, sans-serif; padding: 40px; color: #1C1C1E; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #003366; padding-bottom: 15px; margin-bottom: 20px; }
-        .logo { font-size: 24px; font-weight: bold; color: #003366; }
+        .logo-area { display: flex; align-items: center; gap: 12px; }
+        .logo-img { width: 60px; height: auto; border-radius: 8px; }
+        .logo-text { font-size: 20px; font-weight: bold; color: #003366; line-height: 1.2; }
+        .logo-sub { font-size: 11px; color: #6B7280; margin-top: 2px; }
         .invoice-label { font-size: 14px; color: #6B7280; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
         .field { margin-bottom: 8px; }
         .field-label { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
         .field-value { font-size: 14px; font-weight: 500; }
-        .amount-section { background: #F5F7FA; padding: 15px; border-radius: 8px; margin-top: 20px; text-align: right; }
-        .amount { font-size: 28px; font-weight: bold; color: #003366; }
+        .amount-section { background: linear-gradient(135deg, #F5F7FA, #E8F0FE); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: right; border: 1px solid #003366/10; }
+        .amount { font-size: 32px; font-weight: bold; color: #003366; }
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .status-submitted { background: #E8F0FE; color: #1A3C5E; }
         .status-pending { background: #FFF3D6; color: #F5A623; }
         .status-in_progress { background: #E8F0FE; color: #003366; }
         .status-completed { background: #E8F5E9; color: #2E7D32; }
-        .footer { margin-top: 40px; font-size: 11px; color: #6B7280; text-align: center; border-top: 1px solid #E5E7EB; padding-top: 15px; }
+        .footer { margin-top: 40px; font-size: 11px; color: #6B7280; text-align: center; border-top: 2px solid #003366; padding-top: 15px; }
+        .footer-logo { width: 18px; height: 18px; vertical-align: middle; border-radius: 3px; margin-right: 4px; }
+        .gold-accent { width: 100%; height: 3px; background: linear-gradient(90deg, #003366, #F5A623, #003366); border-radius: 2px; margin-bottom: 20px; }
       </style></head><body>
+      <div class="gold-accent"></div>
       <div class="header">
-        <div><div class="logo">JUGNOO PHOTOSTATE</div><div style="font-size:12px;color:#6B7280;">Chowk Azam, Layyah, Punjab</div></div>
+        <div class="logo-area">
+          <img src="${logoUrl}" alt="Jugnoo Photos" class="logo-img" />
+          <div>
+            <div class="logo-text">JUGNOO PHOTOSTATE</div>
+            <div class="logo-sub">Chowk Azam, Layyah, Punjab</div>
+            <div class="logo-sub" style="color:#F5A623;">AI-Powered Business Management</div>
+          </div>
+        </div>
         <div style="text-align:right"><div class="invoice-label">INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
       </div>
       <div class="grid">
@@ -294,7 +308,7 @@ export function MyApplications() {
         <div style="font-size:12px;color:#6B7280;margin-bottom:5px;">Service Fee</div>
         <div class="amount">Rs. ${app.fee_amount?.toLocaleString()}</div>
       </div>
-      <div class="footer">Jugnoo Photostate · AI-Powered Business Management · Chowk Azam</div>
+      <div class="footer"><img src="${logoUrl}" alt="" class="footer-logo" /> Jugnoo Photostate · AI-Powered Business Management · Chowk Azam</div>
       </body></html>
     `
     const printWindow = window.open('', '_blank')
