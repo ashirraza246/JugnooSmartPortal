@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, ShoppingCart, Users, AlertCircle } from 'lucide-react'
+import { TrendingUp, TrendingDown, ShoppingCart, Users, AlertCircle, Wallet } from 'lucide-react'
 
 interface StatsCardsProps {
   stats: {
@@ -10,39 +10,112 @@ interface StatsCardsProps {
     todayRevenue: number
     activeCustomers: number
     pendingTasks: number
+    yesterdayOrders?: number
+    yesterdayRevenue?: number
+    thisWeekRevenue?: number
+    orderTrend?: number
+    revenueTrend?: number
+    weekTrend?: number
+    sparklineData?: number[]
   }
   isLoading: boolean
 }
 
+// Mini sparkline component
+function MiniSparkline({ data, color, width = 60, height = 24 }: { data: number[]; color: string; width?: number; height?: number }) {
+  if (!data || data.length < 2) return null
+
+  const max = Math.max(...data, 1)
+  const min = Math.min(...data, 0)
+  const range = max - min || 1
+
+  const points = data.map((val, i) => {
+    const x = (i / (data.length - 1)) * width
+    const y = height - ((val - min) / range) * height * 0.8 - height * 0.1
+    return `${x},${y}`
+  }).join(' ')
+
+  return (
+    <svg width={width} height={height} className="shrink-0">
+      <polyline
+        points={points}
+        fill="none"
+        stroke={color}
+        strokeWidth="1.5"
+        strokeLinecap="round"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
+// Trend indicator
+function TrendIndicator({ value, label }: { value: number; label: string }) {
+  if (value === 0) return null
+  const isPositive = value > 0
+  return (
+    <div className={`flex items-center gap-0.5 text-[10px] font-medium ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+      {isPositive ? (
+        <TrendingUp className="w-3 h-3" />
+      ) : (
+        <TrendingDown className="w-3 h-3" />
+      )}
+      <span>{Math.abs(value).toFixed(1)}% {label}</span>
+    </div>
+  )
+}
+
 export function StatsCards({ stats, isLoading }: StatsCardsProps) {
+  const sparkData = stats.sparklineData || []
+
   const cards = [
     {
       title: "Today's Orders",
       value: stats.todayOrders,
+      formattedValue: String(stats.todayOrders),
       icon: ShoppingCart,
       color: '#1A3C5E',
       bgColor: '#E8F0FE',
+      sparkColor: '#1A3C5E',
+      trend: stats.orderTrend,
+      trendLabel: 'vs yesterday',
+      comparison: stats.yesterdayOrders !== undefined ? `Yesterday: ${stats.yesterdayOrders}` : undefined,
     },
     {
       title: 'Revenue Today',
-      value: stats.todayRevenue > 0 ? `Rs. ${stats.todayRevenue.toLocaleString()}` : 'No Revenue',
-      icon: TrendingUp,
+      value: stats.todayRevenue,
+      formattedValue: stats.todayRevenue > 0 ? `Rs. ${stats.todayRevenue.toLocaleString()}` : 'No Revenue',
+      icon: Wallet,
       color: '#2E7D32',
       bgColor: '#E8F5E9',
+      sparkColor: '#2E7D32',
+      trend: stats.revenueTrend,
+      trendLabel: 'vs yesterday',
+      comparison: stats.yesterdayRevenue !== undefined ? `Yesterday: Rs. ${stats.yesterdayRevenue.toLocaleString()}` : undefined,
     },
     {
       title: 'Active Customers',
       value: stats.activeCustomers,
+      formattedValue: String(stats.activeCustomers),
       icon: Users,
       color: '#F5A623',
       bgColor: '#FFF3D6',
+      sparkColor: '#F5A623',
+      trend: 0,
+      trendLabel: '',
+      comparison: undefined,
     },
     {
       title: 'Pending Tasks',
       value: stats.pendingTasks,
+      formattedValue: String(stats.pendingTasks),
       icon: AlertCircle,
       color: '#E53935',
       bgColor: '#FFEBEE',
+      sparkColor: '#E53935',
+      trend: 0,
+      trendLabel: '',
+      comparison: undefined,
     },
   ]
 
@@ -71,19 +144,33 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: index * 0.1 }}
           >
-            <Card className="border-0 shadow-sm rounded-2xl overflow-hidden">
+            <Card className="border-0 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
               <CardContent className="p-4">
-                <div className="flex items-center gap-3">
+                <div className="flex items-start gap-3">
                   <div
                     className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
                     style={{ backgroundColor: card.bgColor }}
                   >
                     <Icon className="w-5 h-5" style={{ color: card.color }} />
                   </div>
-                  <div className="min-w-0">
+                  <div className="flex-1 min-w-0">
                     <p className="text-[11px] text-[#6B7280] font-medium">{card.title}</p>
-                    <p className="text-lg font-bold truncate" style={{ color: card.color }}>{card.value}</p>
+                    <p className="text-lg font-bold truncate" style={{ color: card.color }}>{card.formattedValue}</p>
+                    {/* Trend indicator */}
+                    {card.trend !== 0 && (
+                      <TrendIndicator value={card.trend} label={card.trendLabel} />
+                    )}
+                    {/* Comparison text */}
+                    {card.comparison && (
+                      <p className="text-[9px] text-[#9CA3AF] mt-0.5">{card.comparison}</p>
+                    )}
                   </div>
+                  {/* Sparkline */}
+                  {sparkData.length > 1 && (
+                    <div className="shrink-0 mt-1">
+                      <MiniSparkline data={sparkData} color={card.sparkColor} />
+                    </div>
+                  )}
                 </div>
               </CardContent>
             </Card>

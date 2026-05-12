@@ -22,6 +22,8 @@ import {
   CircleDot, ArrowRight,
 } from 'lucide-react'
 import { useState, useRef } from 'react'
+import { StatusTimeline, generateTimelineFromStatus } from '@/components/shared/StatusTimeline'
+import { QrVerificationBadge } from '@/components/qr/QrVerificationBadge'
 
 interface ServiceApplication {
   id: string
@@ -485,6 +487,33 @@ export function MyApplications() {
                   <div className="mt-2.5 pl-0 sm:pl-[52px]">
                     {renderStatusProgress(app.status)}
                   </div>
+
+                  {/* Status Timeline - expandable detail */}
+                  <div className="mt-2 pl-0 sm:pl-[52px]">
+                    <details className="text-xs">
+                      <summary className="cursor-pointer text-[#1A3C5E] hover:text-[#F5A623] font-medium transition-colors">
+                        {t.statusTracking} / View Timeline
+                      </summary>
+                      <div className="mt-3 pl-2">
+                        <StatusTimeline
+                          entries={generateTimelineFromStatus(
+                            app.status,
+                            app.created_at,
+                            app.updated_at,
+                            app.service_type
+                          )}
+                          currentStatus={app.status}
+                        />
+                      </div>
+                    </details>
+                  </div>
+
+                  {/* QR Verified badge for completed apps */}
+                  {app.status === 'completed' && (
+                    <div className="mt-2 pl-0 sm:pl-[52px]">
+                      <QrVerificationBadge isVerified={true} size="sm" />
+                    </div>
+                  )}
 
                   {/* Notes */}
                   {app.notes && (

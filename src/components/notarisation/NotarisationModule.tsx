@@ -23,8 +23,9 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Plus, ArrowRight, Scale } from 'lucide-react'
+import { Plus, ArrowRight, Scale, Eye, Upload } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { DocumentPreview, DocumentThumbnail } from '@/components/shared/DocumentPreview'
 
 const notarisationFlow: Record<string, string> = {
   pending: 'in_process',
@@ -58,6 +59,8 @@ export function NotarisationModule() {
     feeAmount: '',
     appointmentDate: '',
   })
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const [previewOpen, setPreviewOpen] = useState(false)
 
   const { data: records = [], isLoading } = useQuery({
     queryKey: ['notarisation'],
@@ -119,6 +122,11 @@ export function NotarisationModule() {
     setFormData({ customerId: '', serviceType: 'general', description: '', feeAmount: '', appointmentDate: '' })
   }
 
+  const openPreview = (url: string) => {
+    setPreviewUrl(url)
+    setPreviewOpen(true)
+  }
+
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
@@ -148,29 +156,34 @@ export function NotarisationModule() {
             const safeServiceType = (record.serviceType as string) || 'general'
             const safeStatus = (record.status as string) || 'pending'
             const safeFeeAmount = (record.feeAmount as number) || 0
+            const docUrl = (record.documentUrl as string) || (record.resultDocumentUrl as string) || null
             return (
             <Card key={record.id as string} className="hover:shadow-md transition-shadow">
               <CardContent className="p-4">
                 <div className="flex items-start justify-between gap-2">
-                  <div className="flex-1 min-w-0">
-                    <div className="flex items-center gap-2 mb-1">
-                      <h3 className="font-semibold text-sm">
-                        {serviceTypeLabels[safeServiceType] || safeServiceType}
-                      </h3>
-                      <Badge className={`${typeColors[safeServiceType] || ''} text-[10px] px-1.5`}>
-                        {safeServiceType}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">
-                      {(record.customer as Record<string, string>)?.fullName || 'Unknown'}
-                    </p>
-                    {record.description && (
-                      <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
-                        {record.description as string}
+                  <div className="flex items-start gap-2">
+                    {/* Document thumbnail */}
+                    <DocumentThumbnail url={docUrl} onClick={() => docUrl && openPreview(docUrl)} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-center gap-2 mb-1">
+                        <h3 className="font-semibold text-sm">
+                          {serviceTypeLabels[safeServiceType] || safeServiceType}
+                        </h3>
+                        <Badge className={`${typeColors[safeServiceType] || ''} text-[10px] px-1.5`}>
+                          {safeServiceType}
+                        </Badge>
+                      </div>
+                      <p className="text-xs text-muted-foreground">
+                        {(record.customer as Record<string, string>)?.fullName || 'Unknown'}
                       </p>
-                    )}
-                    <div className="mt-2">
-                      <StatusBadge status={safeStatus} type="notarisation" />
+                      {record.description && (
+                        <p className="text-xs text-muted-foreground mt-1 line-clamp-1">
+                          {record.description as string}
+                        </p>
+                      )}
+                      <div className="mt-2">
+                        <StatusBadge status={safeStatus} type="notarisation" />
+                      </div>
                     </div>
                   </div>
                   <span className="text-sm font-semibold">Rs. {safeFeeAmount.toLocaleString()}</span>
@@ -255,6 +268,14 @@ export function NotarisationModule() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Document Preview Dialog */}
+      <DocumentPreview
+        url={previewUrl}
+        filename="notarisation-document"
+        open={previewOpen}
+        onOpenChange={setPreviewOpen}
+      />
     </div>
   )
 }

@@ -32,9 +32,14 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard, Printer, MessageCircle, Upload, Download, Link as LinkIcon } from 'lucide-react'
+import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard, Printer, MessageCircle, Upload, Download, Link as LinkIcon, QrCode, Shield, Send } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
+import { Switch } from '@/components/ui/switch'
+import { StatusTimeline, generateTimelineFromStatus } from '@/components/shared/StatusTimeline'
+import { DataExport } from '@/components/shared/DataExport'
+import { QrVerificationBadge } from '@/components/qr/QrVerificationBadge'
+import { generateWhatsAppLink, statusChangedMessage, documentReadyMessage } from '@/lib/whatsapp-auto'
 
 const statusFlow = ['pending', 'in_progress', 'ready', 'delivered']
 
@@ -57,6 +62,7 @@ export function OrdersModule() {
   const [isUploading, setIsUploading] = useState(false)
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [detailApp, setDetailApp] = useState<ServiceApplication | null>(null)
+  const [autoWhatsApp, setAutoWhatsApp] = useState(true)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Service Applications types
@@ -459,6 +465,29 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
             <Button variant="outline" size="sm" onClick={() => refetchApps()} className="gap-1.5">
               <RefreshCw className="w-3.5 h-3.5" /> Refresh
             </Button>
+            <DataExport
+              data={applications.map((a: ServiceApplication) => ({
+                id: a.id.slice(0,8).toUpperCase(),
+                service: a.service_name,
+                type: a.service_type,
+                applicant: a.applicant_name,
+                status: a.status,
+                payment: a.payment_status,
+                amount: a.fee_amount,
+                date: new Date(a.created_at).toLocaleDateString(),
+              }))}
+              filename="jugnoo-applications"
+              columns={[
+                { key: 'id', label: 'ID' },
+                { key: 'service', label: 'Service' },
+                { key: 'applicant', label: 'Applicant' },
+                { key: 'status', label: 'Status' },
+                { key: 'payment', label: 'Payment' },
+                { key: 'amount', label: 'Amount' },
+                { key: 'date', label: 'Date' },
+              ]}
+              title="Jugnoo Photostate - Applications Report"
+            />
           </div>
 
           {appsLoading ? (
@@ -510,7 +539,19 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                           {app.payment_status === 'paid' ? 'Paid' : 'Unpaid'}
                         </Badge>
                         <span className="text-sm font-bold text-[#003366]">Rs {app.fee_amount?.toLocaleString()}</span>
+                        {/* QR Verified badge for completed apps */}
+                        {app.status === 'completed' && (
+                          <QrVerificationBadge isVerified={true} size="sm" />
+                        )}
                       </div>
+                    </div>
+
+                    {/* Auto WhatsApp toggle */}
+                    <div className="mt-2 flex items-center gap-2 pl-0 sm:pl-[52px]">
+                      <Switch checked={autoWhatsApp} onCheckedChange={setAutoWhatsApp} className="data-[state=checked]:bg-emerald-600" />
+                      <span className="text-[10px] text-[#6B7280] flex items-center gap-1">
+                        <Send className="w-3 h-3" /> Auto-send WhatsApp
+                      </span>
                     </div>
 
                     {/* Action buttons row */}
@@ -643,10 +684,30 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={() => setShowForm(true)} className="gap-2">
+            <Button onClick={() => setShowForm(true)} className="gap-2 bg-[#1A3C5E] hover:bg-[#15304D] rounded-xl">
               <Plus className="w-4 h-4" />
               New Order
             </Button>
+            <DataExport
+              data={orders.map((o: Record<string, unknown>) => ({
+                orderNumber: (o.orderNumber as string) || 'N/A',
+                customer: (o.customer as Record<string, string>)?.fullName || 'Walk-in',
+                type: ((o.orderType as string) || 'other').replace(/_/g, ' '),
+                status: (o.status as string) || 'pending',
+                amount: ((o.totalAmount as number) || 0).toLocaleString(),
+                payment: (o.paymentStatus as string) || 'unpaid',
+              }))}
+              filename="jugnoo-orders"
+              columns={[
+                { key: 'orderNumber', label: 'Order #' },
+                { key: 'customer', label: 'Customer' },
+                { key: 'type', label: 'Type' },
+                { key: 'status', label: 'Status' },
+                { key: 'amount', label: 'Amount (Rs.)' },
+                { key: 'payment', label: 'Payment' },
+              ]}
+              title="Jugnoo Photostate - Orders Report"
+            />
           </div>
 
           <Card>
@@ -783,6 +844,20 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                       <p className="text-sm mt-0.5">{selectedOrder.description as string}</p>
                     </div>
                   )}
+
+                  {/* Status Timeline */}
+                  <div className="mt-4 pt-3 border-t border-gray-100">
+                    <p className="text-xs font-semibold text-[#1A3C5E] mb-3">Order Timeline</p>
+                    <StatusTimeline
+                      entries={generateTimelineFromStatus(
+                        (selectedOrder.status as string) || 'pending',
+                        (selectedOrder.createdAt as string) || new Date().toISOString(),
+                        new Date().toISOString()
+                      )}
+                      currentStatus={(selectedOrder.status as string) || 'pending'}
+                    />
+                  </div>
+
                   <div className="flex gap-2 pt-2">
                     {getNextStatus((selectedOrder.status as string) || 'pending') && (
                       <Button

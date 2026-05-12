@@ -13,6 +13,8 @@ function mapPayment(p: Record<string, unknown>) {
     receiptNumber: p.receipt_number,
     notes: p.notes,
     createdAt: p.created_at,
+    screenshotUrl: p.screenshot_url || p.payment_screenshot_url || null,
+    verificationStatus: p.verification_status || 'verified',
     customer: customer ? { fullName: customer.full_name } : null,
     order: order ? { orderNumber: order.order_number } : null,
   }
@@ -27,11 +29,11 @@ export async function GET(req: NextRequest) {
     const page = parseInt(searchParams.get('page') || '1')
     const limit = parseInt(searchParams.get('limit') || '50')
     const customerId = searchParams.get('customerId')
+    const verificationFilter = searchParams.get('verification')
     const from = (page - 1) * limit
 
     let query = supabase.from('payments').select('*, customer:customers(full_name), order:orders(order_number)', { count: 'exact' }).order('created_at', { ascending: false }).range(from, from + limit - 1)
 
-    // Filter by customer ID if provided
     if (customerId) {
       query = query.eq('customer_id', customerId)
     }
@@ -47,10 +49,15 @@ export async function GET(req: NextRequest) {
       query = query.gte('created_at', monthAgo.toISOString())
     }
 
+    // Filter by verification status
+    if (verificationFilter === 'pending') {
+      query = query.eq('verification_status', 'screenshot_uploaded')
+    }
+
     const { data, count, error } = await query
     if (error) return Response.json({ error: error.message }, { status: 400 })
 
-    // Revenue summary (only for admin, not filtered by customer)
+    // Revenue summary
     const today = new Date(); today.setHours(0,0,0,0)
     const weekAgo = new Date(); weekAgo.setDate(weekAgo.getDate() - 7)
     const monthAgo = new Date(); monthAgo.setMonth(monthAgo.getMonth() - 1)
@@ -96,14 +103,25 @@ export async function POST(req: NextRequest) {
     const body = await req.json()
     const receiptNumber = `RCT-${Date.now()}`
 
-    const { data, error } = await supabase.from('payments').insert([{
+    const insertData: Record<string, unknown> = {
       order_id: body.orderId || null,
       customer_id: body.customerId || null,
       amount: body.amount,
       payment_method: body.paymentMethod || 'cash',
       receipt_number: receiptNumber,
       notes: body.notes || null,
-    }]).select()
+    }
+
+    // Add screenshot and verification status if provided
+    if (body.screenshotUrl) {
+      insertData.screenshot_url = body.screenshotUrl
+      insertData.payment_screenshot_url = body.screenshotUrl
+    }
+    if (body.verificationStatus) {
+      insertData.verification_status = body.verificationStatus
+    }
+
+    const { data, error } = await supabase.from('payments').insert([insertData]).select()
 
     if (error) return Response.json({ error: error.message }, { status: 400 })
 
@@ -123,6 +141,39 @@ export async function POST(req: NextRequest) {
   } catch (error) {
     console.error('Payments POST error:', error)
     return Response.json({ error: 'Failed to create payment' }, { status: 500 })
+  }
+}
+
+export async function PUT(req: NextRequest) {
+  try {
+    if (!isSupabaseConfigured()) return Response.json({ error: 'Supabase not configured' }, { status: 500 })
+
+    const body = await req.json()
+    const { id, verificationAction, rejectReason } = body
+
+    if (!id) return Response.json({ error: 'Payment ID required' }, { status: 400 })
+
+    // Handle verification actions
+    if (verificationAction) {
+      const updates: Record<string, unknown> = {}
+
+      if (verificationAction === 'verify') {
+        updates.verification_status = 'verified'
+      } else if (verificationAction === 'reject') {
+        updates.verification_status = 'rejected'
+        if (rejectReason) updates.notes = rejectReason
+      }
+
+      const { error } = await supabase.from('payments').update(updates).eq('id', id)
+      if (error) return Response.json({ error: error.message }, { status: 400 })
+
+      return Response.json({ success: true, action: verificationAction })
+    }
+
+    return Response.json({ error: 'No action specified' }, { status: 400 })
+  } catch (error) {
+    console.error('Payments PUT error:', error)
+    return Response.json({ error: 'Failed to update payment' }, { status: 500 })
   }
 }
 

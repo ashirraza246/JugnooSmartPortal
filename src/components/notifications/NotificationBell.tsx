@@ -5,10 +5,12 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Bell, CheckCheck, X, Trash2 } from 'lucide-react';
 import { useAppStore } from '@/lib/store';
 import { useAuth } from '@/lib/auth';
+import { useRealtimeNotifications } from '@/hooks/use-realtime-notifications';
 import { Button } from '@/components/ui/button';
 
 export default function NotificationBell() {
   const [isOpen, setIsOpen] = useState(false);
+  const [hasNewNotif, setHasNewNotif] = useState(false);
   const notifications = useAppStore((s) => s.notifications);
   const markNotificationRead = useAppStore((s) => s.markNotificationRead);
   const markAllNotificationsRead = useAppStore((s) => s.markAllNotificationsRead);
@@ -16,6 +18,24 @@ export default function NotificationBell() {
   const clearAllNotifications = useAppStore((s) => s.clearAllNotifications);
   const { isAdmin } = useAuth();
   const ref = useRef<HTMLDivElement>(null);
+  const prevCountRef = useRef(notifications.filter((n) => !n.isRead).length);
+
+  // Initialize realtime notifications
+  useRealtimeNotifications();
+
+  // Detect new notifications for pulse effect
+  useEffect(() => {
+    const currentUnread = notifications.filter((n) => !n.isRead).length;
+    if (currentUnread > prevCountRef.current && prevCountRef.current >= 0) {
+      // Use timeout to avoid calling setState directly in effect
+      const timer = setTimeout(() => {
+        setHasNewNotif(true);
+        setTimeout(() => setHasNewNotif(false), 3000);
+      }, 0);
+      return () => clearTimeout(timer);
+    }
+    prevCountRef.current = currentUnread;
+  }, [notifications]);
 
   const unreadCount = notifications.filter((n) => !n.isRead).length;
 
@@ -29,7 +49,6 @@ export default function NotificationBell() {
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
-  // Lock body scroll when notification panel is open on mobile
   useEffect(() => {
     if (isOpen) {
       document.body.style.overflow = 'hidden';
@@ -61,6 +80,33 @@ export default function NotificationBell() {
     }
   };
 
+  // Group notifications by date
+  const groupNotifications = (notifs: typeof notifications) => {
+    const now = new Date();
+    const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    const groups: { label: string; items: typeof notifications }[] = [
+      { label: 'Today / آج', items: [] },
+      { label: 'Yesterday / کل', items: [] },
+      { label: 'Earlier / پہلے', items: [] },
+    ];
+
+    for (const n of notifs) {
+      const date = new Date(n.createdAt);
+      if (date >= today) {
+        groups[0].items.push(n);
+      } else if (date >= yesterday) {
+        groups[1].items.push(n);
+      } else {
+        groups[2].items.push(n);
+      }
+    }
+
+    return groups.filter(g => g.items.length > 0);
+  };
+
   const formatDate = (dateStr: string) => {
     const date = new Date(dateStr);
     const now = new Date();
@@ -75,6 +121,8 @@ export default function NotificationBell() {
 
   const bellColor = 'text-white';
   const bellHoverBg = 'hover:bg-white/10';
+
+  const groupedNotifications = groupNotifications(notifications.slice(0, 20));
 
   return (
     <div className="relative" ref={ref}>
@@ -92,6 +140,16 @@ export default function NotificationBell() {
             {unreadCount > 9 ? '9+' : unreadCount}
           </motion.span>
         )}
+        {/* Pulse effect for new notifications */}
+        {hasNewNotif && (
+          <motion.div
+            className="absolute inset-0 rounded-xl"
+            style={{ backgroundColor: '#F5A623', opacity: 0.3 }}
+            initial={{ scale: 0.8, opacity: 0.3 }}
+            animate={{ scale: 1.2, opacity: 0 }}
+            transition={{ duration: 1, repeat: 2 }}
+          />
+        )}
       </button>
 
       <AnimatePresence>
@@ -107,7 +165,7 @@ export default function NotificationBell() {
               onClick={() => setIsOpen(false)}
             />
 
-            {/* Notification Panel: Mobile = Bottom sheet above navbar, Desktop = Dropdown */}
+            {/* Notification Panel */}
             <motion.div
               initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
@@ -176,7 +234,7 @@ export default function NotificationBell() {
                 </div>
               </div>
 
-              {/* Notification list */}
+              {/* Notification list with grouping */}
               <div className="flex-1 overflow-y-auto overscroll-contain">
                 {notifications.length === 0 ? (
                   <div className="p-8 text-center text-gray-400">
@@ -184,44 +242,59 @@ export default function NotificationBell() {
                     <p className="text-sm">Koi notification nahi / No notifications</p>
                   </div>
                 ) : (
-                  <div className="divide-y divide-gray-50">
-                    {notifications.slice(0, 15).map((notif) => (
-                      <motion.div
-                        key={notif.id}
-                        className={`p-3 cursor-pointer hover:bg-[#F5F7FA] transition-colors group relative ${
-                          !notif.isRead ? 'bg-[#E8F0FE]/30' : ''
-                        }`}
-                        onClick={() => markNotificationRead(notif.id)}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        <div className="flex items-start gap-2 sm:gap-3">
-                          <div className={`flex-shrink-0 mt-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium ${getTypeColor(notif.type)}`}>
-                            {getTypeLabel(notif.type)}
-                          </div>
-                          <div className="flex-1 min-w-0">
-                            <p className={`text-xs sm:text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>
-                              {notif.title}
-                            </p>
-                            <p className="text-[10px] sm:text-xs text-[#6B7280] mt-0.5 line-clamp-2">{notif.message}</p>
-                            <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
-                          </div>
-                          <div className="flex items-center gap-1 shrink-0">
-                            {!notif.isRead && (
-                              <div className="w-2 h-2 rounded-full bg-[#F5A623] mt-2" />
-                            )}
-                            <button
-                              onClick={(e) => {
-                                e.stopPropagation();
-                                clearNotification(notif.id);
-                              }}
-                              className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-opacity"
-                              title="Hatao / Dismiss"
-                            >
-                              <X className="w-3.5 h-3.5" />
-                            </button>
-                          </div>
+                  <div>
+                    {groupedNotifications.map((group) => (
+                      <div key={group.label}>
+                        {/* Group header */}
+                        <div className="sticky top-0 bg-[#F5F7FA] px-3 py-1.5 border-b border-gray-100">
+                          <p className="text-[10px] font-semibold text-[#6B7280] uppercase tracking-wider">{group.label}</p>
                         </div>
-                      </motion.div>
+                        {/* Group items */}
+                        <div className="divide-y divide-gray-50">
+                          {group.items.map((notif) => (
+                            <motion.div
+                              key={notif.id}
+                              className={`p-3 cursor-pointer hover:bg-[#F5F7FA] transition-colors group relative ${
+                                !notif.isRead ? 'bg-[#E8F0FE]/30' : ''
+                              }`}
+                              onClick={() => markNotificationRead(notif.id)}
+                              whileTap={{ scale: 0.98 }}
+                            >
+                              <div className="flex items-start gap-2 sm:gap-3">
+                                <div className={`flex-shrink-0 mt-0.5 px-1.5 sm:px-2 py-0.5 rounded-full text-[9px] sm:text-[10px] font-medium ${getTypeColor(notif.type)}`}>
+                                  {getTypeLabel(notif.type)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className={`text-xs sm:text-sm leading-snug ${!notif.isRead ? 'font-semibold text-[#1A3C5E]' : 'text-[#6B7280]'}`}>
+                                    {notif.title}
+                                  </p>
+                                  <p className="text-[10px] sm:text-xs text-[#6B7280] mt-0.5 line-clamp-2">{notif.message}</p>
+                                  <p className="text-[9px] sm:text-[10px] text-gray-400 mt-1">{formatDate(notif.createdAt)}</p>
+                                </div>
+                                <div className="flex items-center gap-1 shrink-0">
+                                  {!notif.isRead && (
+                                    <motion.div
+                                      initial={{ scale: 0 }}
+                                      animate={{ scale: 1 }}
+                                      className="w-2 h-2 rounded-full bg-[#F5A623] mt-2"
+                                    />
+                                  )}
+                                  <button
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      clearNotification(notif.id);
+                                    }}
+                                    className="p-1 rounded hover:bg-red-50 text-gray-300 hover:text-red-500 transition-opacity"
+                                    title="Hatao / Dismiss"
+                                  >
+                                    <X className="w-3.5 h-3.5" />
+                                  </button>
+                                </div>
+                              </div>
+                            </motion.div>
+                          ))}
+                        </div>
+                      </div>
                     ))}
                   </div>
                 )}
