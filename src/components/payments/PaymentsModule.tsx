@@ -31,10 +31,12 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
-import { Plus, Banknote, TrendingUp, Calendar, Wallet, Upload, Image as ImageIcon } from 'lucide-react'
+import { Plus, Banknote, TrendingUp, Calendar, Wallet, Upload, Image as ImageIcon, FileText } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { PaymentVerification } from './PaymentVerification'
 import { DataExport } from '@/components/shared/DataExport'
+import { InvoiceDialog } from './InvoiceDialog'
+import { type InvoiceData, downloadInvoicePDF } from '@/lib/invoice-pdf'
 
 export function PaymentsModule() {
   const queryClient = useQueryClient()
@@ -50,6 +52,8 @@ export function PaymentsModule() {
   })
   const [screenshotFile, setScreenshotFile] = useState<File | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
+  const [invoiceOpen, setInvoiceOpen] = useState(false)
+  const [selectedInvoiceData, setSelectedInvoiceData] = useState<InvoiceData | null>(null)
 
   const { data, isLoading } = useQuery({
     queryKey: ['payments'],
@@ -127,6 +131,59 @@ export function PaymentsModule() {
     setShowForm(false)
     setFormData({ orderId: '', customerId: '', amount: '', paymentMethod: 'cash', notes: '' })
     setScreenshotFile(null)
+  }
+
+  const handleDownloadInvoice = (payment: Record<string, unknown>) => {
+    const safeReceiptNumber = (payment.receiptNumber as string) || 'N/A'
+    const safeCustomerName = (payment.customer as Record<string, string>)?.fullName || '-'
+    const safeOrderNumber = (payment.order as Record<string, string>)?.orderNumber || '-'
+    const safeAmount = (payment.amount as number) || 0
+    const safePaymentMethod = (payment.paymentMethod as string) || 'cash'
+    const safeCreatedAt = (payment.createdAt as string) || new Date().toISOString()
+
+    const invoiceData: InvoiceData = {
+      invoiceNumber: safeReceiptNumber,
+      date: new Date(safeCreatedAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
+      customerName: safeCustomerName,
+      orderNumber: safeOrderNumber !== '-' ? safeOrderNumber : undefined,
+      items: [{
+        description: safeOrderNumber !== '-' ? `Order #${safeOrderNumber} Payment` : 'Service Payment',
+        quantity: 1,
+        unitPrice: safeAmount,
+        total: safeAmount,
+      }],
+      subtotal: safeAmount,
+      totalAmount: safeAmount,
+      paymentMethod: safePaymentMethod,
+    }
+    downloadInvoicePDF(invoiceData)
+  }
+
+  const handleOpenInvoice = (payment: Record<string, unknown>) => {
+    const safeReceiptNumber = (payment.receiptNumber as string) || 'N/A'
+    const safeCustomerName = (payment.customer as Record<string, string>)?.fullName || '-'
+    const safeOrderNumber = (payment.order as Record<string, string>)?.orderNumber || '-'
+    const safeAmount = (payment.amount as number) || 0
+    const safePaymentMethod = (payment.paymentMethod as string) || 'cash'
+    const safeCreatedAt = (payment.createdAt as string) || new Date().toISOString()
+
+    const invoiceData: InvoiceData = {
+      invoiceNumber: safeReceiptNumber,
+      date: new Date(safeCreatedAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
+      customerName: safeCustomerName,
+      orderNumber: safeOrderNumber !== '-' ? safeOrderNumber : undefined,
+      items: [{
+        description: safeOrderNumber !== '-' ? `Order #${safeOrderNumber} Payment` : 'Service Payment',
+        quantity: 1,
+        unitPrice: safeAmount,
+        total: safeAmount,
+      }],
+      subtotal: safeAmount,
+      totalAmount: safeAmount,
+      paymentMethod: safePaymentMethod,
+    }
+    setSelectedInvoiceData(invoiceData)
+    setInvoiceOpen(true)
   }
 
   const revenue = data?.revenue || { today: 0, thisWeek: 0, thisMonth: 0, total: 0 }
@@ -214,18 +271,19 @@ export function PaymentsModule() {
                       <TableHead>Method</TableHead>
                       <TableHead>Status</TableHead>
                       <TableHead>Date</TableHead>
+                      <TableHead className="w-20">Invoice</TableHead>
                     </TableRow>
                   </TableHeader>
                   <TableBody>
                     {isLoading ? (
                       [1, 2, 3].map((i) => (
                         <TableRow key={i}>
-                          <TableCell colSpan={7} className="h-12 animate-pulse bg-muted/50" />
+                          <TableCell colSpan={8} className="h-12 animate-pulse bg-muted/50" />
                         </TableRow>
                       ))
                     ) : payments.length === 0 ? (
                       <TableRow>
-                        <TableCell colSpan={7} className="text-center py-8 text-muted-foreground">
+                        <TableCell colSpan={8} className="text-center py-8 text-muted-foreground">
                           No payments recorded
                         </TableCell>
                       </TableRow>
@@ -238,6 +296,7 @@ export function PaymentsModule() {
                         const safePaymentMethod = (payment.paymentMethod as string) || 'cash'
                         const safeCreatedAt = (payment.createdAt as string) || new Date().toISOString()
                         const safeVerStatus = (payment.verificationStatus as string) || 'verified'
+                        const isVerified = safeVerStatus === 'verified' || safeVerStatus === 'completed'
                         return (
                         <TableRow key={payment.id as string}>
                           <TableCell className="font-medium">{safeReceiptNumber}</TableCell>
@@ -262,12 +321,12 @@ export function PaymentsModule() {
                           </TableCell>
                           <TableCell>
                             <Badge className={`text-[9px] border-0 rounded-lg ${
-                              safeVerStatus === 'verified' || safeVerStatus === 'completed' ? 'bg-emerald-50 text-emerald-700' :
+                              isVerified ? 'bg-emerald-50 text-emerald-700' :
                               safeVerStatus === 'screenshot_uploaded' ? 'bg-amber-50 text-amber-700' :
                               safeVerStatus === 'rejected' ? 'bg-red-50 text-red-600' :
                               'bg-gray-50 text-gray-600'
                             }`}>
-                              {safeVerStatus === 'verified' || safeVerStatus === 'completed' ? '✓ Verified' :
+                              {isVerified ? '✓ Verified' :
                                safeVerStatus === 'screenshot_uploaded' ? '⏳ Pending' :
                                safeVerStatus === 'rejected' ? '✕ Rejected' :
                                safeVerStatus}
@@ -275,6 +334,21 @@ export function PaymentsModule() {
                           </TableCell>
                           <TableCell className="text-sm text-muted-foreground">
                             {new Date(safeCreatedAt).toLocaleDateString()}
+                          </TableCell>
+                          <TableCell>
+                            {isVerified ? (
+                              <Button
+                                size="sm"
+                                variant="ghost"
+                                className="h-7 px-2 text-[10px] gap-1 text-[#1A3C5E] hover:bg-[#E8F0FE] rounded-lg"
+                                onClick={() => handleOpenInvoice(payment)}
+                              >
+                                <FileText className="w-3 h-3" />
+                                Invoice
+                              </Button>
+                            ) : (
+                              <span className="text-[10px] text-[#9CA3AF]">—</span>
+                            )}
                           </TableCell>
                         </TableRow>
                         )
@@ -291,6 +365,14 @@ export function PaymentsModule() {
           <PaymentVerification />
         </TabsContent>
       </Tabs>
+
+      {/* Invoice Dialog */}
+      <InvoiceDialog
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        invoiceData={selectedInvoiceData}
+        whatsappNumber="923001234567"
+      />
 
       {/* Record Payment Dialog */}
       <Dialog open={showForm} onOpenChange={setShowForm}>

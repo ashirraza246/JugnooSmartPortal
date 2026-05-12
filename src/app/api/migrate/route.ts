@@ -85,6 +85,43 @@ export async function POST(req: Request) {
 function getMigrationSQL() {
   return `-- Run this SQL in Supabase SQL Editor
 
+-- Commission Rules table
+CREATE TABLE IF NOT EXISTS commission_rules (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  service_type TEXT NOT NULL,
+  service_name TEXT NOT NULL,
+  govt_fee NUMERIC DEFAULT 0,
+  jugnoo_fee NUMERIC DEFAULT 0,
+  commission_type TEXT DEFAULT 'fixed' CHECK (commission_type IN ('fixed', 'percentage')),
+  commission_value NUMERIC DEFAULT 0,
+  min_commission NUMERIC DEFAULT 0,
+  max_commission NUMERIC DEFAULT 0,
+  is_active BOOLEAN DEFAULT true,
+  created_at TIMESTAMPTZ DEFAULT now(),
+  updated_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE commission_rules ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on commission_rules" ON commission_rules FOR ALL USING (true) WITH CHECK (true);
+
+-- WhatsApp Notifications table
+CREATE TABLE IF NOT EXISTS whatsapp_notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  type TEXT NOT NULL DEFAULT 'whatsapp_pending',
+  subtype TEXT NOT NULL CHECK (subtype IN ('status_change', 'payment_confirmed', 'document_ready', 'order_created')),
+  customer_phone TEXT NOT NULL,
+  customer_name TEXT NOT NULL DEFAULT '',
+  message TEXT NOT NULL,
+  wa_link TEXT NOT NULL,
+  order_id UUID,
+  application_id UUID,
+  is_sent BOOLEAN DEFAULT false,
+  sent_at TIMESTAMPTZ,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+ALTER TABLE whatsapp_notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all on whatsapp_notifications" ON whatsapp_notifications FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_is_sent ON whatsapp_notifications(is_sent) WHERE is_sent = false;
+
 CREATE TABLE IF NOT EXISTS site_settings (
   id TEXT PRIMARY KEY DEFAULT 'main',
   settings JSONB DEFAULT '{}',

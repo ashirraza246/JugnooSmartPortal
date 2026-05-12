@@ -22,6 +22,7 @@ export type AdminModuleKey =
   | 'cvbuilder'
   | 'payments'
   | 'pricing'
+  | 'commission'
   | 'inventory'
   | 'team'
   | 'settings'

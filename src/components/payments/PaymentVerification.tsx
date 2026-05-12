@@ -21,6 +21,8 @@ import {
 import { motion, AnimatePresence } from 'framer-motion'
 import { useToast } from '@/hooks/use-toast'
 import { DocumentPreview } from '@/components/shared/DocumentPreview'
+import { InvoiceDialog } from './InvoiceDialog'
+import { type InvoiceData } from '@/lib/invoice-pdf'
 
 interface PendingPayment {
   id: string
@@ -44,6 +46,10 @@ export function PaymentVerification() {
   const [selectedPayment, setSelectedPayment] = useState<PendingPayment | null>(null)
   const [rejectReason, setRejectReason] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
+
+  // Invoice dialog state
+  const [invoiceOpen, setInvoiceOpen] = useState(false)
+  const [invoiceData, setInvoiceData] = useState<InvoiceData | null>(null)
 
   const { data: pendingPayments = [], isLoading } = useQuery({
     queryKey: ['pending-verifications'],
@@ -70,12 +76,42 @@ export function PaymentVerification() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['pending-verifications'] })
       queryClient.invalidateQueries({ queryKey: ['payments'] })
-      toast({
-        title: variables.action === 'verify' ? 'Payment verified!' : 'Payment rejected',
-        description: variables.action === 'verify'
-          ? 'Payment has been confirmed successfully'
-          : 'Customer will be notified of the rejection',
-      })
+
+      if (variables.action === 'verify') {
+        // Find the verified payment to generate invoice
+        const verifiedPayment = pendingPayments.find(p => p.id === variables.id)
+        if (verifiedPayment) {
+          const newInvoiceData: InvoiceData = {
+            invoiceNumber: verifiedPayment.receiptNumber || `INV-${Date.now()}`,
+            date: new Date(verifiedPayment.createdAt).toLocaleDateString('en-PK', { day: 'numeric', month: 'long', year: 'numeric' }),
+            customerName: verifiedPayment.customerName || 'Customer',
+            orderNumber: verifiedPayment.orderNumber,
+            items: [{
+              description: verifiedPayment.orderNumber
+                ? `Order #${verifiedPayment.orderNumber} Payment`
+                : 'Service Payment',
+              quantity: 1,
+              unitPrice: verifiedPayment.amount,
+              total: verifiedPayment.amount,
+            }],
+            subtotal: verifiedPayment.amount,
+            totalAmount: verifiedPayment.amount,
+            paymentMethod: verifiedPayment.paymentMethod,
+          }
+          setInvoiceData(newInvoiceData)
+          setInvoiceOpen(true)
+        }
+
+        toast({
+          title: 'Payment verified!',
+          description: 'Invoice has been generated. You can download or share it.',
+        })
+      } else {
+        toast({
+          title: 'Payment rejected',
+          description: 'Customer will be notified of the rejection',
+        })
+      }
     },
   })
 
@@ -251,6 +287,14 @@ export function PaymentVerification() {
         filename="payment-screenshot"
         open={previewOpen}
         onOpenChange={setPreviewOpen}
+      />
+
+      {/* Invoice Dialog (auto-opens after verification) */}
+      <InvoiceDialog
+        open={invoiceOpen}
+        onOpenChange={setInvoiceOpen}
+        invoiceData={invoiceData}
+        whatsappNumber="923001234567"
       />
 
       {/* Reject Dialog */}

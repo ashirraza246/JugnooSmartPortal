@@ -1,11 +1,12 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   ArrowLeft, ArrowRight, Check, Clock, DollarSign, Info,
   FileText, User, HelpCircle, AlertTriangle, CheckCircle,
   XCircle, Calendar, Banknote, CreditCard, Smartphone, Building,
+  Mic,
 } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,6 +20,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useAppStore } from '@/lib/store';
 import { pakistaniCities } from '@/lib/data';
 import { toast } from 'sonner';
+import { VoiceInputButton } from '@/components/ui/VoiceInputButton';
 
 const STEPS = [
   { id: 1, label: 'Eligibility / اہلیت', icon: CheckCircle },
@@ -570,42 +572,90 @@ function PersonalDetailsStep({
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
+  const [voiceLang, setVoiceLang] = useState('en-PK');
+
+  const handleVoiceForField = useCallback((field: string) => (transcript: string) => {
+    setFormData((prev) => ({ ...prev, [field]: (prev[field] || '') + transcript }));
+  }, [setFormData]);
+
   return (
     <Card className="premium-card border-0">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 text-[#003366]">
-          <User className="w-5 h-5" />
-          Personal Details / ذاتی تفصیلات
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-[#003366]">
+            <User className="w-5 h-5" />
+            Personal Details / ذاتی تفصیلات
+          </CardTitle>
+          {/* Voice language indicator */}
+          <div className="flex items-center gap-1.5">
+            <Mic className="w-3.5 h-3.5 text-[#6B7280]" />
+            <select
+              value={voiceLang}
+              onChange={(e) => setVoiceLang(e.target.value)}
+              className="text-[10px] text-[#6B7280] bg-gray-50 border border-gray-200 rounded px-1.5 py-0.5"
+              aria-label="Voice input language"
+            >
+              <option value="en-PK">EN</option>
+              <option value="ur-PK">اردو</option>
+            </select>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <div className="space-y-2">
             <Label className="text-base font-medium">Full Name / پورا نام *</Label>
-            <Input
-              value={formData.fullName}
-              onChange={(e) => updateField('fullName', e.target.value)}
-              className="h-12 text-lg"
-              placeholder="Apna naam likhein"
-            />
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={formData.fullName}
+                onChange={(e) => updateField('fullName', e.target.value)}
+                className="h-12 text-lg flex-1"
+                placeholder="Apna naam likhein"
+              />
+              <VoiceInputButton
+                onTranscript={handleVoiceForField('fullName')}
+                language={voiceLang}
+                onLanguageChange={setVoiceLang}
+                size="sm"
+                className="shrink-0"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-base font-medium">CNIC / شناختی کارڈ نمبر *</Label>
-            <Input
-              value={formData.cnic}
-              onChange={(e) => updateField('cnic', e.target.value)}
-              className="h-12 text-lg"
-              placeholder="XXXXX-XXXXXXX-X"
-            />
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={formData.cnic}
+                onChange={(e) => updateField('cnic', e.target.value)}
+                className="h-12 text-lg flex-1"
+                placeholder="XXXXX-XXXXXXX-X"
+              />
+              <VoiceInputButton
+                onTranscript={handleVoiceForField('cnic')}
+                language={voiceLang}
+                onLanguageChange={setVoiceLang}
+                size="sm"
+                className="shrink-0"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-base font-medium">Phone / فون نمبر *</Label>
-            <Input
-              value={formData.phone}
-              onChange={(e) => updateField('phone', e.target.value)}
-              className="h-12 text-lg"
-              placeholder="03XX-XXXXXXX"
-            />
+            <div className="flex items-center gap-1.5">
+              <Input
+                value={formData.phone}
+                onChange={(e) => updateField('phone', e.target.value)}
+                className="h-12 text-lg flex-1"
+                placeholder="03XX-XXXXXXX"
+              />
+              <VoiceInputButton
+                onTranscript={handleVoiceForField('phone')}
+                language={voiceLang}
+                onLanguageChange={setVoiceLang}
+                size="sm"
+                className="shrink-0"
+              />
+            </div>
           </div>
           <div className="space-y-2">
             <Label className="text-base font-medium">Email / ای میل</Label>
@@ -664,12 +714,21 @@ function PersonalDetailsStep({
         </div>
         <div className="space-y-2">
           <Label className="text-base font-medium">Address / پتہ</Label>
-          <Input
-            value={formData.address}
-            onChange={(e) => updateField('address', e.target.value)}
-            className="h-12 text-lg"
-            placeholder="Mukammal pata likhein"
-          />
+          <div className="flex items-center gap-1.5">
+            <Input
+              value={formData.address}
+              onChange={(e) => updateField('address', e.target.value)}
+              className="h-12 text-lg flex-1"
+              placeholder="Mukammal pata likhein"
+            />
+            <VoiceInputButton
+              onTranscript={handleVoiceForField('address')}
+              language={voiceLang}
+              onLanguageChange={setVoiceLang}
+              size="sm"
+              className="shrink-0"
+            />
+          </div>
         </div>
       </CardContent>
     </Card>

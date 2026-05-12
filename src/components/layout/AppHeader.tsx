@@ -1,15 +1,123 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useAppStore, type ModuleKey } from '@/lib/store'
 import { useAuth } from '@/lib/auth'
-import { Menu, Search, Shield, UserCircle, Globe, LogOut, HelpCircle, MessageCircle, Phone, ChevronRight } from 'lucide-react'
+import { Menu, Search, Shield, UserCircle, Globe, LogOut, HelpCircle, MessageCircle, Phone, ChevronRight, Bell, X } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { motion, AnimatePresence } from 'framer-motion'
 import NotificationBell from '@/components/notifications/NotificationBell'
+import {
+  isNotificationSupported,
+  getNotificationPermission,
+  initializePushNotifications,
+} from '@/lib/push-notifications'
+
+// Permission prompt dismissed key
+const PERMISSION_DISMISSED_KEY = 'jugnoo_notification_permission_dismissed'
+
+// Hook to manage notification permission banner state
+function useNotificationPermissionBanner() {
+  const [showBanner, setShowBanner] = useState(false)
+  const [isRequesting, setIsRequesting] = useState(false)
+
+  useEffect(() => {
+    // Check if we should show the permission banner
+    if (!isNotificationSupported()) return
+    const dismissed = localStorage.getItem(PERMISSION_DISMISSED_KEY)
+    if (dismissed) return
+    const permission = getNotificationPermission()
+    if (permission === 'default') {
+      // Delay showing the banner so it doesn't appear immediately on load
+      const timer = setTimeout(() => setShowBanner(true), 3000)
+      return () => clearTimeout(timer)
+    }
+  }, [])
+
+  const handleEnable = useCallback(async () => {
+    setIsRequesting(true)
+    try {
+      const result = await initializePushNotifications()
+      if (result.permission === 'granted') {
+        setShowBanner(false)
+      } else {
+        // Permission was denied or dismissed, hide the banner
+        setShowBanner(false)
+      }
+    } catch {
+      setShowBanner(false)
+    } finally {
+      setIsRequesting(false)
+    }
+  }, [])
+
+  const handleDismiss = useCallback(() => {
+    setShowBanner(false)
+    localStorage.setItem(PERMISSION_DISMISSED_KEY, 'true')
+  }, [])
+
+  return { showBanner, isRequesting, handleEnable, handleDismiss }
+}
+
+// Notification permission banner component
+function NotificationPermissionBanner({
+  isRequesting,
+  onEnable,
+  onDismiss,
+}: {
+  isRequesting: boolean
+  onEnable: () => void
+  onDismiss: () => void
+}) {
+  return (
+    <motion.div
+      initial={{ height: 0, opacity: 0 }}
+      animate={{ height: 'auto', opacity: 1 }}
+      exit={{ height: 0, opacity: 0 }}
+      transition={{ duration: 0.25 }}
+      className="overflow-hidden bg-gradient-to-r from-amber-50 to-orange-50 border-b border-amber-200"
+    >
+      <div className="px-4 sm:px-6 py-2.5 flex items-center gap-3">
+        <div className="w-8 h-8 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
+          <Bell className="w-4 h-4 text-amber-600" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <p className="text-xs sm:text-sm font-medium text-amber-800">
+            Stay updated! Enable push notifications
+          </p>
+          <p className="text-[10px] sm:text-xs text-amber-600 hidden sm:block">
+            Get alerts for order updates, payments & deadlines — even when the app is closed.
+          </p>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          <Button
+            size="sm"
+            onClick={onEnable}
+            disabled={isRequesting}
+            className="h-7 px-3 text-xs bg-amber-500 hover:bg-amber-600 text-white gap-1"
+          >
+            {isRequesting ? (
+              <span className="w-3 h-3 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            ) : (
+              'Enable'
+            )}
+          </Button>
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={onDismiss}
+            className="h-7 w-7 text-amber-400 hover:text-amber-600 hover:bg-amber-100"
+          >
+            <X className="w-3.5 h-3.5" />
+          </Button>
+        </div>
+      </div>
+    </motion.div>
+  )
+}
 
 const moduleTitles: Record<string, string> = {
   dashboard: 'Dashboard',
@@ -87,6 +195,7 @@ export function AppHeader() {
   const [supportOpen, setSupportOpen] = useState(false)
   const userMenuRef = useRef<HTMLDivElement>(null)
   const whatsappNumber = useWhatsAppNumber()
+  const { showBanner: showNotifBanner, isRequesting: isNotifRequesting, handleEnable: handleNotifEnable, handleDismiss: handleNotifDismiss } = useNotificationPermissionBanner()
 
   const titles = isUrdu ? moduleTitlesUrdu : moduleTitles
   const userName = user?.full_name || user?.email?.split('@')[0] || 'User'
@@ -247,8 +356,9 @@ export function AppHeader() {
   // Customer portal header - Dark navy UBL style
   if (!isAdmin) {
     return (
-      <header className="sticky top-0 z-30 bg-[#1A3C5E] px-4 sm:px-6 py-3 shadow-sm relative">
-        <div className="flex items-center gap-3">
+      <div className="sticky top-0 z-30">
+        <header className="bg-[#1A3C5E] px-4 sm:px-6 py-3 shadow-sm relative">
+          <div className="flex items-center gap-3">
           <Button variant="ghost" size="icon" className="lg:hidden hover:bg-white/10 text-white" onClick={() => setSidebarOpen(true)}>
             <Menu className="w-5 h-5" />
           </Button>
@@ -287,12 +397,23 @@ export function AppHeader() {
           </div>
         </div>
       </header>
+      <AnimatePresence>
+        {showNotifBanner && (
+          <NotificationPermissionBanner
+            isRequesting={isNotifRequesting}
+            onEnable={handleNotifEnable}
+            onDismiss={handleNotifDismiss}
+          />
+        )}
+      </AnimatePresence>
+      </div>
     )
   }
 
   // Admin header - UBL navy/gold style (matching customer portal)
   return (
-    <header className="sticky top-0 z-30 bg-[#1A3C5E] px-4 sm:px-6 py-3 shadow-sm relative">
+    <div className="sticky top-0 z-30">
+    <header className="bg-[#1A3C5E] px-4 sm:px-6 py-3 shadow-sm relative">
       <div className="flex items-center gap-4">
         <Button variant="ghost" size="icon" className="lg:hidden hover:bg-white/10 text-white" onClick={() => setSidebarOpen(true)}>
           <Menu className="w-5 h-5" />
@@ -347,5 +468,15 @@ export function AppHeader() {
         </div>
       </div>
     </header>
+    <AnimatePresence>
+      {showNotifBanner && (
+        <NotificationPermissionBanner
+          isRequesting={isNotifRequesting}
+          onEnable={handleNotifEnable}
+          onDismiss={handleNotifDismiss}
+        />
+      )}
+    </AnimatePresence>
+    </div>
   )
 }

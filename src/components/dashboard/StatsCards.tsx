@@ -54,11 +54,11 @@ function TrendIndicator({ value, label }: { value: number; label: string }) {
   if (value === 0) return null
   const isPositive = value > 0
   return (
-    <div className={`flex items-center gap-0.5 text-[10px] font-medium ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
+    <div className={`flex items-center gap-0.5 text-[9px] sm:text-[10px] font-medium ${isPositive ? 'text-emerald-600' : 'text-red-500'}`}>
       {isPositive ? (
-        <TrendingUp className="w-3 h-3" />
+        <TrendingUp className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
       ) : (
-        <TrendingDown className="w-3 h-3" />
+        <TrendingDown className="w-2.5 h-2.5 sm:w-3 sm:h-3" />
       )}
       <span>{Math.abs(value).toFixed(1)}% {label}</span>
     </div>
@@ -124,7 +124,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {[1, 2, 3, 4].map((i) => (
           <Card key={i} className="border-0 shadow-sm rounded-2xl overflow-hidden">
-            <CardContent className="p-4">
+            <CardContent className="p-3 sm:p-4">
               <div className="h-16 ubl-skeleton-shimmer rounded-xl" />
             </CardContent>
           </Card>
@@ -145,17 +145,17 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
             transition={{ delay: index * 0.1 }}
           >
             <Card className="border-0 shadow-sm rounded-2xl overflow-hidden hover:shadow-md transition-shadow">
-              <CardContent className="p-4">
+              <CardContent className="p-3 sm:p-4">
                 <div className="flex items-start gap-3">
                   <div
-                    className="w-11 h-11 rounded-xl flex items-center justify-center shrink-0"
+                    className="w-9 h-9 sm:w-11 sm:h-11 rounded-xl flex items-center justify-center shrink-0"
                     style={{ backgroundColor: card.bgColor }}
                   >
-                    <Icon className="w-5 h-5" style={{ color: card.color }} />
+                    <Icon className="w-4 h-4 sm:w-5 sm:h-5" style={{ color: card.color }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-[11px] text-[#6B7280] font-medium">{card.title}</p>
-                    <p className="text-lg font-bold truncate" style={{ color: card.color }}>{card.formattedValue}</p>
+                    <p className="text-base sm:text-lg font-bold truncate" style={{ color: card.color }}>{card.formattedValue}</p>
                     {/* Trend indicator */}
                     {card.trend !== 0 && (
                       <TrendIndicator value={card.trend} label={card.trendLabel} />
@@ -167,7 +167,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
                   </div>
                   {/* Sparkline */}
                   {sparkData.length > 1 && (
-                    <div className="shrink-0 mt-1">
+                    <div className="shrink-0 mt-1 hidden sm:block">
                       <MiniSparkline data={sparkData} color={card.sparkColor} />
                     </div>
                   )}

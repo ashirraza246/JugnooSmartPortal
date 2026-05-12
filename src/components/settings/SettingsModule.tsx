@@ -10,6 +10,7 @@ import { Label } from '@/components/ui/label'
 import { Separator } from '@/components/ui/separator'
 import { Printer, Save, Download, UsersRound, ListChecks, Shield, Database, ExternalLink, CreditCard, Loader2, CheckCircle2 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { PushNotificationSettings } from '@/components/notifications/PushNotificationSettings'
 
 interface PaymentSettings {
   jazzCash: {
@@ -195,6 +196,9 @@ export function SettingsModule() {
           </div>
         </CardContent>
       </Card>
+
+      {/* Push Notifications */}
+      <PushNotificationSettings />
 
       {/* Business Info */}
       <Card className="border-0 shadow-sm overflow-hidden">

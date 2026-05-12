@@ -32,7 +32,7 @@ import {
 } from '@/components/ui/dialog'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard, Printer, MessageCircle, Upload, Download, Link as LinkIcon, QrCode, Shield, Send } from 'lucide-react'
+import { Plus, Filter, ArrowRight, Trash2, FileText, RefreshCw, CheckCircle2, Clock, XCircle, DollarSign, CreditCard, Printer, MessageCircle, Upload, Download, Link as LinkIcon, QrCode, Shield, Send, ExternalLink, X as XIcon } from 'lucide-react'
 import { useAppStore } from '@/lib/store'
 import { useToast } from '@/hooks/use-toast'
 import { Switch } from '@/components/ui/switch'
@@ -63,6 +63,8 @@ export function OrdersModule() {
   const [detailDialogOpen, setDetailDialogOpen] = useState(false)
   const [detailApp, setDetailApp] = useState<ServiceApplication | null>(null)
   const [autoWhatsApp, setAutoWhatsApp] = useState(true)
+  const [whatsappBanner, setWhatsappBanner] = useState<{ link: string; message: string } | null>(null)
+  const [whatsappBannerApp, setWhatsappBannerApp] = useState<{ link: string; message: string } | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)
 
   // Service Applications types
@@ -114,9 +116,13 @@ export function OrdersModule() {
       })
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['service-applications-admin'] })
       toast({ title: 'Application updated!' })
+      // Show WhatsApp banner if notification was generated
+      if (data?.whatsappNotification) {
+        setWhatsappBannerApp(data.whatsappNotification)
+      }
     },
   })
 
@@ -167,9 +173,13 @@ export function OrdersModule() {
       })
       return res.json()
     },
-    onSuccess: () => {
+    onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['orders'] })
       toast({ title: 'Order status updated!' })
+      // Show WhatsApp banner if notification was generated
+      if (data?.whatsappNotification) {
+        setWhatsappBanner(data.whatsappNotification)
+      }
     },
   })
 
@@ -442,6 +452,66 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
           Manual Orders ({orders.length})
         </button>
       </div>
+
+      {/* WhatsApp Notification Banner - Applications */}
+      {whatsappBannerApp && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+            <MessageCircle className="w-5 h-5 text-green-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-green-800">Send WhatsApp update to customer</p>
+            <p className="text-xs text-green-600 mt-0.5 truncate">Status change notification ready</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white gap-1.5 rounded-lg h-9"
+              onClick={() => { window.open(whatsappBannerApp.link, '_blank'); setWhatsappBannerApp(null) }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open WhatsApp
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-green-600 hover:text-green-800 hover:bg-green-100 h-9 w-9 p-0"
+              onClick={() => setWhatsappBannerApp(null)}
+            >
+              <XIcon className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
+
+      {/* WhatsApp Notification Banner - Manual Orders */}
+      {whatsappBanner && (
+        <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-xl p-4 flex items-center gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+          <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center shrink-0">
+            <MessageCircle className="w-5 h-5 text-green-600" />
+          </div>
+          <div className="flex-1 min-w-0">
+            <p className="text-sm font-semibold text-green-800">Send WhatsApp update to customer</p>
+            <p className="text-xs text-green-600 mt-0.5 truncate">Order status change notification ready</p>
+          </div>
+          <div className="flex items-center gap-2 shrink-0">
+            <Button
+              size="sm"
+              className="bg-green-600 hover:bg-green-700 text-white gap-1.5 rounded-lg h-9"
+              onClick={() => { window.open(whatsappBanner.link, '_blank'); setWhatsappBanner(null) }}
+            >
+              <ExternalLink className="w-3.5 h-3.5" /> Open WhatsApp
+            </Button>
+            <Button
+              size="sm"
+              variant="ghost"
+              className="text-green-600 hover:text-green-800 hover:bg-green-100 h-9 w-9 p-0"
+              onClick={() => setWhatsappBanner(null)}
+            >
+              <XIcon className="w-4 h-4" />
+            </Button>
+          </div>
+        </div>
+      )}
 
       {/* SERVICE APPLICATIONS TAB */}
       {activeTab === 'service-applications' && (
@@ -812,6 +882,26 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
               </DialogHeader>
               {selectedOrder && (
                 <div className="space-y-4">
+                  {/* WhatsApp Banner in Order Detail */}
+                  {whatsappBanner && (
+                    <div className="bg-gradient-to-r from-green-50 to-emerald-50 border border-green-200 rounded-lg p-3 flex items-center gap-2">
+                      <MessageCircle className="w-4 h-4 text-green-600 shrink-0" />
+                      <p className="text-xs text-green-700 flex-1">Send WhatsApp update to customer</p>
+                      <Button
+                        size="sm"
+                        className="bg-green-600 hover:bg-green-700 text-white gap-1 rounded-lg h-7 text-[11px] px-2.5"
+                        onClick={() => { window.open(whatsappBanner.link, '_blank'); setWhatsappBanner(null) }}
+                      >
+                        <ExternalLink className="w-3 h-3" /> Open WhatsApp
+                      </Button>
+                      <button
+                        onClick={() => setWhatsappBanner(null)}
+                        className="p-1 text-green-400 hover:text-green-700"
+                      >
+                        <XIcon className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  )}
                   <div className="grid grid-cols-2 gap-3 text-sm">
                     <div>
                       <span className="text-muted-foreground">Customer:</span>

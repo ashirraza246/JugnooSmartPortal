@@ -29,6 +29,7 @@ const ServiceManagerModule = dynamic(() => import('@/components/services/Service
 const TeamManagementModule = dynamic(() => import('@/components/team/TeamManagementModule').then(m => ({ default: m.TeamManagementModule })), { ssr: false })
 const CVBuilderModule = dynamic(() => import('@/components/cvbuilder/CVBuilderModule').then(m => ({ default: m.CVBuilderModule })), { ssr: false })
 const DocumentServicesModule = dynamic(() => import('@/components/documents/DocumentServicesModule').then(m => ({ default: m.DocumentServicesModule })), { ssr: false })
+const CommissionModule = dynamic(() => import('@/components/commission/CommissionModule').then(m => ({ default: m.CommissionModule })), { ssr: false })
 
 // Customer modules - dynamic import
 const CustomerDashboard = dynamic(() => import('@/components/customer/CustomerDashboard').then(m => ({ default: m.CustomerDashboard })), { ssr: false })
@@ -53,7 +54,7 @@ const queryClient = new QueryClient({
 // Admin-only module keys - customers can NEVER access these
 // Only modules that are EXCLUSIVELY admin (not shared with customer portal)
 // 'payments' and 'whatsapp' are SHARED between admin & customer, so NOT in this list
-const ADMIN_ONLY_MODULES = ['dashboard', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'pricing', 'inventory', 'team', 'settings']
+const ADMIN_ONLY_MODULES = ['dashboard', 'orders', 'customers', 'govt', 'notarisation', 'service-mgmt', 'documents', 'cvbuilder', 'pricing', 'commission', 'inventory', 'team', 'settings']
 
 function ModuleFallback() {
   return (
@@ -84,6 +85,7 @@ function AdminContent() {
     settings: SettingsModule,
     documents: DocumentServicesModule,
     cvbuilder: CVBuilderModule,
+    commission: CommissionModule,
     help: HelpPage,
   }
 

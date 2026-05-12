@@ -1,6 +1,6 @@
 'use client'
 
-import { useState, useRef, useEffect } from 'react'
+import { useState, useRef, useEffect, useCallback } from 'react'
 import { useAuth } from '@/lib/auth'
 import { useAppStore } from '@/lib/store'
 import { useQuery } from '@tanstack/react-query'
@@ -10,15 +10,22 @@ import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import {
   Send, MessageCircle, Phone, Bot, User, Sparkles,
-  Headphones, ArrowRight
+  Headphones, ArrowRight, Zap, Mic
 } from 'lucide-react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { VoiceInputButton, VoiceLanguageToggle } from '@/components/ui/VoiceInputButton'
 
 interface ChatMessage {
   id: string
   text: string
   sender: 'user' | 'bot'
   timestamp: Date
+  isAi?: boolean
+}
+
+interface ChatHistoryItem {
+  role: 'user' | 'assistant'
+  content: string
 }
 
 export function SupportChat() {
@@ -27,10 +34,46 @@ export function SupportChat() {
   const [messages, setMessages] = useState<ChatMessage[]>([])
   const [input, setInput] = useState('')
   const [isTyping, setIsTyping] = useState(false)
+  const [chatHistory, setChatHistory] = useState<ChatHistoryItem[]>([])
   const scrollRef = useRef<HTMLDivElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
 
+  // Voice input state (managed via callbacks from VoiceInputButton)
+  const [voiceLanguage, setVoiceLanguage] = useState(isUrdu ? 'ur-PK' : 'en-PK')
+  const [isVoiceListening, setIsVoiceListening] = useState(false)
+  const [isVoiceSupported, setIsVoiceSupported] = useState(false)
+  const [interimVoiceText, setInterimVoiceText] = useState('')
+
   const userName = user?.full_name || user?.email?.split('@')[0] || 'User'
+
+  // Voice input callbacks
+  const handleVoiceTranscript = useCallback((text: string) => {
+    setInput(prev => prev + text)
+    setInterimVoiceText('')
+  }, [])
+
+  const handleVoiceInterimTranscript = useCallback((text: string) => {
+    setInterimVoiceText(text)
+  }, [])
+
+  const handleVoiceListeningChange = useCallback((listening: boolean) => {
+    setIsVoiceListening(listening)
+    if (!listening) {
+      setInterimVoiceText('')
+    }
+  }, [])
+
+  const handleVoiceSupportedChange = useCallback((supported: boolean) => {
+    setIsVoiceSupported(supported)
+  }, [])
+
+  const handleVoiceLanguageChange = useCallback((lang: string) => {
+    setVoiceLanguage(lang)
+  }, [])
+
+  const handleVoiceError = useCallback((error: string) => {
+    console.warn('Voice input error:', error)
+  }, [])
 
   // Fetch WhatsApp number from settings
   const { data: settingsData } = useQuery({
@@ -56,10 +99,11 @@ export function SupportChat() {
     const greeting: ChatMessage = {
       id: 'greeting',
       text: isUrdu
-        ? `السلام علیکم ${userName}! میں Jugnoo کا سپورٹ اسسٹنٹ ہوں۔ آپ مجھ سے کسی بھی سوال کے بارے میں بات کر سکتے ہیں۔ مثال کے طور پر پوچھیں: سروسز کیسے استعمال کریں؟ پیمنٹ کیسے کریں؟ درخواست کا اسٹیٹس کیسے دیکھیں؟`
-        : `Hello ${userName}! I'm Jugnoo's support assistant. You can ask me anything! For example: How to use services? How to make payment? How to track my application? What documents are needed?`,
+        ? `السلام علیکم ${userName}! میں Jugnoo کا AI اسسٹنٹ ہوں۔ آپ مجھ سے کسی بھی سوال کے بارے میں بات کر سکتے ہیں۔ مثال کے طور پر پوچھیں: سروسز کیسے استعمال کریں؟ پیمنٹ کیسے کریں؟ درخواست کا اسٹیٹس کیسے دیکھیں؟`
+        : `Hello ${userName}! I'm Jugnoo's AI assistant. You can ask me anything! For example: How to use services? How to make payment? How to track my application? What documents are needed?`,
       sender: 'bot',
       timestamp: new Date(),
+      isAi: true,
     }
     setMessages([greeting])
   }, [isUrdu, userName])
@@ -71,8 +115,8 @@ export function SupportChat() {
     }
   }, [messages, isTyping])
 
-  // Comprehensive bot responses - Urdu aware
-  const getBotResponse = (userMessage: string): string => {
+  // ─── Rule-based responses (FAST, used as first-pass or fallback) ───
+  const getRuleBasedResponse = useCallback((userMessage: string): string | null => {
     const lower = userMessage.toLowerCase().trim()
 
     // Greetings
@@ -117,11 +161,11 @@ export function SupportChat() {
         : `Loan information:\n\n🏦 Tier 1: Up to Rs. 500K - 0% markup, 3 years\n🏦 Tier 2: Rs. 500K to 1.5M - 5% markup, 5 years\n🏦 Tier 3: Rs. 1.5M to 7.5M - 7% markup, 8 years\n\nNo collateral needed for Tier 1 and 2. Collateral required for Tier 3.\n\nAge requirement: 18 to 45 years.\n\nWould you like to apply for a loan?`
     }
 
-    // Eligibility
-    if (lower.match(/eligib|اہل|اہلیت|eligible|کون سکھتا|who can apply|criteria|معیار/)) {
+    // Thank you
+    if (lower.match(/thank|شکریہ|thanks|dhanyavaad/)) {
       return isUrdu
-        ? `اہلیت کے عام معیار:\n\n✅ پاکستانی شہری ہونا\n✅ درست شناختی کارڈ\n✅ عمری حد (سروس کے مطابق)\n✅ آمدنی کی حد (کچھ سروسز کے لیے)\n✅ بینک ڈیفالٹر نہ ہونا\n\nہر سروس کی اپنی اہلیت ہے۔ درخواست دیتے وقت آٹو اہلیت چیک ہوتی ہے۔ اگر آپ اہل نہ بھی ہوں تو پھر بھی درخواست دے سکتے ہیں، حتمی فیصلہ ایڈمن کرے گا۔`
-        : `General eligibility criteria:\n\n✅ Pakistani citizen\n✅ Valid CNIC\n✅ Age limit (varies by service)\n✅ Income threshold (for some services)\n✅ Not a bank defaulter\n\nEach service has its own eligibility. An auto-check runs when you apply. Even if you're not eligible, you can still apply - final decision is made by admin.`
+        ? `خوش آمدید ${userName}! 🙏 اگر آپ کو کوئی اور سوال ہو تو ضرور پوچھیں۔ ہم ہمیشہ مدد کے لیے موجود ہیں۔\n\nآپ واٹس ایپ پر بھی رابطہ کر سکتے ہیں فوری جواب کے لیے۔`
+        : `You're welcome ${userName}! 🙏 If you have any other questions, feel free to ask. We're always here to help.\n\nYou can also reach us on WhatsApp for immediate response.`
     }
 
     // WhatsApp
@@ -131,59 +175,84 @@ export function SupportChat() {
         : `For WhatsApp support:\n\n📱 Tap the "WhatsApp" button below\n📱 Message us directly on our number\n📱 We usually respond within 5-10 minutes\n\nOn WhatsApp, you can also send images and chat easily.`
     }
 
-    // Profile
+    // No rule matched - return null to trigger LLM call
+    return null
+  }, [isUrdu, userName])
+
+  // Fallback responses (when LLM also fails)
+  const getFallbackResponse = useCallback((userMessage: string): string => {
+    const lower = userMessage.toLowerCase().trim()
+
+    // Try rule-based one more time with broader matching
+    if (lower.match(/eligib|اہل|اہلیت|eligible|کون سکھتا|who can apply|criteria|معیار/)) {
+      return isUrdu
+        ? `اہلیت کے عام معیار:\n\n✅ پاکستانی شہری ہونا\n✅ درست شناختی کارڈ\n✅ عمری حد (سروس کے مطابق)\n✅ آمدنی کی حد (کچھ سروسز کے لیے)\n✅ بینک ڈیفالٹر نہ ہونا\n\nہر سروس کی اپنی اہلیت ہے۔ درخواست دیتے وقت آٹو اہلیت چیک ہوتی ہے۔ اگر آپ اہل نہ بھی ہوں تو پھر بھی درخواست دے سکتے ہیں، حتمی فیصلہ ایڈمن کرے گا۔`
+        : `General eligibility criteria:\n\n✅ Pakistani citizen\n✅ Valid CNIC\n✅ Age limit (varies by service)\n✅ Income threshold (for some services)\n✅ Not a bank defaulter\n\nEach service has its own eligibility. An auto-check runs when you apply. Even if you're not eligible, you can still apply - final decision is made by admin.`
+    }
+
     if (lower.match(/profile|پروفائل|account|اکاؤنٹ|name|نام|update|اپڈیٹ/)) {
       return isUrdu
         ? `پروفائل اپڈیٹ کرنے کے لیے:\n\n👤 نیچے "پروفائل" آئیکن دبائیں\n👤 اپنا نام، فون نمبر اپڈیٹ کریں\n👤 سیو بٹن دبائیں\n\nآپ کی پروفائل ہر درخواست میں خود بھر جائے گی۔`
         : `To update your profile:\n\n👤 Tap "Profile" icon at the bottom\n👤 Update your name, phone number\n👤 Press Save button\n\nYour profile will auto-fill in every application.`
     }
 
-    // Time / Processing
     if (lower.match(/time|وقت|kitna time|کتنا وقت|processing|پروسیسنگ|how long|کب تک/)) {
       return isUrdu
         ? `پروسیسنگ کا وقت:\n\n⏱️ عام درخواستیں: 2 سے 4 ہفتے\n⏱️ قرضے کی درخواستیں: 2 سے 4 ہفتے\n⏱️ شناختی کارڈ: 5 سے 30 دن (قسم کے مطابق)\n\nدرخواست جمع کرانے کے بعد آپ کو نوٹیفکیشن بھیجی جائے گی۔`
-        : `Processing time:\n\n⏱️ General applications: 2-4 weeks\n⏏️ Loan applications: 2-4 weeks\n⏱️ CNIC services: 5-30 days (depending on type)\n\nYou'll receive a notification after your application is processed.`
+        : `Processing time:\n\n⏱️ General applications: 2-4 weeks\n⏱️ Loan applications: 2-4 weeks\n⏱️ CNIC services: 5-30 days (depending on type)\n\nYou'll receive a notification after your application is processed.`
     }
 
-    // Cost / Price
     if (lower.match(/price|قیمت|cost|لاگت|fee|فیس|kitna|کتنا|rate|ریٹ|charge/)) {
       return isUrdu
         ? `فیس کی معلومات:\n\n💰 سرکاری سروسز: Rs. 300-500\n💰 قرضے کی سروسز: Rs. 1,000-1,500\n💰 شناختی کارڈ: Rs. 300 (عام)، Rs. 1,500 (فوری)\n💰 پرنٹنگ/اسکیننگ: سروس کے مطابق\n\nیہ فیس دستاویزات تیار کرنے اور درخواست جمع کرانے کی ہے۔ سرکاری فیس الگ ہو سکتی ہے۔`
         : `Fee information:\n\n💰 Govt schemes: Rs. 300-500\n💰 Loan services: Rs. 1,000-1,500\n💰 CNIC services: Rs. 300 (normal), Rs. 1,500 (urgent)\n💰 Printing/Scanning: Varies by service\n\nThis fee is for document preparation and application submission. Government fees may be separate.`
     }
 
-    // Thank you
-    if (lower.match(/thank|شکریہ|thanks|dhanyavaad|شکریہ/)) {
-      return isUrdu
-        ? `خوش آمدید ${userName}! 🙏 اگر آپ کو کوئی اور سوال ہو تو ضرور پوچھیں۔ ہم ہمیشہ مدد کے لیے موجود ہیں۔\n\nآپ واٹس ایپ پر بھی رابطہ کر سکتے ہیں فوری جواب کے لیے۔`
-        : `You're welcome ${userName}! 🙏 If you have any other questions, feel free to ask. We're always here to help.\n\nYou can also reach us on WhatsApp for immediate response.`
-    }
-
-    // Help / Support
     if (lower.match(/help|مدد|support|سپورٹ|problem|مسئلہ|issue|مشکل|مشکل ہو رہی/)) {
       return isUrdu
         ? `میں آپ کی مدد کرنے کے لیے یہاں ہوں! بتائیں آپ کیا مسئلہ درپیش ہے:\n\n🔴 پیمنٹ کا مسئلہ?\n🔴 درخواست جمع نہیں ہو رہی?\n🔴 دستاویزات اپلوڈ نہیں ہو رہی?\n🔴 اسٹیٹس چیک کرنا ہے?\n🔴 کچھ اور?\n\nیا پھر واٹس ایپ پر براہ راست بات کریں۔`
         : `I'm here to help! Tell me what issue you're facing:\n\n🔴 Payment issue?\n🔴 Can't submit application?\n🔴 Document upload problem?\n🔴 Need to check status?\n🔴 Something else?\n\nOr chat directly on WhatsApp for immediate help.`
     }
 
-    // Default fallback - varied responses
+    // Generic fallback
     const fallbacksUrdu = [
       `شکریہ آپ کے سوال کا! ${userName}، آپ کا سوال سمجھ آ گیا۔ ہماری ٹیم آپ سے جلد رابطہ کرے گی۔ فی الحال آپ یہ کر سکتے ہیں:\n\n• سروسز براؤز کریں\n• اپنی درخواستیں چیک کریں\n• واٹس ایپ پر سپورٹ لیں\n\nکیا اور کوئی سوال ہے?`,
       `${userName}، اچھا سوال ہے! میرے پاس اس کا مکمل جواب نہیں، لیکن میں آپ کی مدد کر سکتا ہوں:\n\n• سروسز سیکشن چیک کریں\n• ہیلپ پیج دیکھیں\n• واٹس ایپ پر بات کریں\n\nمیں ہر ممکن مدد کروں گا!`,
-      `سوال بھیجے رکھیں ${userName}! جو بھی معلومات آپ کو چاہیں میں دینے کی کوشش کروں گا۔ آپ مجھ سے سروسز، پیمنٹ، درخواست، دستاویزات، یا کسی اور بات کے بارے میں پوچھ سکتے ہیں۔`
     ]
 
     const fallbacksEn = [
       `Thank you for your question, ${userName}! Our team will get back to you shortly. In the meantime, you can:\n\n• Browse our services\n• Check your applications\n• Get support on WhatsApp\n\nAnything else I can help with?`,
       `Great question, ${userName}! I don't have the complete answer right now, but I can help:\n\n• Check the Services section\n• Visit the Help page\n• Chat on WhatsApp\n\nI'll do my best to assist you!`,
-      `Keep the questions coming, ${userName}! I'll try to provide whatever information you need. You can ask me about services, payments, applications, documents, or anything else.`
     ]
 
     const fallbacks = isUrdu ? fallbacksUrdu : fallbacksEn
     return fallbacks[Math.floor(Math.random() * fallbacks.length)]
-  }
+  }, [isUrdu, userName])
 
-  const handleSend = () => {
+  // ─── LLM API call ───
+  const callLLM = useCallback(async (message: string, history: ChatHistoryItem[]): Promise<string | null> => {
+    try {
+      const res = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message,
+          history,
+          language: isUrdu ? 'urdu' : 'english',
+        }),
+      })
+
+      if (!res.ok) return null
+
+      const data = await res.json()
+      return data.reply || null
+    } catch {
+      return null
+    }
+  }, [isUrdu])
+
+  // ─── Main send handler ───
+  const handleSend = async () => {
     if (!input.trim()) return
 
     const userMsg: ChatMessage = {
@@ -194,20 +263,75 @@ export function SupportChat() {
     }
 
     setMessages(prev => [...prev, userMsg])
+    const messageText = input.trim()
     setInput('')
+    setInterimVoiceText('')
     setIsTyping(true)
 
-    // Simulate bot response with delay
-    setTimeout(() => {
-      const botMsg: ChatMessage = {
-        id: `bot_${Date.now()}`,
-        text: getBotResponse(userMsg.text),
-        sender: 'bot',
-        timestamp: new Date(),
+    // Step 1: Try rule-based matching first (fast)
+    const ruleResponse = getRuleBasedResponse(messageText)
+
+    if (ruleResponse) {
+      // Rule matched - use it directly (fast response)
+      setTimeout(() => {
+        const botMsg: ChatMessage = {
+          id: `bot_${Date.now()}`,
+          text: ruleResponse,
+          sender: 'bot',
+          timestamp: new Date(),
+          isAi: false,
+        }
+        setMessages(prev => [...prev, botMsg])
+        setIsTyping(false)
+      }, 400 + Math.random() * 400)
+    } else {
+      // Step 2: No rule match - call LLM API
+      try {
+        const llmResponse = await callLLM(messageText, chatHistory)
+
+        if (llmResponse) {
+          // LLM succeeded
+          const botMsg: ChatMessage = {
+            id: `bot_${Date.now()}`,
+            text: llmResponse,
+            sender: 'bot',
+            timestamp: new Date(),
+            isAi: true,
+          }
+          setMessages(prev => [...prev, botMsg])
+          // Update chat history for context
+          setChatHistory(prev => [
+            ...prev,
+            { role: 'user', content: messageText },
+            { role: 'assistant', content: llmResponse },
+          ])
+        } else {
+          // Step 3: LLM failed - use fallback
+          const fallbackText = getFallbackResponse(messageText)
+          const botMsg: ChatMessage = {
+            id: `bot_${Date.now()}`,
+            text: fallbackText,
+            sender: 'bot',
+            timestamp: new Date(),
+            isAi: false,
+          }
+          setMessages(prev => [...prev, botMsg])
+        }
+      } catch {
+        // LLM error - use fallback
+        const fallbackText = getFallbackResponse(messageText)
+        const botMsg: ChatMessage = {
+          id: `bot_${Date.now()}`,
+          text: fallbackText,
+          sender: 'bot',
+          timestamp: new Date(),
+          isAi: false,
+        }
+        setMessages(prev => [...prev, botMsg])
       }
-      setMessages(prev => [...prev, botMsg])
+
       setIsTyping(false)
-    }, 600 + Math.random() * 800)
+    }
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -265,10 +389,23 @@ export function SupportChat() {
           <div className="w-9 h-9 rounded-full bg-white/10 flex items-center justify-center">
             <Headphones className="w-4 h-4 text-[#F5A623]" />
           </div>
-          <div>
-            <p className="text-white text-sm font-semibold">{isUrdu ? 'Jugnoo سپورٹ' : 'Jugnoo Support'}</p>
+          <div className="flex-1">
+            <div className="flex items-center gap-2">
+              <p className="text-white text-sm font-semibold">{isUrdu ? 'Jugnoo سپورٹ' : 'Jugnoo Support'}</p>
+              <Badge className="bg-[#F5A623]/20 text-[#F5A623] border-0 text-[8px] px-1.5 py-0 rounded-md gap-0.5">
+                <Zap className="w-2.5 h-2.5" />
+                AI Powered
+              </Badge>
+            </div>
             <p className="text-blue-200 text-[10px]">{isUrdu ? 'عام طور پر فوری جواب' : 'Usually replies instantly'}</p>
           </div>
+          {/* Voice Language Toggle */}
+          {isVoiceSupported && (
+            <VoiceLanguageToggle
+              language={voiceLanguage}
+              onLanguageChange={handleVoiceLanguageChange}
+            />
+          )}
         </div>
 
         {/* Messages */}
@@ -302,9 +439,19 @@ export function SupportChat() {
                       : 'bg-white text-[#1C1C1E] shadow-sm rounded-bl-md'
                   }`}>
                     <p>{msg.text}</p>
-                    <p className={`text-[10px] mt-1 ${
-                      msg.sender === 'user' ? 'text-blue-200' : 'text-[#6B7280]'
-                    }`}>{formatTime(msg.timestamp)}</p>
+                    <div className={`flex items-center gap-1.5 mt-1 ${
+                      msg.sender === 'user' ? 'justify-end' : 'justify-start'
+                    }`}>
+                      <p className={`text-[10px] ${
+                        msg.sender === 'user' ? 'text-blue-200' : 'text-[#6B7280]'
+                      }`}>{formatTime(msg.timestamp)}</p>
+                      {msg.isAi && msg.sender === 'bot' && (
+                        <span className="inline-flex items-center gap-0.5 text-[8px] text-[#F5A623]">
+                          <Sparkles className="w-2 h-2" />
+                          AI
+                        </span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </motion.div>
@@ -334,28 +481,85 @@ export function SupportChat() {
           )}
         </div>
 
+        {/* Voice listening indicator in chat area */}
+        <AnimatePresence>
+          {isVoiceListening && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: 'auto' }}
+              exit={{ opacity: 0, height: 0 }}
+              className="shrink-0 bg-red-50 border-t border-red-100 overflow-hidden"
+            >
+              <div className="px-4 py-2 flex items-center gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-red-500 animate-pulse" />
+                  <span className="w-2 h-2 rounded-full bg-red-400 animate-pulse" style={{ animationDelay: '0.2s' }} />
+                  <span className="w-2 h-2 rounded-full bg-red-300 animate-pulse" style={{ animationDelay: '0.4s' }} />
+                </div>
+                <p className="text-xs text-red-600 font-medium">
+                  {isUrdu ? 'آواز سن رہا ہے...' : 'Listening...'}
+                </p>
+                {interimVoiceText && (
+                  <p className="text-xs text-red-400 truncate flex-1 ml-1">{interimVoiceText}</p>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+
         {/* Input */}
         <div className="shrink-0 p-3 bg-white border-t border-gray-100">
           <div className="flex items-center gap-2">
-            <Input
-              ref={inputRef}
-              value={input}
-              onChange={(e) => setInput(e.target.value)}
-              onKeyDown={handleKeyDown}
-              placeholder={isUrdu ? 'اپنا سوال لکھیں...' : 'Type your question...'}
-              className="flex-1 h-11 bg-[#F5F7FA] border-transparent rounded-xl focus:border-[#1A3C5E] focus:bg-white text-sm"
+            <div className="relative flex-1">
+              <Input
+                ref={inputRef}
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder={isUrdu ? 'اپنا سوال لکھیں...' : 'Type your question...'}
+                className="h-11 bg-[#F5F7FA] border-transparent rounded-xl focus:border-[#1A3C5E] focus:bg-white text-sm w-full pr-12"
+              />
+              {/* Show interim voice text as overlay inside input */}
+              {isVoiceListening && interimVoiceText && (
+                <div className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-red-400 max-w-[40%] truncate pointer-events-none">
+                  {interimVoiceText}
+                </div>
+              )}
+            </div>
+            {/* Voice Input Button */}
+            <VoiceInputButton
+              onTranscript={handleVoiceTranscript}
+              onInterimTranscript={handleVoiceInterimTranscript}
+              onListeningChange={handleVoiceListeningChange}
+              onSupportedChange={handleVoiceSupportedChange}
+              language={voiceLanguage}
+              onLanguageChange={handleVoiceLanguageChange}
+              size="md"
+              onError={handleVoiceError}
+              className="shrink-0"
             />
             <Button
               onClick={handleSend}
-              disabled={!input.trim()}
+              disabled={!input.trim() || isTyping}
               className="bg-[#1A3C5E] hover:bg-[#0F2A42] text-white rounded-xl h-11 w-11 p-0 shrink-0 disabled:opacity-40"
             >
               <Send className="w-4 h-4" />
             </Button>
           </div>
-          <p className="text-[10px] text-[#6B7280] text-center mt-2">
-            {isUrdu ? 'یا واٹس ایپ پر رابطہ کریں فوری جواب کے لیے' : 'Or contact on WhatsApp for immediate response'}
-          </p>
+          <div className="flex items-center justify-center gap-1 mt-2">
+            {isVoiceSupported && (
+              <>
+                <Mic className="w-3 h-3 text-[#6B7280]" />
+                <p className="text-[10px] text-[#6B7280]">
+                  {isUrdu ? 'آواز سے لکھیں' : 'Tap mic to dictate'}
+                </p>
+                <span className="text-[10px] text-[#6B7280] mx-1">•</span>
+              </>
+            )}
+            <p className="text-[10px] text-[#6B7280]">
+              {isUrdu ? 'یا واٹس ایپ پر رابطہ کریں فوری جواب کے لیے' : 'Or contact on WhatsApp for immediate response'}
+            </p>
+          </div>
         </div>
       </Card>
     </div>

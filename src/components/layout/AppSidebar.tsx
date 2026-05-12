@@ -26,6 +26,7 @@ const adminNavItems: { key: ModuleKey; label: string; labelUrdu: string; icon: R
   { key: 'cvbuilder', label: 'CV Builder', labelUrdu: 'سی وی بلڈر', icon: FilePlus2, group: 'services' },
   { key: 'payments', label: 'Payments', labelUrdu: 'پیمنٹس', icon: Banknote, group: 'finance' },
   { key: 'pricing', label: 'Pricing', labelUrdu: 'قیمتیں', icon: DollarSign, group: 'finance' },
+  { key: 'commission', label: 'Commission', labelUrdu: 'کمیشن', icon: DollarSign, group: 'finance' },
   { key: 'inventory', label: 'Inventory', labelUrdu: 'انوینٹری', icon: Package, group: 'manage' },
   { key: 'team', label: 'Team & Access', labelUrdu: 'ٹیم و رسائی', icon: UsersRound, group: 'manage' },
   { key: 'settings', label: 'Settings', labelUrdu: 'سیٹنگز', icon: Settings, group: 'manage' },

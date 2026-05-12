@@ -86,14 +86,14 @@ export function DashboardModule() {
 
           {/* Trend indicators in hero */}
           {data?.stats && (data.stats.orderTrend !== 0 || data.stats.revenueTrend !== 0) && (
-            <div className="flex items-center gap-4 mt-3">
+            <div className="flex flex-wrap items-center gap-2 sm:gap-4 mt-3">
               {data.stats.orderTrend !== 0 && (
-                <div className={`flex items-center gap-1 text-xs font-medium ${data.stats.orderTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <div className={`flex items-center gap-1 text-[10px] sm:text-xs font-medium ${data.stats.orderTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {data.stats.orderTrend > 0 ? '↑' : '↓'} {Math.abs(data.stats.orderTrend).toFixed(1)}% orders vs yesterday
                 </div>
               )}
               {data.stats.revenueTrend !== 0 && (
-                <div className={`flex items-center gap-1 text-xs font-medium ${data.stats.revenueTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
+                <div className={`flex items-center gap-1 text-[10px] sm:text-xs font-medium ${data.stats.revenueTrend > 0 ? 'text-emerald-400' : 'text-red-400'}`}>
                   {data.stats.revenueTrend > 0 ? '↑' : '↓'} {Math.abs(data.stats.revenueTrend).toFixed(1)}% revenue vs yesterday
                 </div>
               )}

@@ -1,4 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { triggerStatusWhatsAppNotification, triggerPaymentWhatsAppNotification } from '@/lib/whatsapp-auto-trigger'
 
 export async function GET(req: Request) {
   try {
@@ -85,6 +86,19 @@ export async function POST(req: Request) {
       return Response.json({ error: error.message }, { status: 400 })
     }
 
+    // Auto-trigger WhatsApp notification for new application
+    const phone = applicantWhatsapp || applicantPhone || ''
+    if (phone) {
+      triggerStatusWhatsAppNotification({
+        applicationId: data.id,
+        customerPhone: phone,
+        customerName: applicantName || 'Customer',
+        serviceName,
+        newStatus: 'submitted',
+        amount: feeAmount,
+      }).catch(err => console.error('WhatsApp auto-trigger failed:', err))
+    }
+
     return Response.json({ id: data.id, message: 'Application submit ho gayi hai!' })
   } catch (error) {
     console.error('Service applications POST error:', error)
@@ -105,6 +119,16 @@ export async function PUT(req: Request) {
       return Response.json({ error: 'Application ID chahiye' }, { status: 400 })
     }
 
+    // Fetch the current application to detect status changes
+    const { data: existingApp } = await supabase
+      .from('service_applications')
+      .select('status, payment_status, applicant_name, applicant_phone, applicant_whatsapp, service_name, fee_amount')
+      .eq('id', id)
+      .single()
+
+    const previousStatus = (existingApp as Record<string, unknown>)?.status as string | undefined
+    const previousPaymentStatus = (existingApp as Record<string, unknown>)?.payment_status as string | undefined
+
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (status) updates.status = status
     if (paymentStatus) updates.payment_status = paymentStatus
@@ -113,13 +137,13 @@ export async function PUT(req: Request) {
 
     // If this is a customer edit (has applicant fields), check if the application is paid
     if (applicantName !== undefined || applicantCnic !== undefined || applicantPhone !== undefined || description !== undefined) {
-      const { data: existingApp } = await supabase
+      const { data: existingApp2 } = await supabase
         .from('service_applications')
         .select('payment_status')
         .eq('id', id)
         .single()
 
-      if (existingApp?.payment_status === 'paid') {
+      if (existingApp2?.payment_status === 'paid') {
         return Response.json({ error: 'Paid applications cannot be edited' }, { status: 403 })
       }
 
@@ -135,7 +159,56 @@ export async function PUT(req: Request) {
       return Response.json({ error: error.message }, { status: 400 })
     }
 
-    return Response.json({ message: 'Application update ho gayi hai!' })
+    let whatsappLink: string | null = null
+    let whatsappMessage: string | null = null
+
+    // Auto-trigger WhatsApp on status change
+    if (status && status !== previousStatus && existingApp) {
+      const customerPhone = ((existingApp as Record<string, unknown>).applicant_whatsapp || (existingApp as Record<string, unknown>).applicant_phone) as string || ''
+      const customerName = (existingApp as Record<string, unknown>).applicant_name as string || 'Customer'
+      const serviceName = (existingApp as Record<string, unknown>).service_name as string || 'Service'
+      const feeAmount = (existingApp as Record<string, unknown>).fee_amount as number || 0
+
+      if (customerPhone) {
+        const result = await triggerStatusWhatsAppNotification({
+          applicationId: id,
+          customerPhone,
+          customerName,
+          serviceName,
+          newStatus: status,
+          amount: feeAmount,
+        })
+        if (result) {
+          whatsappLink = result.link
+          whatsappMessage = result.message
+        }
+      }
+    }
+
+    // Auto-trigger WhatsApp on payment confirmation
+    if (paymentStatus === 'paid' && paymentStatus !== previousPaymentStatus && existingApp) {
+      const customerPhone = ((existingApp as Record<string, unknown>).applicant_whatsapp || (existingApp as Record<string, unknown>).applicant_phone) as string || ''
+      const customerName = (existingApp as Record<string, unknown>).applicant_name as string || 'Customer'
+      const serviceName = (existingApp as Record<string, unknown>).service_name as string || 'Service'
+      const feeAmount = (existingApp as Record<string, unknown>).fee_amount as number || 0
+
+      if (customerPhone) {
+        const result = await triggerPaymentWhatsAppNotification({
+          customerPhone,
+          customerName,
+          serviceName,
+          amount: feeAmount,
+          paymentMethod: (existingApp as Record<string, unknown>).payment_method as string || 'Cash',
+        })
+        whatsappLink = result.link
+        whatsappMessage = result.message
+      }
+    }
+
+    return Response.json({
+      message: 'Application update ho gayi hai!',
+      whatsappNotification: whatsappLink ? { link: whatsappLink, message: whatsappMessage } : null,
+    })
   } catch (error) {
     console.error('Service applications PUT error:', error)
     return Response.json({ error: 'Application update nahi ho saki.' }, { status: 500 })

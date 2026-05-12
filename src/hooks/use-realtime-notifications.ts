@@ -3,6 +3,8 @@
 import { useEffect, useRef, useCallback } from 'react'
 import { useAppStore } from '@/lib/store'
 import { getSupabaseClient } from '@/lib/supabase-client'
+import { showLocalNotification } from '@/lib/push-notifications'
+import type { RealtimeChannel } from '@supabase/supabase-js'
 
 // Web Audio API notification sound
 function playNotificationSound() {
@@ -30,67 +32,43 @@ function playNotificationSound() {
   }
 }
 
-// Request browser notification permission
-async function requestNotificationPermission() {
-  if (typeof window === 'undefined' || !('Notification' in window)) return false
-
-  if (Notification.permission === 'granted') return true
-  if (Notification.permission === 'denied') return false
-
-  const permission = await Notification.requestPermission()
-  return permission === 'granted'
-}
-
-// Show browser notification
-function showBrowserNotification(title: string, body: string) {
-  if (typeof window === 'undefined' || !('Notification' in window)) return
-  if (Notification.permission !== 'granted') return
-
-  try {
-    new Notification(title, {
-      body,
-      icon: '/icon-192.png',
-      badge: '/icon-192.png',
-      tag: 'jugnoo-notification',
-    })
-  } catch {
-    // Notification API not available
-  }
-}
-
 export function useRealtimeNotifications() {
   const addNotification = useAppStore((s) => s.addNotification)
-  const subscriptionRef = useRef<ReturnType<typeof getSupabaseClient>['channel'] | null>(null)
+  const subscriptionRef = useRef<RealtimeChannel | null>(null)
   const hasSetup = useRef(false)
 
   const handleNewNotification = useCallback((payload: { new: Record<string, unknown> }) => {
     const newNotif = payload.new
     if (!newNotif) return
 
-    // Add to Zustand store
+    const title = (newNotif.title as string) || 'New Notification'
+    const message = (newNotif.message as string) || ''
+    const type = (newNotif.type as 'status' | 'payment' | 'deadline' | 'info') || 'info'
+    const link = (newNotif.link as string) || undefined
+
+    // Add to Zustand store (in-app notification)
     addNotification({
-      title: (newNotif.title as string) || 'New Notification',
-      message: (newNotif.message as string) || '',
-      type: (newNotif.type as 'status' | 'payment' | 'deadline' | 'info') || 'info',
-      link: (newNotif.link as string) || undefined,
+      title,
+      message,
+      type,
+      link,
     })
 
     // Play sound
     playNotificationSound()
 
-    // Show browser notification
-    showBrowserNotification(
-      (newNotif.title as string) || 'Jugnoo Smart Portal',
-      (newNotif.message as string) || 'You have a new notification'
-    )
+    // Show push notification via service worker (works even when app is in background)
+    // This checks notification preferences internally
+    showLocalNotification(title, message, {
+      url: link || '/',
+      type,
+      tag: `jugnoo-${Date.now()}`,
+    })
   }, [addNotification])
 
   useEffect(() => {
     if (hasSetup.current) return
     hasSetup.current = true
-
-    // Request browser notification permission
-    requestNotificationPermission()
 
     // Try to set up Supabase Realtime subscription
     try {
@@ -131,6 +109,8 @@ export function useRealtimeNotifications() {
   }, [handleNewNotification])
 
   return {
-    requestNotificationPermission,
+    // Expose no-op requestNotificationPermission — permission is now managed
+    // through the PushNotificationSettings component and push-notifications.ts
+    requestNotificationPermission: async () => {},
   }
 }
