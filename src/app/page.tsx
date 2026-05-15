@@ -36,7 +36,6 @@ const CustomerDashboard = dynamic(() => import('@/components/customer/CustomerDa
 const ServicesBrowser = dynamic(() => import('@/components/customer/ServicesBrowser').then(m => ({ default: m.ServicesBrowser })), { ssr: false })
 const MyApplications = dynamic(() => import('@/components/customer/MyApplications').then(m => ({ default: m.MyApplications })), { ssr: false })
 const CustomerPayments = dynamic(() => import('@/components/customer/CustomerPayments').then(m => ({ default: m.CustomerPayments })), { ssr: false })
-const CustomerWhatsApp = dynamic(() => import('@/components/customer/CustomerWhatsApp').then(m => ({ default: m.CustomerWhatsApp })), { ssr: false })
 const CustomerProfile = dynamic(() => import('@/components/customer/CustomerProfile').then(m => ({ default: m.CustomerProfile })), { ssr: false })
 const SupportChat = dynamic(() => import('@/components/customer/SupportChat').then(m => ({ default: m.SupportChat })), { ssr: false })
 const HelpPage = dynamic(() => import('@/components/customer/HelpPage').then(m => ({ default: m.HelpPage })), { ssr: false })
@@ -195,7 +194,6 @@ function CustomerContent() {
     'my-applications': MyApplications,
     'my-orders': MyApplications,
     'payments': CustomerPayments,
-    'whatsapp': CustomerWhatsApp,
     'profile': CustomerProfile,
     'notifications': NotificationList,
     'support-chat': SupportChat,

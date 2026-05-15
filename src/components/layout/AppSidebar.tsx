@@ -39,7 +39,6 @@ const customerNavItems: { key: ModuleKey; label: string; labelUrdu: string; icon
   { key: 'my-orders', label: 'My Orders', labelUrdu: 'میرے آرڈرز', icon: ClipboardList, group: 'main' },
   { key: 'notifications', label: 'Notifications', labelUrdu: 'اطلاعات', icon: Bell, group: 'main' },
   { key: 'payments', label: 'Payments', labelUrdu: 'پیمنٹس', icon: CreditCard, group: 'finance' },
-  { key: 'whatsapp', label: 'WhatsApp', labelUrdu: 'واٹس ایپ', icon: MessageSquare, group: 'main' },
   { key: 'support-chat', label: 'Support', labelUrdu: 'سپورٹ', icon: Headphones, group: 'main' },
   { key: 'profile', label: 'Profile', labelUrdu: 'پروفائل', icon: UserCircle, group: 'account' },
 ]

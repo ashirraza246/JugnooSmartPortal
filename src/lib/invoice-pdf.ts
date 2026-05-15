@@ -34,6 +34,7 @@ export interface InvoiceData {
 
 /**
  * Generate a professional branded PDF invoice using jsPDF drawing commands
+ * All text is in Urdu language
  */
 export function generateInvoicePDF(data: InvoiceData): jsPDF {
   const doc = new jsPDF({
@@ -61,22 +62,22 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFont('helvetica', 'bold')
   doc.text('JUGNOO PHOTOSTATE', margin, 18)
 
-  // Tagline
+  // Tagline - Urdu
   doc.setFontSize(8)
   doc.setTextColor(...GOLD)
-  doc.text('AI-Powered Business Management', margin, 25)
+  doc.text('AI \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u062A\u0638\u0627\u0645', margin, 25)
 
   // Address in header
   doc.setFontSize(7)
   doc.setTextColor(200, 210, 220)
   doc.text('Chowk Azam, Layyah, Punjab, Pakistan', margin, 31)
-  doc.text('Working Hours: 9 AM - 9 PM', margin, 36)
+  doc.text('\u06A9\u0627\u0645 \u06A9\u06D2 \u0627\u0648\u0642\u0627\u062A: 9 AM - 9 PM', margin, 36)
 
-  // INVOICE title on the right side of header
-  doc.setFontSize(28)
+  // INVOICE title on the right side of header - Urdu + English
+  doc.setFontSize(24)
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.text('INVOICE', pageWidth - margin, 28, { align: 'right' })
+  doc.text('\u0628\u0644 / INVOICE', pageWidth - margin, 28, { align: 'right' })
 
   doc.setFontSize(8)
   doc.setTextColor(...GOLD)
@@ -89,7 +90,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFontSize(8)
   doc.setTextColor(...GRAY)
   doc.setFont('helvetica', 'normal')
-  doc.text('Invoice Date:', margin, y)
+  doc.text('\u062A\u0627\u0631\u06CC\u062E:', margin, y)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...DARK)
   doc.text(data.date, margin + 28, y)
@@ -98,7 +99,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.orderNumber) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text('Order No:', margin, y)
+    doc.text('\u0622\u0631\u0688\u0631 \u0646\u0645\u0628\u0631:', margin, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
     doc.text(data.orderNumber, margin + 28, y)
@@ -108,14 +109,14 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.paymentMethod) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text('Payment:', margin, y)
+    doc.text('\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC:', margin, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
     const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
       : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
-      : data.paymentMethod === 'bank_transfer' ? 'Bank Transfer'
-      : data.paymentMethod === 'online' ? 'Online Payment'
-      : data.paymentMethod === 'cash' ? 'Cash'
+      : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
+      : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
+      : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
       : data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.slice(1)
     doc.text(methodLabel, margin + 28, y)
     y += 6
@@ -124,21 +125,21 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.transactionId) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text('Transaction ID:', margin, y)
+    doc.text('\u0644\u06CC\u0646 \u062F\u06CC\u0646 \u0646\u0645\u0628\u0631:', margin, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
     doc.text(data.transactionId, margin + 28, y)
     y += 6
   }
 
-  // Right column: Customer info (Bill To)
+  // Right column: Customer info (Bill To) - Urdu
   const rightColX = pageWidth / 2 + 5
   const metaLeftY = 52
 
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GOLD)
-  doc.text('BILL TO', rightColX, metaLeftY)
+  doc.text('\u0628\u0644 \u0628\u0646\u0627\u0645', rightColX, metaLeftY)
 
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...DARK)
@@ -149,14 +150,14 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text(`Phone: ${data.customerPhone}`, rightColX, metaLeftY + 14)
+    doc.text(`\u0641\u0648\u0646: ${data.customerPhone}`, rightColX, metaLeftY + 14)
   }
 
   if (data.customerCnic) {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text(`CNIC: ${data.customerCnic}`, rightColX, metaLeftY + (data.customerPhone ? 20 : 14))
+    doc.text(`\u0634\u0646\u0627\u062E\u062A\u06CC \u06A9\u0627\u0631\u0688: ${data.customerCnic}`, rightColX, metaLeftY + (data.customerPhone ? 20 : 14))
   }
 
   // ─── GOLD SEPARATOR ───
@@ -185,10 +186,10 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFontSize(8)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(255, 255, 255)
-  doc.text('Description', descX + 3, y)
-  doc.text('Qty', qtyX + 3, y)
-  doc.text('Unit Price', priceX + 3, y)
-  doc.text('Total', totalX + 3, y)
+  doc.text('\u062A\u0641\u0635\u06CC\u0644', descX + 3, y)
+  doc.text('\u062A\u0639\u062F\u0627\u062F', qtyX + 3, y)
+  doc.text('\u0641\u06CC \u0642\u06CC\u0645\u062A', priceX + 3, y)
+  doc.text('\u06A9\u0644', totalX + 3, y)
 
   y += 8
 
@@ -244,7 +245,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GRAY)
   doc.setFontSize(8)
-  doc.text('Subtotal:', totalsX, y)
+  doc.text('\u0630\u06CC\u0644\u06CC \u06A9\u0644:', totalsX, y)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...DARK)
   doc.text(`Rs. ${data.subtotal.toLocaleString()}`, amountsX, y, { align: 'right' })
@@ -254,7 +255,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.serviceFee && data.serviceFee > 0) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text('Service Fee:', totalsX, y)
+    doc.text('\u0633\u0631\u0648\u0633 \u0641\u06CC\u0633:', totalsX, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
     doc.text(`Rs. ${data.serviceFee.toLocaleString()}`, amountsX, y, { align: 'right' })
@@ -269,7 +270,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFontSize(10)
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...NAVY)
-  doc.text('TOTAL:', totalsX, y + 1)
+  doc.text('\u06A9\u0644 \u0631\u0642\u0645:', totalsX, y + 1)
   doc.setTextColor(...DARK)
   doc.text(`Rs. ${data.totalAmount.toLocaleString()}`, amountsX, y + 1, { align: 'right' })
 
@@ -279,18 +280,19 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.paymentMethod) {
     const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
       : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
-      : data.paymentMethod === 'bank_transfer' ? 'Bank Transfer'
-      : data.paymentMethod === 'online' ? 'Online Payment'
-      : data.paymentMethod === 'cash' ? 'Cash'
+      : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
+      : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
+      : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
       : data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.slice(1)
 
     doc.setFillColor(...GOLD)
-    const badgeWidth = doc.getTextWidth(methodLabel) + 10
+    const badgeText = `\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC \u06A9\u06D2 \u0630\u0631\u06CC\u0639\u06D2 ${methodLabel}`
+    const badgeWidth = doc.getTextWidth(badgeText) + 10
     doc.roundedRect(margin, y - 3, badgeWidth, 7, 2, 2, 'F')
     doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(255, 255, 255)
-    doc.text(`Paid via ${methodLabel}`, margin + 3, y + 1)
+    doc.text(badgeText, margin + 3, y + 1)
     y += 10
   }
 
@@ -304,24 +306,24 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...NAVY)
-    doc.text('VERIFICATION', margin + 4, y + 3)
+    doc.text('\u062A\u0635\u062F\u06CC\u0642', margin + 4, y + 3)
 
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
     doc.setFontSize(6.5)
 
     if (data.verificationUrl) {
-      doc.text(`Verify online: ${data.verificationUrl}`, margin + 4, y + 9)
+      doc.text(`\u0622\u0646 \u0644\u0627\u0626\u0646 \u062A\u0635\u062F\u06CC\u0642 \u06A9\u0631\u06CC\u06BA: ${data.verificationUrl}`, margin + 4, y + 9)
     }
 
     if (data.verificationHash) {
-      doc.text(`Hash: ${data.verificationHash}`, margin + 4, y + 13)
+      doc.text(`\u06C1\u0634: ${data.verificationHash}`, margin + 4, y + 13)
     }
 
     // QR icon placeholder
     doc.setFontSize(6)
     doc.setTextColor(...LIGHT_GRAY)
-    doc.text('Scan QR to verify', pageWidth - margin - 22, y + 6)
+    doc.text('\u062A\u0635\u062F\u06CC\u0642 \u06A9\u06D2 \u0644\u06CC\u06D2 QR \u0627\u0633\u06A9\u06CC\u0646 \u06A9\u0631\u06CC\u06BA', pageWidth - margin - 32, y + 6)
     // Simple QR placeholder box
     doc.setDrawColor(...NAVY)
     doc.setLineWidth(0.4)
@@ -354,8 +356,8 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
 
   doc.setTextColor(...LIGHT_GRAY)
   doc.setFontSize(6)
-  doc.text('AI-Powered Business Management | Payments: JazzCash, EasyPaisa, Bank Transfer', pageWidth / 2, footerY + 11, { align: 'center' })
-  doc.text('This is a computer-generated invoice. No signature required.', pageWidth / 2, footerY + 15, { align: 'center' })
+  doc.text('AI \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u062A\u0638\u0627\u0645 | \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC: \u062C\u06CC\u0632 \u06A9\u06CC\u0634\u060C \u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1\u060C \u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631', pageWidth / 2, footerY + 11, { align: 'center' })
+  doc.text('\u06CC\u06C1 \u06A9\u0645\u067E\u06CC\u0648\u0679\u0631 \u06A9\u0627 \u0628\u0646\u0627\u06CC\u0627 \u06C1\u0648\u0627 \u0628\u0644 \u06C1\u06D2\u06D4 \u062F\u0633\u062A\u062E\u0637 \u0636\u0631\u0648\u0631\u06CC \u0646\u06C1\u06CC\u06BA\u06D4', pageWidth / 2, footerY + 15, { align: 'center' })
 
   return doc
 }
@@ -378,32 +380,32 @@ export function generateInvoiceBlob(data: InvoiceData): Blob {
 }
 
 /**
- * Generate a WhatsApp share link with invoice summary
+ * Generate a WhatsApp share link with invoice summary (Urdu)
  */
 export function generateWhatsAppInvoiceLink(data: InvoiceData, phone?: string): string {
   const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
     : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
-    : data.paymentMethod === 'bank_transfer' ? 'Bank Transfer'
-    : data.paymentMethod === 'online' ? 'Online Payment'
-    : data.paymentMethod === 'cash' ? 'Cash'
+    : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
+    : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
+    : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
     : data.paymentMethod || 'N/A'
 
-  const summary = `*Jugnoo Photostate - Invoice*
+  const summary = `*\u062C\u06AF\u0646\u0648 \u0641\u0648\u0679\u0648 \u0627\u0633\u0679\u06CC\u0679 - \u0628\u0644*
 ━━━━━━━━━━━━━━━━━━
-Invoice #: ${data.invoiceNumber}
-Date: ${data.date}
-Customer: ${data.customerName}
-${data.orderNumber ? `Order: ${data.orderNumber}` : ''}
+\u0628\u0644 \u0646\u0645\u0628\u0631: ${data.invoiceNumber}
+\u062A\u0627\u0631\u06CC\u062E: ${data.date}
+\u06A9\u0633\u0679\u0645\u0631: ${data.customerName}
+${data.orderNumber ? `\u0622\u0631\u0688\u0631: ${data.orderNumber}` : ''}
 
-*Items:*
-${data.items.map(item => `• ${item.description} x${item.quantity} = Rs.${item.total.toLocaleString()}`).join('\n')}
+*\u0622\u0626\u0679\u0645\u0632:*
+${data.items.map(item => `\u2022 ${item.description} x${item.quantity} = Rs.${item.total.toLocaleString()}`).join('\n')}
 
-*Subtotal:* Rs.${data.subtotal.toLocaleString()}
-${data.serviceFee ? `*Service Fee:* Rs.${data.serviceFee.toLocaleString()}\n` : ''}*TOTAL:* Rs.${data.totalAmount.toLocaleString()}
+*\u0630\u06CC\u0644\u06CC \u06A9\u0644:* Rs.${data.subtotal.toLocaleString()}
+${data.serviceFee ? `*\u0633\u0631\u0648\u0633 \u0641\u06CC\u0633:* Rs.${data.serviceFee.toLocaleString()}\n` : ''}*\u06A9\u0644 \u0631\u0642\u0645:* Rs.${data.totalAmount.toLocaleString()}
 
-*Payment:* ${methodLabel}
-${data.transactionId ? `*Transaction ID:* ${data.transactionId}` : ''}
-${data.verificationUrl ? `\nVerify: ${data.verificationUrl}` : ''}
+*\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC:* ${methodLabel}
+${data.transactionId ? `*\u0644\u06CC\u0646 \u062F\u06CC\u0646 \u0646\u0645\u0628\u0631:* ${data.transactionId}` : ''}
+${data.verificationUrl ? `\n\u062A\u0635\u062F\u06CC\u0642: ${data.verificationUrl}` : ''}
 
 ━━━━━━━━━━━━━━━━━━
 Jugnoo Photostate

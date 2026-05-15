@@ -251,6 +251,12 @@ export function SupportChat() {
     }
   }, [isUrdu])
 
+  // ─── Check if message is a greeting ───
+  const isGreeting = useCallback((userMessage: string): boolean => {
+    const lower = userMessage.toLowerCase().trim()
+    return !!lower.match(/^(hello|hi|hey|salam|سلام|السلام|ہیلو|ہائے|assalam|اسلام)/)
+  }, [])
+
   // ─── Main send handler ───
   const handleSend = async () => {
     if (!input.trim()) return
@@ -268,57 +274,47 @@ export function SupportChat() {
     setInterimVoiceText('')
     setIsTyping(true)
 
-    // Step 1: Try rule-based matching first (fast)
-    const ruleResponse = getRuleBasedResponse(messageText)
-
-    if (ruleResponse) {
-      // Rule matched - use it directly (fast response)
-      setTimeout(() => {
-        const botMsg: ChatMessage = {
-          id: `bot_${Date.now()}`,
-          text: ruleResponse,
-          sender: 'bot',
-          timestamp: new Date(),
-          isAi: false,
-        }
-        setMessages(prev => [...prev, botMsg])
-        setIsTyping(false)
-      }, 400 + Math.random() * 400)
-    } else {
-      // Step 2: No rule match - call LLM API
-      try {
-        const llmResponse = await callLLM(messageText, chatHistory)
-
-        if (llmResponse) {
-          // LLM succeeded
+    // Step 1: If it's a greeting, use instant rule-based response (fast)
+    if (isGreeting(messageText)) {
+      const greetingResponse = getRuleBasedResponse(messageText)
+      if (greetingResponse) {
+        setTimeout(() => {
           const botMsg: ChatMessage = {
             id: `bot_${Date.now()}`,
-            text: llmResponse,
-            sender: 'bot',
-            timestamp: new Date(),
-            isAi: true,
-          }
-          setMessages(prev => [...prev, botMsg])
-          // Update chat history for context
-          setChatHistory(prev => [
-            ...prev,
-            { role: 'user', content: messageText },
-            { role: 'assistant', content: llmResponse },
-          ])
-        } else {
-          // Step 3: LLM failed - use fallback
-          const fallbackText = getFallbackResponse(messageText)
-          const botMsg: ChatMessage = {
-            id: `bot_${Date.now()}`,
-            text: fallbackText,
+            text: greetingResponse,
             sender: 'bot',
             timestamp: new Date(),
             isAi: false,
           }
           setMessages(prev => [...prev, botMsg])
+          setIsTyping(false)
+        }, 400 + Math.random() * 400)
+        return
+      }
+    }
+
+    // Step 2: For ALL non-greeting messages, ALWAYS call LLM API first
+    try {
+      const llmResponse = await callLLM(messageText, chatHistory)
+
+      if (llmResponse) {
+        // LLM succeeded
+        const botMsg: ChatMessage = {
+          id: `bot_${Date.now()}`,
+          text: llmResponse,
+          sender: 'bot',
+          timestamp: new Date(),
+          isAi: true,
         }
-      } catch {
-        // LLM error - use fallback
+        setMessages(prev => [...prev, botMsg])
+        // Update chat history for context
+        setChatHistory(prev => [
+          ...prev,
+          { role: 'user', content: messageText },
+          { role: 'assistant', content: llmResponse },
+        ])
+      } else {
+        // Step 3: LLM failed - use fallback
         const fallbackText = getFallbackResponse(messageText)
         const botMsg: ChatMessage = {
           id: `bot_${Date.now()}`,
@@ -329,9 +325,20 @@ export function SupportChat() {
         }
         setMessages(prev => [...prev, botMsg])
       }
-
-      setIsTyping(false)
+    } catch {
+      // LLM error - use fallback
+      const fallbackText = getFallbackResponse(messageText)
+      const botMsg: ChatMessage = {
+        id: `bot_${Date.now()}`,
+        text: fallbackText,
+        sender: 'bot',
+        timestamp: new Date(),
+        isAi: false,
+      }
+      setMessages(prev => [...prev, botMsg])
     }
+
+    setIsTyping(false)
   }
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
