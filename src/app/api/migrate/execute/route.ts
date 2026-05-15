@@ -35,7 +35,43 @@ CREATE TABLE IF NOT EXISTS whatsapp_notifications (
 );
 ALTER TABLE whatsapp_notifications ENABLE ROW LEVEL SECURITY;
 CREATE POLICY "Allow all" ON whatsapp_notifications FOR ALL USING (true) WITH CHECK (true);
-CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_is_sent ON whatsapp_notifications(is_sent) WHERE is_sent = false;`
+CREATE INDEX IF NOT EXISTS idx_whatsapp_notifications_is_sent ON whatsapp_notifications(is_sent) WHERE is_sent = false;
+
+-- Notifications table (for admin panel)
+CREATE TABLE IF NOT EXISTS notifications (
+  id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+  type TEXT NOT NULL DEFAULT 'info',
+  title TEXT NOT NULL,
+  message TEXT NOT NULL,
+  is_read BOOLEAN DEFAULT false,
+  category TEXT DEFAULT 'info',
+  created_at TIMESTAMPTZ DEFAULT now(),
+  reference_id TEXT,
+  reference_type TEXT
+);
+ALTER TABLE notifications ENABLE ROW LEVEL SECURITY;
+CREATE POLICY "Allow all" ON notifications FOR ALL USING (true) WITH CHECK (true);
+CREATE INDEX IF NOT EXISTS idx_notifications_unread ON notifications (is_read, created_at DESC) WHERE is_read = false;
+
+-- Storage buckets for file uploads
+INSERT INTO storage.buckets (id, name, public, file_size_limit) VALUES
+  ('order-files', 'order-files', true, 10485760),
+  ('documents', 'documents', true, 10485760)
+ON CONFLICT (id) DO NOTHING;
+
+-- Storage policies for order-files bucket
+CREATE POLICY "Public read access" ON storage.objects FOR SELECT USING (bucket_id = 'order-files');
+CREATE POLICY "Authenticated upload" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'order-files' AND auth.role() = 'authenticated');
+CREATE POLICY "Anon upload access" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'order-files');
+CREATE POLICY "Authenticated update" ON storage.objects FOR UPDATE USING (bucket_id = 'order-files');
+CREATE POLICY "Anon update access" ON storage.objects FOR UPDATE USING (bucket_id = 'order-files');
+
+-- Storage policies for documents bucket
+CREATE POLICY "Public read access docs" ON storage.objects FOR SELECT USING (bucket_id = 'documents');
+CREATE POLICY "Authenticated upload docs" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documents' AND auth.role() = 'authenticated');
+CREATE POLICY "Anon upload access docs" ON storage.objects FOR INSERT WITH CHECK (bucket_id = 'documents');
+CREATE POLICY "Authenticated update docs" ON storage.objects FOR UPDATE USING (bucket_id = 'documents');
+CREATE POLICY "Anon update access docs" ON storage.objects FOR UPDATE USING (bucket_id = 'documents');`
 
 /**
  * POST /api/migrate/execute
@@ -96,7 +132,7 @@ export async function POST(req: Request) {
 
     return Response.json({
       status: 'success',
-      message: 'Migration executed successfully! Both commission_rules and whatsapp_notifications tables have been created.',
+      message: 'Migration executed successfully! Tables created: commission_rules, whatsapp_notifications, notifications. Storage buckets created: order-files, documents.',
       result,
     })
   } catch (error) {
