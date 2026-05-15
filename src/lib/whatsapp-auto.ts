@@ -66,14 +66,14 @@ export function statusChangedMessage(data: OrderData, newStatus: string): WhatsA
   }
 
   const statusLabels: Record<string, string> = {
-    pending: 'Pending / زیر التوا',
-    in_progress: 'In Progress / جاری',
-    ready: 'Ready / تیار',
-    completed: 'Completed / مکمل',
-    delivered: 'Delivered / فراہم شدہ',
-    rejected: 'Rejected / مسترد',
-    submitted: 'Submitted / جمع شدہ',
-    approved: 'Approved / منظور شدہ',
+    pending: 'Pending',
+    in_progress: 'In Progress',
+    ready: 'Ready',
+    completed: 'Completed',
+    delivered: 'Delivered',
+    rejected: 'Rejected',
+    submitted: 'Submitted',
+    approved: 'Approved',
   }
 
   const emoji = statusEmojis[newStatus] || '📋'

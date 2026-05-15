@@ -400,36 +400,37 @@ export function generateInvoiceBlob(data: InvoiceData): Blob {
 }
 
 /**
- * Generate a WhatsApp share link with invoice summary (Urdu)
+ * Generate a WhatsApp share link with invoice summary (English + widely-supported emojis)
  */
 export function generateWhatsAppInvoiceLink(data: InvoiceData, phone?: string): string {
-  const methodLabel = data.paymentMethod === 'jazzcash' ? '\u062C\u06CC\u0632 \u06A9\u06CC\u0634'
-    : data.paymentMethod === 'easypaisa' ? '\u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1'
-    : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
-    : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
-    : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
+  const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
+    : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
+    : data.paymentMethod === 'bank_transfer' ? 'Bank Transfer'
+    : data.paymentMethod === 'online' ? 'Online Payment'
+    : data.paymentMethod === 'cash' ? 'Cash'
     : data.paymentMethod || 'N/A'
 
-  const summary = `*\u062C\u06AF\u0646\u0648 \u0641\u0648\u0679\u0648 \u0627\u0633\u0679\u06CC\u0679 - \u0628\u0644*
-━━━━━━━━━━━━━━━━━━
-\u0628\u0644 \u0646\u0645\u0628\u0631: ${data.invoiceNumber}
-\u062A\u0627\u0631\u06CC\u062E: ${data.date}
-\u06AF\u06AF\u0631\u0627\u0645\u06CC: ${data.customerName}
-${data.orderNumber ? `\u0622\u0631\u0688\u0631: ${data.orderNumber}` : ''}
+  const summary = `📄 *JUGNOO PHOTOSTATE - Invoice*
+━━━━━━━━━━━━━━━━━━━━━
+📋 Invoice: #${data.invoiceNumber}
+📆 Date: ${data.date}
+👤 Customer: ${data.customerName}
+${data.orderNumber ? `📦 Order: ${data.orderNumber}` : ''}
 
-*\u0622\u0626\u0679\u0645\u0632:*
-${data.items.map(item => `\u2022 ${item.description} x${item.quantity} = Rs.${item.total.toLocaleString()}`).join('\n')}
+*Items:*
+${data.items.map(item => `- ${item.description} x${item.quantity} = Rs.${item.total.toLocaleString()}`).join('\n')}
 
-*\u0630\u06CC\u0644\u06CC \u06A9\u0644:* Rs.${data.subtotal.toLocaleString()}
-${data.serviceFee ? `*\u0633\u0631\u0648\u0633 \u0641\u06CC\u0633:* Rs.${data.serviceFee.toLocaleString()}\n` : ''}*\u06A9\u0644 \u0631\u0642\u0645:* Rs.${data.totalAmount.toLocaleString()}
+💰 Subtotal: Rs.${data.subtotal.toLocaleString()}
+${data.serviceFee ? `🔧 Service Fee: Rs.${data.serviceFee.toLocaleString()}\n` : ''}💵 *Total: Rs.${data.totalAmount.toLocaleString()}*
 
-*\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC:* ${methodLabel}
-${data.transactionId ? `*\u0644\u06CC\u0646 \u062F\u06CC\u0646 \u0646\u0645\u0628\u0631:* ${data.transactionId}` : ''}
-${data.verificationUrl ? `\n\u062A\u0635\u062F\u06CC\u0642: ${data.verificationUrl}` : ''}
+💳 Payment: ${methodLabel}
+${data.transactionId ? `🔐 Trx ID: ${data.transactionId}` : ''}
+${data.verificationUrl ? `\n✅ Verify: ${data.verificationUrl}` : ''}
 
-━━━━━━━━━━━━━━━━━━
-Jugnoo Photostate
-\u0686\u0648\u06A9 \u0627\u0639\u0638\u0645\u060C \u0644\u06CC\u06C1`
+━━━━━━━━━━━━━━━━━━━━━
+🏪 _Jugnoo Photostate_
+📍 _Chowk Azam, Layyah, Punjab_
+💡 _AI-Powered Business Management_`
 
   const encodedSummary = encodeURIComponent(summary)
   return phone
