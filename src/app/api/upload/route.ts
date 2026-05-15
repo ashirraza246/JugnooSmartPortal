@@ -1,4 +1,8 @@
-import { supabase, isSupabaseConfigured } from '@/lib/supabase'
+import { createClient } from '@supabase/supabase-js'
+
+const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL || ''
+const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || ''
+const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY || ''
 
 const ALLOWED_FILE_TYPES = [
   'application/pdf',
@@ -21,9 +25,42 @@ const ALLOWED_EXTENSIONS = [
 
 const MAX_FILE_SIZE = 10 * 1024 * 1024 // 10MB
 
+function getAdminClient() {
+  // Use service_role key if available (can create buckets and bypass RLS)
+  // Fall back to anon key if service_role not configured
+  const key = supabaseServiceKey || supabaseAnonKey
+  if (!supabaseUrl || !key) return null
+  return createClient(supabaseUrl, key, {
+    auth: { persistSession: false, autoRefreshToken: false },
+  })
+}
+
+async function ensureBucketExists(bucketName: string): Promise<boolean> {
+  const admin = getAdminClient()
+  if (!admin) return false
+
+  // Check if bucket exists
+  const { data: buckets } = await admin.storage.listBuckets()
+  const exists = buckets?.some(b => b.name === bucketName)
+
+  if (!exists) {
+    // Try to create it (requires service_role key)
+    const { error: createError } = await admin.storage.createBucket(bucketName, {
+      public: true,
+      fileSizeLimit: MAX_FILE_SIZE,
+    })
+    if (createError) {
+      console.error(`Failed to create bucket ${bucketName}:`, createError.message)
+      return false
+    }
+  }
+
+  return true
+}
+
 export async function POST(req: Request) {
   try {
-    if (!isSupabaseConfigured()) {
+    if (!supabaseUrl || !supabaseAnonKey) {
       return Response.json({ error: 'Supabase not configured' }, { status: 500 })
     }
 
@@ -65,91 +102,49 @@ export async function POST(req: Request) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Try uploading to Supabase Storage - use 'order-files' bucket
-    const { data: uploadData, error: uploadError } = await supabase.storage
-      .from('order-files')
-      .upload(filePath, buffer, {
-        contentType: file.type || 'application/octet-stream',
-        upsert: false,
-      })
+    // Use admin client for storage operations (can bypass RLS and create buckets)
+    const admin = getAdminClient()
+    if (!admin) {
+      return Response.json({ error: 'Storage client not available' }, { status: 500 })
+    }
 
-    if (uploadError) {
-      // If storage bucket doesn't exist, try creating it
-      if (uploadError.message?.includes('not found') || uploadError.message?.includes('Bucket not found')) {
-        // Try creating the bucket
-        await supabase.storage.createBucket('order-files', {
-          public: true,
-          fileSizeLimit: MAX_FILE_SIZE,
-        })
+    // List of buckets to try in order
+    const bucketsToTry = ['order-files', 'documents']
 
-        // Retry upload
-        const { data: retryData, error: retryError } = await supabase.storage
-          .from('order-files')
-          .upload(filePath, buffer, {
-            contentType: file.type || 'application/octet-stream',
-            upsert: false,
-          })
+    for (const bucketName of bucketsToTry) {
+      // Ensure the bucket exists
+      await ensureBucketExists(bucketName)
 
-        if (retryError) {
-          // If still failing, try the 'documents' bucket as fallback
-          const { data: fallbackData, error: fallbackError } = await supabase.storage
-            .from('documents')
-            .upload(filePath, buffer, {
-              contentType: file.type || 'application/octet-stream',
-              upsert: false,
-            })
-
-          if (fallbackError) {
-            // Try creating documents bucket too
-            try {
-              await supabase.storage.createBucket('documents', { public: true, fileSizeLimit: MAX_FILE_SIZE })
-            } catch {}
-
-            const { data: retryFallbackData, error: retryFallbackError } = await supabase.storage
-              .from('documents')
-              .upload(filePath, buffer, {
-                contentType: file.type || 'application/octet-stream',
-                upsert: false,
-              })
-
-            if (retryFallbackError) {
-              console.error('All storage upload attempts failed:', retryFallbackError)
-              return Response.json({ error: 'Could not upload file. Storage buckets not available.' }, { status: 500 })
-            }
-
-            const { data: urlData } = supabase.storage.from('documents').getPublicUrl(retryFallbackData!.path)
-            return Response.json({ url: urlData.publicUrl })
-          }
-
-          const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fallbackData!.path)
-          return Response.json({ url: urlData.publicUrl })
-        }
-
-        const { data: urlData } = supabase.storage.from('order-files').getPublicUrl(retryData!.path)
-        return Response.json({ url: urlData.publicUrl })
-      }
-
-      console.error('Storage upload error:', uploadError)
-
-      // Fallback: try 'documents' bucket if order-files fails for other reasons
-      const { data: fallbackData, error: fallbackError } = await supabase.storage
-        .from('documents')
+      // Try uploading
+      const { data: uploadData, error: uploadError } = await admin.storage
+        .from(bucketName)
         .upload(filePath, buffer, {
           contentType: file.type || 'application/octet-stream',
           upsert: false,
         })
 
-      if (fallbackError) {
-        return Response.json({ error: 'Upload failed: ' + uploadError.message }, { status: 500 })
+      if (!uploadError && uploadData) {
+        // Success - get public URL
+        const { data: urlData } = admin.storage.from(bucketName).getPublicUrl(uploadData.path)
+        return Response.json({ url: urlData.publicUrl })
       }
 
-      const { data: urlData } = supabase.storage.from('documents').getPublicUrl(fallbackData.path)
-      return Response.json({ url: urlData.publicUrl })
+      // If bucket still not found after creation attempt, try next bucket
+      console.warn(`Upload to ${bucketName} failed:`, uploadError?.message)
     }
 
-    // Get public URL
-    const { data: urlData } = supabase.storage.from('order-files').getPublicUrl(uploadData.path)
-    return Response.json({ url: urlData.publicUrl })
+    // All buckets failed - as last resort, store as base64 data URL in the database
+    // This is a fallback that doesn't require storage buckets
+    console.error('All storage upload attempts failed. Using base64 fallback.')
+    const base64 = buffer.toString('base64')
+    const dataUrl = `data:${file.type || 'application/octet-stream'};base64,${base64}`
+
+    // Check if data URL is not too large for database (supabase text column limit ~1MB)
+    if (dataUrl.length < 900000) {
+      return Response.json({ url: dataUrl, isBase64: true })
+    }
+
+    return Response.json({ error: 'Could not upload file. Storage buckets not available. Please create the "order-files" bucket in Supabase Dashboard > Storage.' }, { status: 500 })
   } catch (error) {
     console.error('Upload API error:', error)
     return Response.json({ error: 'Upload failed' }, { status: 500 })

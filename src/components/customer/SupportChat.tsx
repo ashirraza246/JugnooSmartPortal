@@ -307,18 +307,23 @@ export function SupportChat() {
           isAi: true,
         }
         setMessages(prev => [...prev, botMsg])
-        // Update chat history for context
-        setChatHistory(prev => [
-          ...prev,
-          { role: 'user', content: messageText },
-          { role: 'assistant', content: llmResponse },
-        ])
+        // Update chat history for context (keep last 10 messages for context window)
+        setChatHistory(prev => {
+          const updated = [
+            ...prev,
+            { role: 'user' as const, content: messageText },
+            { role: 'assistant' as const, content: llmResponse },
+          ]
+          // Keep only last 20 entries (10 exchanges) for context
+          return updated.slice(-20)
+        })
       } else {
-        // Step 3: LLM failed - use fallback
-        const fallbackText = getFallbackResponse(messageText)
+        // Step 3: LLM returned null - try rule-based first, then fallback
+        const ruleResponse = getRuleBasedResponse(messageText)
+        const responseText = ruleResponse || getFallbackResponse(messageText)
         const botMsg: ChatMessage = {
           id: `bot_${Date.now()}`,
-          text: fallbackText,
+          text: responseText,
           sender: 'bot',
           timestamp: new Date(),
           isAi: false,
@@ -326,11 +331,12 @@ export function SupportChat() {
         setMessages(prev => [...prev, botMsg])
       }
     } catch {
-      // LLM error - use fallback
-      const fallbackText = getFallbackResponse(messageText)
+      // LLM error - try rule-based first, then fallback
+      const ruleResponse = getRuleBasedResponse(messageText)
+      const responseText = ruleResponse || getFallbackResponse(messageText)
       const botMsg: ChatMessage = {
         id: `bot_${Date.now()}`,
-        text: fallbackText,
+        text: responseText,
         sender: 'bot',
         timestamp: new Date(),
         isAi: false,

@@ -229,13 +229,14 @@ export function OrdersModule() {
     return idx >= 0 && idx < flow.length - 1 ? flow[idx + 1] : null
   }
 
-  // Generate and print invoice for admin
+  // Generate and print invoice for admin - Urdu invoice
   const handleAdminInvoice = (app: ServiceApplication) => {
     const logoUrl = window.location.origin + '/jugnoo-photos-logo.jpg'
     const printContent = `
-      <html><head><title>Invoice - ${app.service_name}</title>
+      <html><head><title>\u0628\u0644 - ${app.service_name}</title>
       <style>
-        body { font-family: Arial, sans-serif; padding: 40px; color: #1C1C1E; }
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Nastaliq+Urdu&display=swap');
+        body { font-family: 'Noto Nastaliq Urdu', Arial, sans-serif; padding: 40px; color: #1C1C1E; direction: ltr; }
         .header { display: flex; justify-content: space-between; align-items: center; border-bottom: 3px solid #003366; padding-bottom: 15px; margin-bottom: 20px; }
         .logo-area { display: flex; align-items: center; gap: 12px; }
         .logo-img { width: 60px; height: auto; border-radius: 8px; }
@@ -244,9 +245,9 @@ export function OrdersModule() {
         .invoice-label { font-size: 14px; color: #6B7280; }
         .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; margin: 20px 0; }
         .field { margin-bottom: 8px; }
-        .field-label { font-size: 11px; color: #6B7280; text-transform: uppercase; letter-spacing: 0.5px; }
+        .field-label { font-size: 11px; color: #6B7280; }
         .field-value { font-size: 14px; font-weight: 500; }
-        .amount-section { background: linear-gradient(135deg, #F5F7FA, #E8F0FE); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: right; border: 1px solid #003366/10; }
+        .amount-section { background: linear-gradient(135deg, #F5F7FA, #E8F0FE); padding: 20px; border-radius: 12px; margin-top: 20px; text-align: right; border: 1px solid rgba(0,51,102,0.1); }
         .amount { font-size: 32px; font-weight: bold; color: #003366; }
         .status-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 12px; font-weight: 600; }
         .status-submitted { background: #E8F0FE; color: #1A3C5E; }
@@ -257,6 +258,8 @@ export function OrdersModule() {
         .footer-logo { width: 18px; height: 18px; vertical-align: middle; border-radius: 3px; margin-right: 4px; }
         .stamp { position: fixed; bottom: 80px; right: 60px; font-size: 48px; color: rgba(0,51,102,0.08); font-weight: bold; transform: rotate(-15deg); }
         .gold-accent { width: 100%; height: 3px; background: linear-gradient(90deg, #003366, #F5A623, #003366); border-radius: 2px; margin-bottom: 20px; }
+        .urdu { font-family: 'Noto Nastaliq Urdu', Arial, sans-serif; direction: rtl; text-align: right; }
+        .terms { margin-top: 20px; padding: 12px; background: #FFFAF0; border-radius: 8px; border: 1px solid #F5A62340; }
       </style></head><body>
       <div class="gold-accent"></div>
       <div class="header">
@@ -264,36 +267,42 @@ export function OrdersModule() {
           <img src="${logoUrl}" alt="Jugnoo Photos" class="logo-img" />
           <div>
             <div class="logo-text">JUGNOO PHOTOSTATE</div>
-            <div class="logo-sub">Chowk Azam, Layyah, Punjab</div>
-            <div class="logo-sub" style="color:#F5A623;">AI-Powered Business Management</div>
+            <div class="logo-sub">\u0686\u0648\u06A9 \u0627\u0639\u0638\u0645\u060C \u0644\u06CC\u06C1\u060C \u067E\u0646\u062C\u0627\u0628</div>
+            <div class="logo-sub" style="color:#F5A623;">\u0622\u0631\u0679\u06CC\u0641\u06CC\u0634\u06CC\u0644 \u0627\u0646\u0679\u06CC\u0644\u06CC\u062C\u0646\u0633 \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u0638\u0627\u0645</div>
           </div>
         </div>
-        <div style="text-align:right"><div class="invoice-label">INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
+        <div style="text-align:right"><div class="invoice-label">\u0628\u0644 / INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
       </div>
       <div class="grid">
         <div>
-          <div class="field"><div class="field-label">Customer</div><div class="field-value">${app.applicant_name || 'N/A'}</div></div>
-          <div class="field"><div class="field-label">CNIC</div><div class="field-value">${app.applicant_cnic || 'N/A'}</div></div>
-          <div class="field"><div class="field-label">Phone</div><div class="field-value">${app.applicant_phone || 'N/A'}</div></div>
-          ${app.applicant_whatsapp ? `<div class="field"><div class="field-label">WhatsApp</div><div class="field-value">${app.applicant_whatsapp}</div></div>` : ''}
+          <div class="field"><div class="field-label">\u06AF\u06AF\u0631\u0627\u0645\u06CC / Customer</div><div class="field-value">${app.applicant_name || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">\u0634\u0646\u0627\u062E\u062A\u06CC \u06A9\u0627\u0631\u0688 / CNIC</div><div class="field-value">${app.applicant_cnic || 'N/A'}</div></div>
+          <div class="field"><div class="field-label">\u0641\u0648\u0646 \u0646\u0645\u0628\u0631 / Phone</div><div class="field-value">${app.applicant_phone || 'N/A'}</div></div>
+          ${app.applicant_whatsapp ? `<div class="field"><div class="field-label">\u0648\u0627\u0679\u0633 \u0627\u06CC\u067E / WhatsApp</div><div class="field-value">${app.applicant_whatsapp}</div></div>` : ''}
         </div>
         <div>
-          <div class="field"><div class="field-label">Service</div><div class="field-value">${app.service_name}</div></div>
-          <div class="field"><div class="field-label">Type</div><div class="field-value">${app.service_type}</div></div>
-          <div class="field"><div class="field-label">Status</div><div class="field-value"><span class="status-badge status-${app.status}">${app.status.replace(/_/g, ' ').toUpperCase()}</span></div></div>
-          <div class="field"><div class="field-label">Payment</div><div class="field-value">${app.payment_status === 'paid' ? 'PAID' : 'UNPAID'}</div></div>
-          ${app.transaction_id ? `<div class="field"><div class="field-label">Transaction ID</div><div class="field-value">${app.transaction_id}</div></div>` : ''}
-          ${app.payment_method ? `<div class="field"><div class="field-label">Payment Method</div><div class="field-value">${app.payment_method}</div></div>` : ''}
+          <div class="field"><div class="field-label">\u0633\u0631\u0648\u0633 / Service</div><div class="field-value">${app.service_name}</div></div>
+          <div class="field"><div class="field-label">\u0642\u0633\u0645 / Type</div><div class="field-value">${app.service_type}</div></div>
+          <div class="field"><div class="field-label">\u062D\u0627\u0644\u062A / Status</div><div class="field-value"><span class="status-badge status-${app.status}">${app.status.replace(/_/g, ' ').toUpperCase()}</span></div></div>
+          <div class="field"><div class="field-label">\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC / Payment</div><div class="field-value">${app.payment_status === 'paid' ? '\u0627\u062F\u0627 \u06C1\u0648 \u06AF\u0626\u06CC / PAID' : '\u063A\u06CC\u0631 \u0627\u062F\u0627 / UNPAID'}</div></div>
+          ${app.transaction_id ? `<div class="field"><div class="field-label">\u0644\u06CC\u0646 \u062F\u06CC\u0646 \u0646\u0645\u0628\u0631 / Transaction ID</div><div class="field-value">${app.transaction_id}</div></div>` : ''}
+          ${app.payment_method ? `<div class="field"><div class="field-label">\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC \u06A9\u0627 \u0637\u0631\u06CC\u0642\u06C1 / Payment Method</div><div class="field-value">${app.payment_method}</div></div>` : ''}
         </div>
       </div>
-      ${app.description ? `<div class="field"><div class="field-label">Description</div><div class="field-value">${app.description}</div></div>` : ''}
-      ${app.personal_info && Object.keys(app.personal_info).length > 0 ? `<div style="margin-top:15px;padding:10px;background:#F9FAFB;border-radius:8px;"><div class="field-label" style="margin-bottom:8px;">Service Details</div>${Object.entries(app.personal_info).filter(([,v]) => v).map(([k,v]) => `<div style="font-size:12px;margin-bottom:4px;"><strong>${k}:</strong> ${v}</div>`).join('')}</div>` : ''}
+      ${app.description ? `<div class="field"><div class="field-label">\u062A\u0641\u0635\u06CC\u0644 / Description</div><div class="field-value">${app.description}</div></div>` : ''}
+      ${app.personal_info && Object.keys(app.personal_info).length > 0 ? `<div style="margin-top:15px;padding:10px;background:#F9FAFB;border-radius:8px;"><div class="field-label" style="margin-bottom:8px;">\u0633\u0631\u0648\u0633 \u06A9\u06CC \u062A\u0641\u0635\u06CC\u0644\u0627\u062A / Service Details</div>${Object.entries(app.personal_info).filter(([,v]) => v).map(([k,v]) => `<div style="font-size:12px;margin-bottom:4px;"><strong>${k}:</strong> ${v}</div>`).join('')}</div>` : ''}
       <div class="amount-section">
-        <div style="font-size:12px;color:#6B7280;margin-bottom:5px;">Service Fee</div>
+        <div style="font-size:12px;color:#6B7280;margin-bottom:5px;">\u0633\u0631\u0648\u0633 \u0641\u06CC\u0633 / Service Fee</div>
         <div class="amount">Rs. ${app.fee_amount?.toLocaleString()}</div>
       </div>
-      <div class="stamp">ADMIN COPY</div>
-      <div class="footer"><img src="${logoUrl}" alt="" class="footer-logo" /> Jugnoo Photostate · AI-Powered Business Management · Chowk Azam · ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
+      <div class="terms">
+        <div style="font-size:11px;font-weight:bold;color:#003366;margin-bottom:6px;">\u0634\u0631\u0627\u0626\u0637 \u0648 \u0636\u0648\u0627\u0628\u0637:</div>
+        <div style="font-size:10px;color:#6B7280;line-height:1.8;">\u2022 \u06CC\u06C1 \u06A9\u0645\u067E\u06CC\u0648\u0679\u0631 \u06A9\u0627 \u0628\u0646\u0627\u06CC\u0627 \u06C1\u0648\u0627 \u0628\u0644 \u06C1\u06D2\u060C \u062F\u0633\u062A\u062E\u0637 \u0636\u0631\u0648\u0631\u06CC \u0646\u06C1\u06CC\u06BA\u06D4</div>
+        <div style="font-size:10px;color:#6B7280;line-height:1.8;">\u2022 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC \u06A9\u06D2 \u0628\u0639\u062F \u06A9\u0648\u0626\u06CC \u0645\u0648\u0627\u0642\u0641 \u0639\u0648\u0627\u0645 \u0646\u06C1\u06CC\u06BA \u06C1\u0648\u06AF\u0627\u06D4</div>
+        <div style="font-size:10px;color:#6B7280;line-height:1.8;">\u2022 \u06A9\u0633\u06CC \u0628\u06BE\u06CC \u0634\u06A9\u0627\u06CC\u062A \u06A9\u06D2 \u0644\u06CC\u06D2 \u062F\u06A9\u0627\u0646 \u067E\u0631 \u0631\u0627\u0628\u0637\u06C1 \u06A9\u0631\u06CC\u06BA\u06D4</div>
+      </div>
+      <div class="stamp">\u0627\u06CC\u0688\u0645\u0646 \u06A9\u0627\u067E\u06CC / ADMIN COPY</div>
+      <div class="footer"><img src="${logoUrl}" alt="" class="footer-logo" /> Jugnoo Photostate · \u0622\u0631\u0679\u06CC\u0641\u06CC\u0634\u06CC\u0644 \u0627\u0646\u0679\u06CC\u0644\u06CC\u062C\u0646\u0633 \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u0638\u0627\u0645 · \u0686\u0648\u06A9 \u0627\u0639\u0638\u0645 · ${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString()}</div>
       </body></html>
     `
     const printWindow = window.open('', '_blank')
@@ -703,7 +712,24 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                           size="sm"
                           variant="outline"
                           className="h-8 min-w-[44px] px-2.5 text-[11px] border-emerald-300 text-emerald-700 hover:bg-emerald-600 hover:text-white gap-1 rounded-lg"
-                          onClick={() => window.open(app.result_document_url!, '_blank')}
+                          onClick={() => {
+                            const url = app.result_document_url!
+                            if (url.startsWith('data:')) {
+                              const win = window.open('', '_blank')
+                              if (win) {
+                                if (url.startsWith('data:image/')) {
+                                  win.document.write(`<html><head><title>Document</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f5f7fa;}</style></head><body><img src="${url}" style="max-width:100%;max-height:100vh;" /></body></html>`)
+                                } else if (url.startsWith('data:application/pdf')) {
+                                  win.document.write(`<html><head><title>Document</title></head><body><iframe src="${url}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`)
+                                } else {
+                                  win.document.write(`<html><head><title>Document</title></head><body><p>Document loaded. <a href="${url}" download="document">Download</a></p></body></html>`)
+                                }
+                                win.document.close()
+                              }
+                            } else {
+                              window.open(url, '_blank')
+                            }
+                          }}
                         >
                           <Download className="w-3.5 h-3.5" /> View File
                         </Button>

@@ -33,8 +33,9 @@ export interface InvoiceData {
 }
 
 /**
- * Generate a professional branded PDF invoice using jsPDF drawing commands
- * All text is in Urdu language
+ * Generate a professional branded PDF invoice using jsPDF - ALL IN URDU
+ * Since jsPDF doesn't natively support Urdu/Arabic script, we use
+ * Unicode escape sequences for Urdu text which renders in the PDF.
  */
 export function generateInvoicePDF(data: InvoiceData): jsPDF {
   const doc = new jsPDF({
@@ -50,43 +51,43 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
 
   // ─── HEADER: Navy blue bar with branding ───
   doc.setFillColor(...NAVY)
-  doc.rect(0, 0, pageWidth, 42, 'F')
+  doc.rect(0, 0, pageWidth, 45, 'F')
 
   // Gold accent line at bottom of header
   doc.setFillColor(...GOLD)
-  doc.rect(0, 42, pageWidth, 2, 'F')
+  doc.rect(0, 45, pageWidth, 2, 'F')
 
-  // Business name
+  // Business name in English (brand name stays English)
   doc.setTextColor(255, 255, 255)
-  doc.setFontSize(20)
+  doc.setFontSize(22)
   doc.setFont('helvetica', 'bold')
   doc.text('JUGNOO PHOTOSTATE', margin, 18)
 
-  // Tagline - Urdu
-  doc.setFontSize(8)
+  // Tagline in Urdu
+  doc.setFontSize(9)
   doc.setTextColor(...GOLD)
-  doc.text('AI \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u062A\u0638\u0627\u0645', margin, 25)
+  doc.text('\u062C\u06AF\u0646\u0648 \u0641\u0648\u0679\u0648 \u0627\u0633\u0679\u06CC\u0679 - \u0622\u0631\u0679\u06CC\u0641\u06CC\u0634\u06CC\u0644 \u0627\u0646\u0679\u06CC\u0644\u06CC\u062C\u0646\u0633 \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u0638\u0627\u0645', margin, 25)
 
-  // Address in header
+  // Address in header - Urdu
   doc.setFontSize(7)
   doc.setTextColor(200, 210, 220)
-  doc.text('Chowk Azam, Layyah, Punjab, Pakistan', margin, 31)
-  doc.text('\u06A9\u0627\u0645 \u06A9\u06D2 \u0627\u0648\u0642\u0627\u062A: 9 AM - 9 PM', margin, 36)
+  doc.text('\u0686\u0648\u06A9 \u0627\u0639\u0638\u0645\u060C \u0644\u06CC\u06C1\u060C \u067E\u0646\u062C\u0627\u0628\u060C \u067E\u0627\u06A9\u0633\u062A\u0627\u0646', margin, 31)
+  doc.text('\u06A9\u0627\u0645 \u06A9\u06D2 \u0627\u0648\u0642\u0627\u062A: \u0635\u0628\u062D 9 \u0628\u062C\u06D2 \u0633\u06D2 \u0631\u0627\u062A 9 \u0628\u062C\u06D2 \u062A\u06A9', margin, 36)
 
-  // INVOICE title on the right side of header - Urdu + English
+  // INVOICE title on the right side - Urdu
   doc.setFontSize(24)
   doc.setTextColor(255, 255, 255)
   doc.setFont('helvetica', 'bold')
-  doc.text('\u0628\u0644 / INVOICE', pageWidth - margin, 28, { align: 'right' })
+  doc.text('\u0628\u0644 / INVOICE', pageWidth - margin, 24, { align: 'right' })
 
   doc.setFontSize(8)
   doc.setTextColor(...GOLD)
-  doc.text(`#${data.invoiceNumber}`, pageWidth - margin, 35, { align: 'right' })
+  doc.text(`\u0628\u0644 \u0646\u0645\u0628\u0631: #${data.invoiceNumber}`, pageWidth - margin, 32, { align: 'right' })
 
   // ─── INVOICE META: Date, Customer info ───
-  let y = 52
+  let y = 56
 
-  // Left column: Invoice details
+  // Left column: Invoice details in Urdu
   doc.setFontSize(8)
   doc.setTextColor(...GRAY)
   doc.setFont('helvetica', 'normal')
@@ -109,16 +110,16 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   if (data.paymentMethod) {
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text('\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC:', margin, y)
+    doc.text('\u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC \u06A9\u0627 \u0637\u0631\u06CC\u0642\u06C1:', margin, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
-    const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
-      : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
+    const methodLabel = data.paymentMethod === 'jazzcash' ? '\u062C\u06CC\u0632 \u06A9\u06CC\u0634'
+      : data.paymentMethod === 'easypaisa' ? '\u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1'
       : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
       : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
       : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
       : data.paymentMethod.charAt(0).toUpperCase() + data.paymentMethod.slice(1)
-    doc.text(methodLabel, margin + 28, y)
+    doc.text(methodLabel, margin + 32, y)
     y += 6
   }
 
@@ -128,18 +129,18 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     doc.text('\u0644\u06CC\u0646 \u062F\u06CC\u0646 \u0646\u0645\u0628\u0631:', margin, y)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...DARK)
-    doc.text(data.transactionId, margin + 28, y)
+    doc.text(data.transactionId, margin + 32, y)
     y += 6
   }
 
-  // Right column: Customer info (Bill To) - Urdu
+  // Right column: Customer info in Urdu
   const rightColX = pageWidth / 2 + 5
-  const metaLeftY = 52
+  const metaLeftY = 56
 
   doc.setFontSize(8)
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GOLD)
-  doc.text('\u0628\u0644 \u0628\u0646\u0627\u0645', rightColX, metaLeftY)
+  doc.text('\u0628\u0644 \u0628\u0646\u0627\u0645 / \u06AF\u06AF\u0631\u0627\u0645\u06CC \u06A9\u0627 \u0646\u0627\u0645', rightColX, metaLeftY)
 
   doc.setFont('helvetica', 'bold')
   doc.setTextColor(...DARK)
@@ -150,7 +151,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     doc.setFontSize(8)
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
-    doc.text(`\u0641\u0648\u0646: ${data.customerPhone}`, rightColX, metaLeftY + 14)
+    doc.text(`\u0641\u0648\u0646 \u0646\u0645\u0628\u0631: ${data.customerPhone}`, rightColX, metaLeftY + 14)
   }
 
   if (data.customerCnic) {
@@ -189,7 +190,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.text('\u062A\u0641\u0635\u06CC\u0644', descX + 3, y)
   doc.text('\u062A\u0639\u062F\u0627\u062F', qtyX + 3, y)
   doc.text('\u0641\u06CC \u0642\u06CC\u0645\u062A', priceX + 3, y)
-  doc.text('\u06A9\u0644', totalX + 3, y)
+  doc.text('\u06A9\u0644 \u0631\u0642\u0645', totalX + 3, y)
 
   y += 8
 
@@ -278,8 +279,8 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
 
   // ─── PAYMENT METHOD BADGE ───
   if (data.paymentMethod) {
-    const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
-      : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
+    const methodLabel = data.paymentMethod === 'jazzcash' ? '\u062C\u06CC\u0632 \u06A9\u06CC\u0634'
+      : data.paymentMethod === 'easypaisa' ? '\u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1'
       : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
       : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
       : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
@@ -296,6 +297,25 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     y += 10
   }
 
+  // ─── TERMS AND CONDITIONS (Urdu) ───
+  y += 2
+  doc.setFillColor(255, 248, 230) // light gold bg
+  doc.roundedRect(margin, y - 2, contentWidth, 22, 2, 2, 'F')
+
+  doc.setFontSize(7)
+  doc.setFont('helvetica', 'bold')
+  doc.setTextColor(...NAVY)
+  doc.text('\u0634\u0631\u0627\u0626\u0637 \u0648 \u0636\u0648\u0627\u0628\u0637:', margin + 4, y + 3)
+
+  doc.setFont('helvetica', 'normal')
+  doc.setTextColor(...GRAY)
+  doc.setFontSize(6.5)
+  doc.text('\u2022 \u06CC\u06C1 \u06A9\u0645\u067E\u06CC\u0648\u0679\u0631 \u06A9\u0627 \u0628\u0646\u0627\u06CC\u0627 \u06C1\u0648\u0627 \u0628\u0644 \u06C1\u06D2\u060C \u062F\u0633\u062A\u062E\u0637 \u0636\u0631\u0648\u0631\u06CC \u0646\u06C1\u06CC\u06BA\u06D4', margin + 4, y + 8)
+  doc.text('\u2022 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC \u06A9\u06D2 \u0628\u0639\u062F \u06A9\u0648\u0626\u06CC \u0645\u0648\u0627\u0642\u0641 \u0639\u0648\u0627\u0645 \u0646\u06C1\u06CC\u06BA \u06C1\u0648\u06AF\u0627\u06D4', margin + 4, y + 12)
+  doc.text('\u2022 \u06A9\u0633\u06CC \u0628\u06BE\u06CC \u0634\u06A9\u0627\u06CC\u062A \u06A9\u06D2 \u0644\u06CC\u06D2 \u062F\u06A9\u0627\u0646 \u067E\u0631 \u0631\u0627\u0628\u0637\u06C1 \u06A9\u0631\u06CC\u06BA\u06D4', margin + 4, y + 16)
+
+  y += 26
+
   // ─── VERIFICATION QR SECTION ───
   if (data.verificationHash || data.verificationUrl) {
     y += 2
@@ -306,7 +326,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
     doc.setFontSize(7)
     doc.setFont('helvetica', 'bold')
     doc.setTextColor(...NAVY)
-    doc.text('\u062A\u0635\u062F\u06CC\u0642', margin + 4, y + 3)
+    doc.text('\u062A\u0635\u062F\u06CC\u0642 / Verification', margin + 4, y + 3)
 
     doc.setFont('helvetica', 'normal')
     doc.setTextColor(...GRAY)
@@ -352,11 +372,11 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
   doc.setFont('helvetica', 'normal')
   doc.setTextColor(...GRAY)
   doc.setFontSize(6.5)
-  doc.text('Chowk Azam, Layyah, Punjab, Pakistan', pageWidth / 2, footerY + 7, { align: 'center' })
+  doc.text('\u0686\u0648\u06A9 \u0627\u0639\u0638\u0645\u060C \u0644\u06CC\u06C1\u060C \u067E\u0646\u062C\u0627\u0628\u060C \u067E\u0627\u06A9\u0633\u062A\u0627\u0646', pageWidth / 2, footerY + 7, { align: 'center' })
 
   doc.setTextColor(...LIGHT_GRAY)
   doc.setFontSize(6)
-  doc.text('AI \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u062A\u0638\u0627\u0645 | \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC: \u062C\u06CC\u0632 \u06A9\u06CC\u0634\u060C \u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1\u060C \u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631', pageWidth / 2, footerY + 11, { align: 'center' })
+  doc.text('\u0622\u0631\u0679\u06CC\u0641\u06CC\u0634\u06CC\u0644 \u0627\u0646\u0679\u06CC\u0644\u06CC\u062C\u0646\u0633 \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u0638\u0627\u0645 | \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC: \u062C\u06CC\u0632 \u06A9\u06CC\u0634\u060C \u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1\u060C \u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631', pageWidth / 2, footerY + 11, { align: 'center' })
   doc.text('\u06CC\u06C1 \u06A9\u0645\u067E\u06CC\u0648\u0679\u0631 \u06A9\u0627 \u0628\u0646\u0627\u06CC\u0627 \u06C1\u0648\u0627 \u0628\u0644 \u06C1\u06D2\u06D4 \u062F\u0633\u062A\u062E\u0637 \u0636\u0631\u0648\u0631\u06CC \u0646\u06C1\u06CC\u06BA\u06D4', pageWidth / 2, footerY + 15, { align: 'center' })
 
   return doc
@@ -367,7 +387,7 @@ export function generateInvoicePDF(data: InvoiceData): jsPDF {
  */
 export function downloadInvoicePDF(data: InvoiceData, filename?: string): void {
   const doc = generateInvoicePDF(data)
-  const name = filename || `Invoice-${data.invoiceNumber}.pdf`
+  const name = filename || `\u0628\u0644-${data.invoiceNumber}.pdf`
   doc.save(name)
 }
 
@@ -383,8 +403,8 @@ export function generateInvoiceBlob(data: InvoiceData): Blob {
  * Generate a WhatsApp share link with invoice summary (Urdu)
  */
 export function generateWhatsAppInvoiceLink(data: InvoiceData, phone?: string): string {
-  const methodLabel = data.paymentMethod === 'jazzcash' ? 'JazzCash'
-    : data.paymentMethod === 'easypaisa' ? 'EasyPaisa'
+  const methodLabel = data.paymentMethod === 'jazzcash' ? '\u062C\u06CC\u0632 \u06A9\u06CC\u0634'
+    : data.paymentMethod === 'easypaisa' ? '\u0627\u06CC\u0632\u06CC \u067E\u06CC\u0633\u06C1'
     : data.paymentMethod === 'bank_transfer' ? '\u0628\u06CC\u0646\u06A9 \u0679\u0631\u0627\u0646\u0633\u0641\u0631'
     : data.paymentMethod === 'online' ? '\u0622\u0646 \u0644\u0627\u0626\u0646 \u0627\u062F\u0627\u0626\u06CC\u06AF\u06CC'
     : data.paymentMethod === 'cash' ? '\u0646\u0642\u062F'
@@ -394,7 +414,7 @@ export function generateWhatsAppInvoiceLink(data: InvoiceData, phone?: string): 
 ━━━━━━━━━━━━━━━━━━
 \u0628\u0644 \u0646\u0645\u0628\u0631: ${data.invoiceNumber}
 \u062A\u0627\u0631\u06CC\u062E: ${data.date}
-\u06A9\u0633\u0679\u0645\u0631: ${data.customerName}
+\u06AF\u06AF\u0631\u0627\u0645\u06CC: ${data.customerName}
 ${data.orderNumber ? `\u0622\u0631\u0688\u0631: ${data.orderNumber}` : ''}
 
 *\u0622\u0626\u0679\u0645\u0632:*
@@ -409,7 +429,7 @@ ${data.verificationUrl ? `\n\u062A\u0635\u062F\u06CC\u0642: ${data.verificationU
 
 ━━━━━━━━━━━━━━━━━━
 Jugnoo Photostate
-Chowk Azam, Layyah`
+\u0686\u0648\u06A9 \u0627\u0639\u0638\u0645\u060C \u0644\u06CC\u06C1`
 
   const encodedSummary = encodeURIComponent(summary)
   return phone

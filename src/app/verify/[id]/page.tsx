@@ -3,25 +3,40 @@
 import { useQuery } from '@tanstack/react-query'
 import { use } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Shield, CheckCircle2, XCircle, MapPin, Building2, Calendar, FileText, Hash, User, QrCode, Lock, Info, Phone, MessageSquare, Sparkles } from 'lucide-react'
+import { Shield, CheckCircle2, XCircle, MapPin, Building2, Calendar, FileText, Hash, User, QrCode, Lock, Info, Phone, MessageSquare, Sparkles, Eye, Clock, Fingerprint, Award, AlertTriangle, Globe } from 'lucide-react'
 import { Card, CardContent } from '@/components/ui/card'
 
 // Animated Checkmark SVG Component
 function AnimatedCheckmark() {
   return (
     <motion.svg
-      width="64"
-      height="64"
-      viewBox="0 0 64 64"
+      width="72"
+      height="72"
+      viewBox="0 0 72 72"
       fill="none"
       initial="hidden"
       animate="visible"
     >
-      {/* Circle */}
+      {/* Outer glow */}
       <motion.circle
-        cx="32"
-        cy="32"
-        r="28"
+        cx="36"
+        cy="36"
+        r="34"
+        stroke="#10B981"
+        strokeWidth="1"
+        fill="none"
+        opacity="0.2"
+        variants={{
+          hidden: { pathLength: 0, opacity: 0 },
+          visible: { pathLength: 1, opacity: 0.2 }
+        }}
+        transition={{ duration: 0.4, ease: "easeInOut" }}
+      />
+      {/* Main circle */}
+      <motion.circle
+        cx="36"
+        cy="36"
+        r="30"
         stroke="#10B981"
         strokeWidth="4"
         fill="none"
@@ -33,9 +48,9 @@ function AnimatedCheckmark() {
       />
       {/* Checkmark */}
       <motion.path
-        d="M20 32 L28 40 L44 24"
+        d="M22 36 L30 44 L50 24"
         stroke="#10B981"
-        strokeWidth="4"
+        strokeWidth="4.5"
         strokeLinecap="round"
         strokeLinejoin="round"
         fill="none"
@@ -53,17 +68,17 @@ function AnimatedCheckmark() {
 function AnimatedXMark() {
   return (
     <motion.svg
-      width="64"
-      height="64"
-      viewBox="0 0 64 64"
+      width="72"
+      height="72"
+      viewBox="0 0 72 72"
       fill="none"
       initial="hidden"
       animate="visible"
     >
       <motion.circle
-        cx="32"
-        cy="32"
-        r="28"
+        cx="36"
+        cy="36"
+        r="30"
         stroke="#EF4444"
         strokeWidth="4"
         fill="none"
@@ -74,7 +89,7 @@ function AnimatedXMark() {
         transition={{ duration: 0.6, ease: "easeInOut" }}
       />
       <motion.path
-        d="M24 24 L40 40"
+        d="M26 26 L46 46"
         stroke="#EF4444"
         strokeWidth="4"
         strokeLinecap="round"
@@ -86,7 +101,7 @@ function AnimatedXMark() {
         transition={{ duration: 0.3, ease: "easeInOut", delay: 0.5 }}
       />
       <motion.path
-        d="M40 24 L24 40"
+        d="M46 26 L26 46"
         stroke="#EF4444"
         strokeWidth="4"
         strokeLinecap="round"
@@ -104,13 +119,99 @@ function AnimatedXMark() {
 // Pulse ring effect
 function PulseRing() {
   return (
+    <>
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        initial={{ scale: 1, opacity: 0.4 }}
+        animate={{ scale: 2, opacity: 0 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeOut" }}
+        style={{ border: '2px solid #10B981' }}
+      />
+      <motion.div
+        className="absolute inset-0 rounded-full"
+        initial={{ scale: 1, opacity: 0.3 }}
+        animate={{ scale: 1.6, opacity: 0 }}
+        transition={{ duration: 2, repeat: Infinity, ease: "easeOut", delay: 0.7 }}
+        style={{ border: '1.5px solid #10B981' }}
+      />
+    </>
+  )
+}
+
+// Security features list
+function SecurityFeatures() {
+  const features = [
+    { icon: <Lock className="w-4 h-4" />, title: 'Hash-Based Security', titleUrdu: 'ہش پر مبنی سیکیورٹی', desc: 'Each document has a unique cryptographic hash that cannot be forged', descUrdu: 'ہر دستاویز کا ایک منفرد کرپٹوگرافک ہش ہوتا ہے جو جعلسازی نہیں ہو سکتا' },
+    { icon: <Fingerprint className="w-4 h-4" />, title: 'Unique Verification', titleUrdu: 'منفرد تصدیق', desc: 'Every QR code is linked to a specific document in our secure database', descUrdu: 'ہر QR کوڈ ہمارے محفوظ ڈیٹابیس میں ایک مخصوص دستاویز سے جڑا ہوتا ہے' },
+    { icon: <Eye className="w-4 h-4" />, title: 'Instant Verification', titleUrdu: 'فوری تصدیق', desc: 'Scan QR code to instantly verify document authenticity online', descUrdu: 'QR کوڈ اسکین کریں اور آن لائن فوری تصدیق کریں' },
+    { icon: <Shield className="w-4 h-4" />, title: 'Tamper-Proof', titleUrdu: 'بدلاؤ سے محفوظ', desc: 'Any modification to the document invalidates the verification', descUrdu: 'دستاویز میں کوئی بھی تبدیلی تصدیق کو ناکارہ کر دیتی ہے' },
+  ]
+
+  return (
     <motion.div
-      className="absolute inset-0 rounded-full"
-      initial={{ scale: 1, opacity: 0.5 }}
-      animate={{ scale: 1.8, opacity: 0 }}
-      transition={{ duration: 1.5, repeat: Infinity, ease: "easeOut" }}
-      style={{ border: '2px solid #10B981' }}
-    />
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 2 }}
+      className="mt-4"
+    >
+      <div className="flex items-center gap-2 mb-3">
+        <Award className="w-4 h-4 text-[#1A3C5E]" />
+        <p className="text-xs font-semibold text-[#1A3C5E]">How QR Verification Works / QR تصدیق کیسے کام کرتی ہے</p>
+      </div>
+      <div className="grid grid-cols-2 gap-2">
+        {features.map((f, i) => (
+          <motion.div
+            key={i}
+            initial={{ opacity: 0, y: 5 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 2.1 + i * 0.1 }}
+            className="bg-[#F5F7FA] rounded-xl p-2.5"
+          >
+            <div className="flex items-center gap-1.5 mb-1">
+              <span className="text-[#1A3C5E]">{f.icon}</span>
+              <p className="text-[9px] font-semibold text-[#1C1C1E] leading-tight">{f.title}</p>
+            </div>
+            <p className="text-[8px] text-[#6B7280] leading-relaxed">{f.desc}</p>
+            <p className="text-[8px] text-[#6B7280] leading-relaxed mt-0.5" dir="rtl">{f.descUrdu}</p>
+          </motion.div>
+        ))}
+      </div>
+    </motion.div>
+  )
+}
+
+// Benefits section
+function BenefitsSection() {
+  const benefits = [
+    { icon: <Globe className="w-3.5 h-3.5" />, text: 'Verify from anywhere in the world', textUrdu: 'دنیا کے کسی بھی کونے سے تصدیق کریں' },
+    { icon: <Clock className="w-3.5 h-3.5" />, text: '24/7 instant verification available', textUrdu: '24 گھنٹے فوری تصدیق دستیاب' },
+    { icon: <Shield className="w-3.5 h-3.5" />, text: 'Government & bank recognized', textUrdu: 'سرکاری اور بینکی سطح پر تسلیم شدہ' },
+    { icon: <QrCode className="w-3.5 h-3.5" />, text: 'One scan = complete verification', textUrdu: 'ایک اسکین = مکمل تصدیق' },
+  ]
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 2.3 }}
+      className="mt-4 bg-gradient-to-br from-[#1A3C5E]/5 to-[#F5A623]/5 rounded-2xl p-3"
+    >
+      <div className="flex items-center gap-2 mb-2">
+        <Sparkles className="w-4 h-4 text-[#F5A623]" />
+        <p className="text-xs font-semibold text-[#1A3C5E]">Benefits / فوائد</p>
+      </div>
+      <div className="space-y-1.5">
+        {benefits.map((b, i) => (
+          <div key={i} className="flex items-start gap-2">
+            <span className="text-[#1A3C5E] mt-0.5 shrink-0">{b.icon}</span>
+            <div>
+              <p className="text-[9px] text-[#1C1C1E] leading-relaxed">{b.text}</p>
+              <p className="text-[9px] text-[#6B7280] leading-relaxed" dir="rtl">{b.textUrdu}</p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </motion.div>
   )
 }
 
@@ -138,6 +239,8 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           <div className="w-16 h-16 border-4 border-[#1A3C5E] border-t-[#F5A623] rounded-full animate-spin mx-auto" />
           <p className="mt-4 text-[#6B7280] text-sm">Verifying document...</p>
           <p className="mt-1 text-[#6B7280] text-xs" dir="rtl">دستاویز کی تصدیق ہو رہی ہے...</p>
+          <p className="mt-3 text-[10px] text-[#9CA3AF]">Please wait while we verify the QR code authenticity</p>
+          <p className="mt-1 text-[10px] text-[#9CA3AF]" dir="rtl">براہ کرم انتظار کریں جب تک ہم QR کوڈ کی اصلیت کی تصدیق کر رہے ہیں</p>
         </motion.div>
       </div>
     )
@@ -149,14 +252,14 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
-          className="bg-white rounded-3xl shadow-2xl p-8 max-w-md w-full text-center"
+          className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full text-center"
         >
           {/* Invalid animated badge */}
           <motion.div
             initial={{ scale: 0 }}
             animate={{ scale: 1 }}
             transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.1 }}
-            className="w-24 h-24 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 relative"
+            className="w-28 h-28 rounded-full bg-red-50 flex items-center justify-center mx-auto mb-6 relative"
           >
             <AnimatedXMark />
           </motion.div>
@@ -199,29 +302,80 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
             </p>
           </motion.div>
 
-          {/* What does this mean? section */}
+          {/* Warning section - what could cause this */}
           <motion.div
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 1.4 }}
+            className="mt-4 bg-amber-50 rounded-2xl p-4 text-left"
+          >
+            <div className="flex items-center gap-2 mb-2">
+              <AlertTriangle className="w-4 h-4 text-amber-600" />
+              <p className="text-xs font-semibold text-amber-800">Possible Causes / ممکنہ وجوہات</p>
+            </div>
+            <ul className="space-y-1.5">
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>The QR code may have been tampered with or copied</span>
+              </li>
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5" dir="rtl">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>QR کوڈ میں تبدیلی کی گئی ہو گی یا کاپی کیا گیا ہو گا</span>
+              </li>
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>The document is not authentic or not issued by Jugnoo</span>
+              </li>
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5" dir="rtl">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>دستاویز اصلی نہیں ہے یا جگنو کی جانب سے جاری نہیں</span>
+              </li>
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>The verification link may be corrupted</span>
+              </li>
+              <li className="text-[10px] text-amber-700 leading-relaxed flex items-start gap-1.5" dir="rtl">
+                <XCircle className="w-3 h-3 mt-0.5 shrink-0" />
+                <span>تصدیق کا لنک خراب ہو سکتا ہے</span>
+              </li>
+            </ul>
+          </motion.div>
+
+          {/* What does this mean? section */}
+          <motion.div
+            initial={{ opacity: 0, y: 10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 1.6 }}
             className="mt-4 bg-gray-50 rounded-2xl p-4 text-left"
           >
             <div className="flex items-center gap-2 mb-2">
               <Info className="w-4 h-4 text-[#6B7280]" />
-              <p className="text-xs font-semibold text-[#1C1C1E]">What does this mean?</p>
+              <p className="text-xs font-semibold text-[#1C1C1E]">What should you do? / آپ کو کیا کرنا چاہیے؟</p>
             </div>
-            <p className="text-[10px] text-[#6B7280] leading-relaxed">
-              This could mean the QR code has been tampered with, the document is not authentic, or the verification link has expired.
-            </p>
-            <p className="text-[10px] text-[#6B7280] leading-relaxed mt-1" dir="rtl">
-              اس کا مطلب ہو سکتا ہے کہ QR کوڈ میں تبدیلی کی گئی، دستاویز اصلی نہیں، یا تصدیق کا لنک ختم ہو چکا ہے۔
-            </p>
+            <ul className="space-y-1.5">
+              <li className="text-[10px] text-[#6B7280] leading-relaxed flex items-start gap-1.5">
+                <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-emerald-500" />
+                <span>Contact Jugnoo Photostate to verify the document manually</span>
+              </li>
+              <li className="text-[10px] text-[#6B7280] leading-relaxed flex items-start gap-1.5" dir="rtl">
+                <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-emerald-500" />
+                <span>دستاویز کی تصدیق کے لیے جگنو فوٹو اسٹیٹ سے رابطہ کریں</span>
+              </li>
+              <li className="text-[10px] text-[#6B7280] leading-relaxed flex items-start gap-1.5">
+                <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-emerald-500" />
+                <span>Request a new QR code or document from the shop</span>
+              </li>
+              <li className="text-[10px] text-[#6B7280] leading-relaxed flex items-start gap-1.5" dir="rtl">
+                <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0 text-emerald-500" />
+                <span>دکان سے نیا QR کوڈ یا دستاویز کی درخواست کریں</span>
+              </li>
+            </ul>
           </motion.div>
 
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.6 }}
+            transition={{ delay: 1.8 }}
             className="mt-6 text-xs text-[#6B7280]"
           >
             <p>If you believe this is an error, please contact:</p>
@@ -244,7 +398,7 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           <motion.div
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
-            transition={{ delay: 1.8 }}
+            transition={{ delay: 2 }}
             className="mt-6 pt-4 border-t border-gray-100"
           >
             <p className="text-[9px] text-[#9CA3AF] flex items-center justify-center gap-1">
@@ -265,7 +419,7 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-md w-full"
+        className="bg-white rounded-3xl shadow-2xl p-6 sm:p-8 max-w-lg w-full"
       >
         {/* Gold top bar */}
         <div className="h-1.5 bg-gradient-to-r from-[#1A3C5E] via-[#F5A623] to-[#1A3C5E] rounded-full mb-6" />
@@ -275,7 +429,7 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: 'spring', stiffness: 300, damping: 15, delay: 0.15 }}
-          className="w-28 h-28 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4 relative"
+          className="w-32 h-32 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-4 relative"
         >
           <PulseRing />
           <AnimatedCheckmark />
@@ -289,11 +443,13 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
         >
           <h1 className="text-2xl font-bold text-[#1C1C1E]">Document Verified</h1>
           <p className="text-emerald-600 text-sm font-semibold mt-1" dir="rtl">دستاویز کی تصدیق ہو گئی</p>
-          <p className="text-emerald-600 text-sm font-semibold mt-1 flex items-center gap-1 justify-center">
-            <QrCode className="w-4 h-4" />
-            QR Verification Successful
-          </p>
-          <p className="text-emerald-500 text-xs mt-0.5" dir="rtl">QR تصدیق کامیاب</p>
+          <div className="flex items-center justify-center gap-2 mt-2">
+            <span className="inline-flex items-center gap-1 px-3 py-1 bg-emerald-50 rounded-full text-xs font-semibold text-emerald-700">
+              <QrCode className="w-3.5 h-3.5" />
+              QR Verification Successful
+            </span>
+          </div>
+          <p className="text-emerald-500 text-xs mt-1" dir="rtl">QR تصدیق کامیاب</p>
         </motion.div>
 
         {/* Secured by badge */}
@@ -303,9 +459,13 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           transition={{ delay: 1.2 }}
           className="flex items-center justify-center gap-1.5 mb-4"
         >
-          <span className="inline-flex items-center gap-1 px-3 py-1 bg-[#1A3C5E]/5 rounded-full text-[10px] font-semibold text-[#1A3C5E]">
+          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#1A3C5E]/5 rounded-full text-[10px] font-semibold text-[#1A3C5E]">
             <Lock className="w-3 h-3" />
             Secured by QR Verification
+          </span>
+          <span className="inline-flex items-center gap-1 px-3 py-1.5 bg-[#F5A623]/10 rounded-full text-[10px] font-semibold text-[#F5A623]">
+            <Shield className="w-3 h-3" />
+            Authentic
           </span>
         </motion.div>
 
@@ -363,6 +523,16 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
                   <div>
                     <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">CNIC / شناختی کارڈ</p>
                     <p className="text-sm font-semibold text-[#1C1C1E]">{doc.customerCnic}</p>
+                  </div>
+                </div>
+              )}
+
+              {doc.feeAmount && (
+                <div className="flex items-start gap-3">
+                  <Award className="w-4 h-4 text-[#F5A623] mt-0.5 shrink-0" />
+                  <div>
+                    <p className="text-[10px] text-[#6B7280] uppercase tracking-wider">Fee Amount / فیس</p>
+                    <p className="text-sm font-semibold text-[#1A3C5E]">Rs. {doc.feeAmount.toLocaleString()}</p>
                   </div>
                 </div>
               )}
@@ -441,6 +611,14 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
               <span>یہ دستاویز جگنو سمارٹ پورٹل کے QR تصدیق سسٹم سے تصدیق شدہ ہے۔</span>
             </li>
             <li className="text-[10px] text-emerald-700 leading-relaxed flex items-start gap-1.5">
+              <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0" />
+              <span>The document is authentic and has not been tampered with.</span>
+            </li>
+            <li className="text-[10px] text-emerald-700 leading-relaxed flex items-start gap-1.5" dir="rtl">
+              <CheckCircle2 className="w-3 h-3 mt-0.5 shrink-0" />
+              <span>دستاویز اصلی ہے اور اس میں کوئی تبدیلی نہیں کی گئی۔</span>
+            </li>
+            <li className="text-[10px] text-emerald-700 leading-relaxed flex items-start gap-1.5">
               <QrCode className="w-3 h-3 mt-0.5 shrink-0" />
               <span>Scan the QR code on any Jugnoo document to instantly verify its authenticity.</span>
             </li>
@@ -459,11 +637,17 @@ export default function VerifyPage({ params }: { params: Promise<{ id: string }>
           </ul>
         </motion.div>
 
+        {/* How QR Verification Works */}
+        <SecurityFeatures />
+
+        {/* Benefits */}
+        <BenefitsSection />
+
         {/* Footer */}
         <motion.div
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ delay: 1.8 }}
+          transition={{ delay: 2.5 }}
           className="mt-6 pt-4 border-t border-gray-100 text-center"
         >
           <p className="text-[10px] text-[#6B7280]">
