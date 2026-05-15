@@ -39,23 +39,34 @@ async function ensureBucketExists(bucketName: string): Promise<boolean> {
   const admin = getAdminClient()
   if (!admin) return false
 
-  // Check if bucket exists
-  const { data: buckets } = await admin.storage.listBuckets()
-  const exists = buckets?.some(b => b.name === bucketName)
+  try {
+    // Check if bucket exists
+    const { data: buckets, error: listError } = await admin.storage.listBuckets()
 
-  if (!exists) {
-    // Try to create it (requires service_role key)
-    const { error: createError } = await admin.storage.createBucket(bucketName, {
-      public: true,
-      fileSizeLimit: MAX_FILE_SIZE,
-    })
-    if (createError) {
-      console.error(`Failed to create bucket ${bucketName}:`, createError.message)
-      return false
+    if (listError) {
+      console.warn(`Could not list buckets: ${listError.message}`)
+      // Continue anyway - bucket might exist even if we can't list
     }
-  }
 
-  return true
+    const exists = buckets?.some(b => b.name === bucketName)
+
+    if (!exists) {
+      // Try to create it (requires service_role key)
+      const { error: createError } = await admin.storage.createBucket(bucketName, {
+        public: true,
+        fileSizeLimit: MAX_FILE_SIZE,
+      })
+      if (createError) {
+        console.warn(`Could not create bucket ${bucketName}: ${createError.message}`)
+        // Bucket might already exist but we just couldn't list it - try uploading anyway
+      }
+    }
+
+    return true
+  } catch (err) {
+    console.warn(`Bucket check error: ${err}`)
+    return false
+  }
 }
 
 export async function POST(req: Request) {
@@ -102,7 +113,7 @@ export async function POST(req: Request) {
     // Convert file to buffer
     const buffer = Buffer.from(await file.arrayBuffer())
 
-    // Use admin client for storage operations (can bypass RLS and create buckets)
+    // Use admin client for storage operations
     const admin = getAdminClient()
     if (!admin) {
       return Response.json({ error: 'Storage client not available' }, { status: 500 })
@@ -110,43 +121,60 @@ export async function POST(req: Request) {
 
     // List of buckets to try in order
     const bucketsToTry = ['order-files', 'documents']
+    let storageUploadSuccess = false
+    let storageUrl = ''
 
     for (const bucketName of bucketsToTry) {
-      // Ensure the bucket exists
-      await ensureBucketExists(bucketName)
+      try {
+        // Try to ensure the bucket exists
+        await ensureBucketExists(bucketName)
 
-      // Try uploading
-      const { data: uploadData, error: uploadError } = await admin.storage
-        .from(bucketName)
-        .upload(filePath, buffer, {
-          contentType: file.type || 'application/octet-stream',
-          upsert: false,
-        })
+        // Try uploading
+        const { data: uploadData, error: uploadError } = await admin.storage
+          .from(bucketName)
+          .upload(filePath, buffer, {
+            contentType: file.type || 'application/octet-stream',
+            upsert: true, // Use upsert so we can replace files too
+          })
 
-      if (!uploadError && uploadData) {
-        // Success - get public URL
-        const { data: urlData } = admin.storage.from(bucketName).getPublicUrl(uploadData.path)
-        return Response.json({ url: urlData.publicUrl })
+        if (!uploadError && uploadData) {
+          // Success - get public URL
+          const { data: urlData } = admin.storage.from(bucketName).getPublicUrl(uploadData.path)
+          storageUrl = urlData.publicUrl
+          storageUploadSuccess = true
+          break
+        }
+
+        // Log the error and try next bucket
+        console.warn(`Upload to ${bucketName} failed:`, uploadError?.message)
+      } catch (bucketErr) {
+        console.warn(`Bucket ${bucketName} error:`, bucketErr)
       }
-
-      // If bucket still not found after creation attempt, try next bucket
-      console.warn(`Upload to ${bucketName} failed:`, uploadError?.message)
     }
 
-    // All buckets failed - as last resort, store as base64 data URL in the database
-    // This is a fallback that doesn't require storage buckets
-    console.error('All storage upload attempts failed. Using base64 fallback.')
+    if (storageUploadSuccess && storageUrl) {
+      return Response.json({ url: storageUrl, isStorage: true })
+    }
+
+    // Storage upload failed - use base64 data URL fallback
+    // This stores the file directly in the database as a data URL
+    console.info('Storage upload failed, using base64 fallback for file:', file.name)
     const base64 = buffer.toString('base64')
     const dataUrl = `data:${file.type || 'application/octet-stream'};base64,${base64}`
 
-    // Check if data URL is not too large for database (supabase text column limit ~1MB)
-    if (dataUrl.length < 900000) {
+    // PostgreSQL text columns support up to ~1GB, so we can safely store files up to ~5MB as base64
+    // Base64 encoding increases size by ~33%, so a 5MB file becomes ~6.7MB as base64
+    if (dataUrl.length < 7000000) { // 7MB limit for base64 data URL (~5MB original file)
       return Response.json({ url: dataUrl, isBase64: true })
     }
 
-    return Response.json({ error: 'Could not upload file. Storage buckets not available. Please create the "order-files" bucket in Supabase Dashboard > Storage.' }, { status: 500 })
+    return Response.json({
+      error: 'File too large for upload. Storage buckets are not configured. Please add your SUPABASE_SERVICE_ROLE_KEY in the .env file. For now, try uploading a smaller file (under 5MB) or paste a link instead.',
+    }, { status: 500 })
   } catch (error) {
     console.error('Upload API error:', error)
-    return Response.json({ error: 'Upload failed' }, { status: 500 })
+    return Response.json({
+      error: 'Upload failed. Please try again or paste a link instead.',
+    }, { status: 500 })
   }
 }

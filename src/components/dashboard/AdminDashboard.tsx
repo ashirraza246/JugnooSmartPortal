@@ -79,6 +79,7 @@ export default function AdminDashboard() {
   const [uploadDialogOpen, setUploadDialogOpen] = useState(false)
   const [uploadAppId, setUploadAppId] = useState<string | null>(null)
   const [uploadFile, setUploadFile] = useState<File | null>(null)
+  const [uploadUrl, setUploadUrl] = useState('')
   const [uploadProgress, setUploadProgress] = useState(0)
   const [isUploading, setIsUploading] = useState(false)
   const [payDialogOpen, setPayDialogOpen] = useState(false)
@@ -193,11 +194,11 @@ export default function AdminDashboard() {
       const { url } = await uploadRes.json()
       setUploadProgress(80)
 
-      // Step 2: Save URL to application
+      // Step 2: Save URL to application and set status to completed
       const updateRes = await fetch('/api/service-applications', {
         method: 'PUT',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ id, resultDocumentUrl: url }),
+        body: JSON.stringify({ id, resultDocumentUrl: url, status: 'completed' }),
       })
 
       if (!updateRes.ok) throw new Error('Failed to save document URL')
@@ -210,6 +211,7 @@ export default function AdminDashboard() {
       toast.success('Document upload ho gaya / Document uploaded successfully')
       setUploadDialogOpen(false)
       setUploadFile(null)
+      setUploadUrl('')
       setUploadProgress(0)
     },
     onError: (error) => {
@@ -263,10 +265,44 @@ export default function AdminDashboard() {
   }
 
   const handleUploadSubmit = () => {
-    if (!uploadAppId || !uploadFile) {
-      toast.error('File select karein / Please select a file')
+    if (!uploadAppId) {
+      toast.error('Application ID missing / Application ID nahi mila')
       return
     }
+    if (!uploadFile && !uploadUrl.trim()) {
+      toast.error('File select karein ya URL paste karein / Please select a file or paste a URL')
+      return
+    }
+
+    // If URL is provided (no file), just save the URL directly
+    if (uploadUrl.trim() && !uploadFile) {
+      setIsUploading(true)
+      setUploadProgress(50)
+      fetch('/api/service-applications', {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ id: uploadAppId, resultDocumentUrl: uploadUrl.trim(), status: 'completed' }),
+      }).then(res => {
+        if (!res.ok) throw new Error('Failed to save URL')
+        return res.json()
+      }).then(() => {
+        queryClient.invalidateQueries({ queryKey: ['admin-applications'] })
+        queryClient.invalidateQueries({ queryKey: ['admin-all-applications'] })
+        toast.success('Link save ho gaya / Link saved successfully')
+        setUploadDialogOpen(false)
+        setUploadFile(null)
+        setUploadUrl('')
+        setUploadProgress(0)
+      }).catch(() => {
+        toast.error('Link save nahi hua / Failed to save link')
+      }).finally(() => {
+        setIsUploading(false)
+      })
+      return
+    }
+
+    // File upload
+    if (!uploadFile) return
     setIsUploading(true)
     uploadMutation.mutate(
       { id: uploadAppId, file: uploadFile, appId: uploadAppId },
@@ -350,13 +386,18 @@ export default function AdminDashboard() {
     }
   }
 
-  // WhatsApp receipt
+  // WhatsApp receipt - includes document link if available
   const handleWhatsAppReceipt = (app: ServiceApplication) => {
     const phone = (app.applicant_phone || '').replace(/[^0-9]/g, '')
     // Ensure phone starts with country code
     const formattedPhone = phone.startsWith('0') ? '92' + phone.substring(1) : phone.startsWith('92') ? phone : '92' + phone
 
-    const message = `Assalam o Alaikum! 📋
+    // Include document link if it's a proper URL (not base64)
+    const docLink = app.result_document_url && !app.result_document_url.startsWith('data:')
+      ? app.result_document_url
+      : ''
+
+    const message = `Assalam o Alaikum ${app.applicant_name || ''}! 📋
 
 *Jugnoo Photostate - Payment Receipt*
 ━━━━━━━━━━━━━━━━━
@@ -365,6 +406,7 @@ Amount: Rs. ${app.fee_amount?.toLocaleString()}
 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
 Transaction ID: ${app.transaction_id || 'N/A'}
 Date: ${new Date(app.created_at).toLocaleDateString('en-PK')}
+${docLink ? `\n📥 *Download your work:*\n${docLink}` : ''}
 ━━━━━━━━━━━━━━━━━
 Thank you for choosing Jugnoo! 🙏
 
@@ -374,12 +416,17 @@ https://jugnoosmartportal.vercel.app`
     window.open(url, '_blank')
   }
 
-  // WhatsApp completed work
+  // WhatsApp completed work - includes document link
   const handleWhatsAppCompleted = (app: ServiceApplication) => {
     const phone = (app.applicant_phone || '').replace(/[^0-9]/g, '')
     const formattedPhone = phone.startsWith('0') ? '92' + phone.substring(1) : phone.startsWith('92') ? phone : '92' + phone
 
-    const message = `Assalam o Alaikum! ✅
+    // Include document link if it's a proper URL (not base64)
+    const docLink = app.result_document_url && !app.result_document_url.startsWith('data:')
+      ? app.result_document_url
+      : ''
+
+    const message = `Assalam o Alaikum ${app.applicant_name || ''}! ✅
 
 *Jugnoo Photostate - Order Complete*
 ━━━━━━━━━━━━━━━━━
@@ -387,8 +434,8 @@ Service: ${app.service_name}
 Amount: Rs. ${app.fee_amount?.toLocaleString()}
 Status: COMPLETED ✅
 
-Your work is ready! Download here:
-${app.result_document_url || 'Document URL not available'}
+${docLink ? `📥 *Download your work here:*
+${docLink}` : '📥 Your work is ready! Please visit the shop to collect it.'}
 ━━━━━━━━━━━━━━━━━
 Thank you for choosing Jugnoo! 🙏
 
@@ -851,8 +898,8 @@ https://jugnoosmartportal.vercel.app`
                             </Button>
                           )}
 
-                          {/* Upload Work button - when completed */}
-                          {isCompleted && (
+                          {/* Upload Work button - when in_progress or completed */}
+                          {(app.status === 'in_progress' || isCompleted) && (
                             <Button
                               variant="outline"
                               size="sm"
@@ -865,7 +912,7 @@ https://jugnoosmartportal.vercel.app`
                               }}
                             >
                               <Upload className="w-3 h-3 mr-1" />
-                              {hasDocument ? 'Re-upload' : 'Upload Work'}
+                              {hasDocument ? 'Replace File' : 'Upload Work'}
                             </Button>
                           )}
 
@@ -887,10 +934,27 @@ https://jugnoosmartportal.vercel.app`
                               variant="outline"
                               size="sm"
                               className="h-8 min-w-[44px] px-3 border-[#2E7D32]/30 text-[#2E7D32] hover:bg-[#2E7D32] hover:text-white text-[11px] rounded-lg"
-                              onClick={() => window.open(app.result_document_url!, '_blank')}
+                              onClick={() => {
+                                const url = app.result_document_url!
+                                if (url.startsWith('data:')) {
+                                  const win = window.open('', '_blank')
+                                  if (win) {
+                                    if (url.startsWith('data:image/')) {
+                                      win.document.write(`<html><head><title>Document</title><style>body{margin:0;display:flex;justify-content:center;align-items:center;min-height:100vh;background:#f5f7fa;}</style></head><body><img src="${url}" style="max-width:100%;max-height:100vh;" /></body></html>`)
+                                    } else if (url.startsWith('data:application/pdf')) {
+                                      win.document.write(`<html><head><title>Document</title></head><body><iframe src="${url}" style="width:100%;height:100vh;border:none;"></iframe></body></html>`)
+                                    } else {
+                                      win.document.write(`<html><head><title>Document</title></head><body><p>Document loaded. <a href="${url}" download="document">Download</a></p></body></html>`)
+                                    }
+                                    win.document.close()
+                                  }
+                                } else {
+                                  window.open(url, '_blank')
+                                }
+                              }}
                             >
                               <Download className="w-3 h-3 mr-1" />
-                              Download
+                              View File
                             </Button>
                           )}
                         </div>
@@ -1092,7 +1156,10 @@ https://jugnoosmartportal.vercel.app`
       </Tabs>
 
       {/* Upload Document Dialog */}
-      <Dialog open={uploadDialogOpen} onOpenChange={setUploadDialogOpen}>
+      <Dialog open={uploadDialogOpen} onOpenChange={(open) => {
+        setUploadDialogOpen(open)
+        if (!open) { setUploadFile(null); setUploadUrl(''); setUploadProgress(0) }
+      }}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
             <DialogTitle className="text-[#1A3C5E]">Upload Completed Work / مکمل کام اپلوڈ کریں</DialogTitle>
@@ -1100,7 +1167,7 @@ https://jugnoosmartportal.vercel.app`
           </DialogHeader>
           <div className="space-y-4 py-2">
             <div className="space-y-2">
-              <Label className="text-[#1C1C1E] text-sm font-medium">Select File</Label>
+              <Label className="text-[#1C1C1E] text-sm font-medium">Select File / فائل منتخب کریں</Label>
               <div className="flex items-center gap-3">
                 <input
                   ref={fileInputRef}
@@ -1109,6 +1176,7 @@ https://jugnoosmartportal.vercel.app`
                   onChange={(e) => {
                     const file = e.target.files?.[0] || null
                     setUploadFile(file)
+                    if (file) setUploadUrl('') // Clear URL if file selected
                   }}
                   className="hidden"
                 />
@@ -1147,6 +1215,33 @@ https://jugnoosmartportal.vercel.app`
               </div>
             )}
 
+            {/* OR divider */}
+            <div className="flex items-center gap-3">
+              <div className="flex-1 h-px bg-gray-200" />
+              <span className="text-xs text-[#6B7280] font-medium">OR / یا</span>
+              <div className="flex-1 h-px bg-gray-200" />
+            </div>
+
+            {/* URL Input */}
+            <div className="space-y-2">
+              <Label className="text-[#1C1C1E] text-sm font-medium">Paste Link / لنک پیسٹ کریں</Label>
+              <div className="flex items-center gap-2">
+                <Input
+                  type="url"
+                  placeholder="https://drive.google.com/file/..."
+                  value={uploadUrl}
+                  onChange={(e) => {
+                    setUploadUrl(e.target.value)
+                    if (e.target.value) setUploadFile(null) // Clear file if URL entered
+                  }}
+                  className="flex-1 h-10 rounded-xl border-gray-200 focus:border-[#1A3C5E]"
+                />
+              </div>
+              <p className="text-[10px] text-[#6B7280]">
+                Google Drive, Dropbox, ya koi bhi link paste karein
+              </p>
+            </div>
+
             {/* Upload progress */}
             {isUploading && (
               <div className="space-y-2">
@@ -1164,7 +1259,7 @@ https://jugnoosmartportal.vercel.app`
             </Button>
             <Button
               onClick={handleUploadSubmit}
-              disabled={!uploadFile || isUploading}
+              disabled={(!uploadFile && !uploadUrl.trim()) || isUploading}
               className="bg-[#1A3C5E] hover:bg-[#15304D] text-white min-w-[44px]"
             >
               {isUploading ? <Loader2 className="w-4 h-4 animate-spin" /> : <><Upload className="w-4 h-4 mr-1" />Upload</>}

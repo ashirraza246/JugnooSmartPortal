@@ -313,12 +313,17 @@ export function OrdersModule() {
     }
   }
 
-  // Share invoice via WhatsApp
+  // Share invoice via WhatsApp (includes uploaded file link if available)
   const handleWhatsAppInvoice = (app: ServiceApplication) => {
     const phone = app.applicant_whatsapp || app.applicant_phone || ''
     const cleanPhone = phone.replace(/[^0-9]/g, '')
     // Format: if starts with 0, replace with 92 (Pakistan)
     const formattedPhone = cleanPhone.startsWith('0') ? '92' + cleanPhone.substring(1) : cleanPhone.startsWith('92') ? cleanPhone : cleanPhone
+
+    // Include document link if it's a proper URL (not base64)
+    const docLink = app.result_document_url && !app.result_document_url.startsWith('data:')
+      ? app.result_document_url
+      : ''
 
     const invoiceText = `🧾 *JUGNOO PHOTOSTATE - Invoice*
 ━━━━━━━━━━━━━━━━━━━━━
@@ -337,6 +342,7 @@ ${app.transaction_id ? `🔑 Trx ID: ${app.transaction_id}` : ''}
 ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
 
 💵 *Amount: Rs. ${app.fee_amount?.toLocaleString()}*
+${docLink ? `\n📥 *Download Work:*\n${docLink}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━
 📸 _Jugnoo Photostate_
@@ -349,13 +355,38 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
     window.open(url, '_blank')
   }
 
-  // Open WhatsApp chat with customer
+  // Open WhatsApp chat with customer (includes file link if available)
   const handleWhatsAppChat = (app: ServiceApplication) => {
     const phone = app.applicant_whatsapp || app.applicant_phone || ''
     const cleanPhone = phone.replace(/[^0-9]/g, '')
     const formattedPhone = cleanPhone.startsWith('0') ? '92' + cleanPhone.substring(1) : cleanPhone.startsWith('92') ? cleanPhone : cleanPhone
+
+    // Include document link if it's a proper URL (not base64)
+    const docLink = app.result_document_url && !app.result_document_url.startsWith('data:')
+      ? app.result_document_url
+      : ''
+
+    const message = docLink
+      ? `Assalam o Alaikum! 📋
+
+*Jugnoo Photostate - ${app.service_name}*
+━━━━━━━━━━━━━━━━━
+📊 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
+💰 Amount: Rs. ${app.fee_amount?.toLocaleString()}
+
+📥 *Your completed work:*
+${docLink}
+
+━━━━━━━━━━━━━━━━━
+Thank you for choosing Jugnoo! 🙏
+
+https://jugnoosmartportal.vercel.app`
+      : ''
+
     const url = formattedPhone
-      ? `https://wa.me/${formattedPhone}`
+      ? message
+        ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
+        : `https://wa.me/${formattedPhone}`
       : 'https://wa.me/'
     window.open(url, '_blank')
   }
@@ -691,7 +722,7 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                         </Button>
                       )}
 
-                      {/* Upload / Deliver - only when in_progress or completed without document */}
+                      {/* Upload / Deliver - when in_progress or completed without document */}
                       {(app.status === 'in_progress' || (app.status === 'completed' && !app.result_document_url)) && (
                         <Button
                           size="sm"
@@ -703,6 +734,22 @@ ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
                           }}
                         >
                           <Upload className="w-3.5 h-3.5" /> Upload Work
+                        </Button>
+                      )}
+
+                      {/* Re-upload / Replace - when already has a document */}
+                      {app.result_document_url && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          className="h-8 min-w-[44px] px-2.5 text-[11px] border-amber-300 text-amber-700 hover:bg-amber-500 hover:text-white gap-1 rounded-lg"
+                          onClick={() => {
+                            setUploadApp(app)
+                            setDocumentUrl('')
+                            setUploadDialogOpen(true)
+                          }}
+                        >
+                          <RefreshCw className="w-3.5 h-3.5" /> Replace File
                         </Button>
                       )}
 

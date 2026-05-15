@@ -1,5 +1,5 @@
 import { supabase, isSupabaseConfigured } from '@/lib/supabase'
-import { triggerStatusWhatsAppNotification, triggerPaymentWhatsAppNotification } from '@/lib/whatsapp-auto-trigger'
+import { triggerStatusWhatsAppNotification, triggerPaymentWhatsAppNotification, triggerOrderCreatedWhatsAppNotification } from '@/lib/whatsapp-auto-trigger'
 
 export async function GET(req: Request) {
   try {
@@ -29,6 +29,91 @@ export async function GET(req: Request) {
   } catch (error) {
     console.error('Service applications GET error:', error)
     return Response.json([])
+  }
+}
+
+/**
+ * Auto-create a customer in the 'customers' table if they don't exist yet.
+ * This ensures new orders show up in the admin's Customers tab.
+ */
+async function autoCreateCustomer(params: {
+  name: string | null
+  phone: string | null
+  whatsapp: string | null
+  cnic: string | null
+  email?: string | null
+}) {
+  try {
+    if (!isSupabaseConfigured()) return
+
+    const phone = params.phone || params.whatsapp
+    if (!phone && !params.cnic) return // Need at least phone or CNIC to match
+
+    // Check if customer already exists by phone or CNIC
+    let existingQuery = supabase.from('customers').select('id').limit(1)
+
+    if (phone) {
+      existingQuery = existingQuery.eq('whatsapp', phone)
+    } else if (params.cnic) {
+      existingQuery = existingQuery.eq('cnic', params.cnic)
+    }
+
+    const { data: existing } = await existingQuery
+
+    if (existing && existing.length > 0) {
+      // Customer already exists - update their order count
+      if (existing[0]?.id) {
+        await supabase.rpc('increment_orders_count', { customer_id: existing[0].id }).catch(() => {
+          // RPC might not exist, just ignore
+        })
+      }
+      return
+    }
+
+    // Create new customer
+    const { error: createError } = await supabase.from('customers').insert([{
+      full_name: params.name || 'Customer',
+      whatsapp: params.whatsapp || params.phone || null,
+      cnic: params.cnic || null,
+      email: params.email || null,
+      tags: 'auto-created',
+      notes: 'Automatically created from service application',
+      is_vip: false,
+      orders_count: 1,
+      total_spent: 0,
+    }])
+
+    if (createError) {
+      console.warn('Could not auto-create customer:', createError.message)
+    } else {
+      console.info('Auto-created customer for:', params.name || params.phone)
+    }
+  } catch (err) {
+    console.warn('Auto-create customer error:', err)
+  }
+}
+
+/**
+ * Create an admin notification for a new order/application
+ */
+async function createNewOrderNotification(appId: string, serviceName: string, customerName: string) {
+  try {
+    if (!isSupabaseConfigured()) return
+
+    // Insert into notifications table in Supabase
+    await supabase.from('notifications').insert([{
+      type: 'new_order',
+      title: 'New Order Received',
+      message: `${customerName} placed an order for ${serviceName}`,
+      is_read: false,
+      category: 'status',
+    }]).then(({ error }) => {
+      if (error) {
+        console.warn('Could not create notification (Supabase):', error.message)
+      }
+    })
+  } catch (err) {
+    console.warn('Create notification error:', err)
   }
 }
 
@@ -86,6 +171,17 @@ export async function POST(req: Request) {
       return Response.json({ error: error.message }, { status: 400 })
     }
 
+    // Auto-create customer in customers table (for admin panel Customers tab)
+    await autoCreateCustomer({
+      name: applicantName,
+      phone: applicantPhone,
+      whatsapp: applicantWhatsapp,
+      cnic: applicantCnic,
+    })
+
+    // Create notification for admin about new order
+    await createNewOrderNotification(data.id, serviceName, applicantName || 'Customer')
+
     // Auto-trigger WhatsApp notification for new application
     const phone = applicantWhatsapp || applicantPhone || ''
     if (phone) {
@@ -122,12 +218,13 @@ export async function PUT(req: Request) {
     // Fetch the current application to detect status changes
     const { data: existingApp } = await supabase
       .from('service_applications')
-      .select('status, payment_status, applicant_name, applicant_phone, applicant_whatsapp, service_name, fee_amount')
+      .select('status, payment_status, applicant_name, applicant_phone, applicant_whatsapp, service_name, fee_amount, result_document_url')
       .eq('id', id)
       .single()
 
     const previousStatus = (existingApp as Record<string, unknown>)?.status as string | undefined
     const previousPaymentStatus = (existingApp as Record<string, unknown>)?.payment_status as string | undefined
+    const currentDocUrl = (existingApp as Record<string, unknown>)?.result_document_url as string | undefined
 
     const updates: Record<string, unknown> = { updated_at: new Date().toISOString() }
     if (status) updates.status = status
@@ -202,6 +299,41 @@ export async function PUT(req: Request) {
         })
         whatsappLink = result.link
         whatsappMessage = result.message
+      }
+    }
+
+    // If document was uploaded and status is completed, include document URL in WhatsApp
+    if (resultDocumentUrl && status === 'completed' && existingApp) {
+      const customerPhone = ((existingApp as Record<string, unknown>).applicant_whatsapp || (existingApp as Record<string, unknown>).applicant_phone) as string || ''
+      if (customerPhone && resultDocumentUrl) {
+        // Create a WhatsApp message that includes the document link
+        const customerName = (existingApp as Record<string, unknown>).applicant_name as string || 'Customer'
+        const serviceName = (existingApp as Record<string, unknown>).service_name as string || 'Service'
+        const feeAmount = (existingApp as Record<string, unknown>).fee_amount as number || 0
+        const docLink = !resultDocumentUrl.startsWith('data:') ? resultDocumentUrl : ''
+
+        const message = `Assalam o Alaikum ${customerName}! ✅
+
+*Jugnoo Photostate - Order Complete*
+━━━━━━━━━━━━━━━━━
+🔧 Service: ${serviceName}
+💰 Amount: Rs. ${feeAmount?.toLocaleString()}
+📊 Status: COMPLETED ✅
+
+${docLink ? `📥 *Download your work here:*
+${docLink}` : '📥 Your work has been completed. Please visit the shop to collect it.'}
+
+━━━━━━━━━━━━━━━━━
+Thank you for choosing Jugnoo! 🙏
+
+https://jugnoosmartportal.vercel.app`
+
+        const cleanPhone = customerPhone.replace(/[^0-9]/g, '')
+        const formattedPhone = cleanPhone.startsWith('0') ? '92' + cleanPhone.substring(1) : cleanPhone.startsWith('92') ? cleanPhone : '92' + cleanPhone
+        const waLink = `https://wa.me/${formattedPhone}?text=${encodeURIComponent(message)}`
+
+        whatsappLink = waLink
+        whatsappMessage = message
       }
     }
 
