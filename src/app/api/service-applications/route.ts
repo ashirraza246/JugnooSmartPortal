@@ -47,25 +47,33 @@ async function autoCreateCustomer(params: {
     if (!isSupabaseConfigured()) return
 
     const phone = params.phone || params.whatsapp
-    if (!phone && !params.cnic) return // Need at least phone or CNIC to match
+    if (!phone && !params.cnic && (!params.name || params.name === 'Customer')) return // Need at least phone, CNIC, or name to match
 
-    // Check if customer already exists by phone or CNIC
-    let existingQuery = supabase.from('customers').select('id').limit(1)
+    // Check if customer already exists by phone (whatsapp or phone field), CNIC, or name
+    let existingCustomer = null
 
     if (phone) {
-      existingQuery = existingQuery.eq('whatsapp', phone)
-    } else if (params.cnic) {
-      existingQuery = existingQuery.eq('cnic', params.cnic)
+      // Check by whatsapp number
+      const { data: byWhatsapp } = await supabase.from('customers').select('id, orders_count').limit(1).eq('whatsapp', phone)
+      if (byWhatsapp && byWhatsapp.length > 0) existingCustomer = byWhatsapp[0]
     }
 
-    const { data: existing } = await existingQuery
+    if (!existingCustomer && params.cnic) {
+      const { data: byCnic } = await supabase.from('customers').select('id, orders_count').limit(1).eq('cnic', params.cnic)
+      if (byCnic && byCnic.length > 0) existingCustomer = byCnic[0]
+    }
 
-    if (existing && existing.length > 0) {
-      // Customer already exists - update their order count
-      if (existing[0]?.id) {
-        await supabase.rpc('increment_orders_count', { customer_id: existing[0].id }).catch(() => {
-          // RPC might not exist, just ignore
-        })
+    if (!existingCustomer && params.name && params.name !== 'Customer') {
+      const { data: byName } = await supabase.from('customers').select('id, orders_count').limit(1).eq('full_name', params.name)
+      if (byName && byName.length > 0) existingCustomer = byName[0]
+    }
+
+    if (existingCustomer) {
+      // Customer already exists - increment order count
+      if (existingCustomer.id) {
+        await supabase.from('customers').update({
+          orders_count: (existingCustomer.orders_count || 0) + 1,
+        }).eq('id', existingCustomer.id).catch(() => {})
       }
       return
     }
@@ -77,7 +85,7 @@ async function autoCreateCustomer(params: {
       cnic: params.cnic || null,
       email: params.email || null,
       tags: 'auto-created',
-      notes: 'Automatically created from service application',
+      notes: `Auto-created from order on ${new Date().toLocaleDateString('en-PK')}`,
       is_vip: false,
       orders_count: 1,
       total_spent: 0,
@@ -318,10 +326,10 @@ export async function PUT(req: Request) {
 ━━━━━━━━━━━━━━━━━
 🔧 Service: ${serviceName}
 💰 Amount: Rs. ${feeAmount?.toLocaleString()}
-📊 Status: COMPLETED ✅
+📋 Status: COMPLETED ✅
 
-${docLink ? `📥 *Download your work here:*
-${docLink}` : '📥 Your work has been completed. Please visit the shop to collect it.'}
+${docLink ? `⬇️ *Download your work here:*
+${docLink}` : '⬇️ Your work has been completed. Please visit the shop to collect it.'}
 
 ━━━━━━━━━━━━━━━━━
 Thank you for choosing Jugnoo! 🙏

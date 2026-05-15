@@ -37,9 +37,21 @@ export async function GET(req: Request) {
       .select('*', { count: 'exact', head: true })
       .gte('created_at', todayISO)
 
+    // Today's service applications count
+    const { count: todayServiceApps } = await supabase
+      .from('service_applications')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', todayISO)
+
     // Yesterday's orders count for comparison
     const { count: yesterdayOrders } = await supabase
       .from('orders')
+      .select('*', { count: 'exact', head: true })
+      .gte('created_at', yesterdayISO)
+      .lt('created_at', todayISO)
+
+    const { count: yesterdayServiceApps } = await supabase
+      .from('service_applications')
       .select('*', { count: 'exact', head: true })
       .gte('created_at', yesterdayISO)
       .lt('created_at', todayISO)
@@ -52,6 +64,15 @@ export async function GET(req: Request) {
 
     const todayRevenue = todayPayments?.reduce((sum: number, p: { amount: number }) => sum + (p.amount || 0), 0) || 0
 
+    // Today's revenue from service applications
+    const { data: todayPaidApps } = await supabase
+      .from('service_applications')
+      .select('fee_amount')
+      .eq('payment_status', 'paid')
+      .gte('created_at', todayISO)
+
+    const todayAppRevenue = todayPaidApps?.reduce((sum: number, a: { fee_amount: number }) => sum + (a.fee_amount || 0), 0) || 0
+
     // Yesterday's revenue for comparison
     const { data: yesterdayPayments } = await supabase
       .from('payments')
@@ -60,6 +81,16 @@ export async function GET(req: Request) {
       .lt('created_at', todayISO)
 
     const yesterdayRevenue = yesterdayPayments?.reduce((sum: number, p: { amount: number }) => sum + (p.amount || 0), 0) || 0
+
+    // Yesterday's revenue from service applications
+    const { data: yesterdayPaidApps } = await supabase
+      .from('service_applications')
+      .select('fee_amount')
+      .eq('payment_status', 'paid')
+      .gte('created_at', yesterdayISO)
+      .lt('created_at', todayISO)
+
+    const yesterdayAppRevenue = yesterdayPaidApps?.reduce((sum: number, a: { fee_amount: number }) => sum + (a.fee_amount || 0), 0) || 0
 
     // This week's revenue
     const { data: thisWeekPayments } = await supabase
@@ -88,6 +119,15 @@ export async function GET(req: Request) {
       .from('orders')
       .select('*', { count: 'exact', head: true })
       .in('status', ['pending', 'in_progress'])
+
+    // Total all-time orders (orders + service applications)
+    const { count: totalOrdersCount } = await supabase
+      .from('orders')
+      .select('*', { count: 'exact', head: true })
+
+    const { count: totalServiceAppsCount } = await supabase
+      .from('service_applications')
+      .select('*', { count: 'exact', head: true })
 
     // Pending govt services
     const { count: pendingGovtServices } = await supabase
@@ -251,13 +291,14 @@ export async function GET(req: Request) {
 
     return Response.json({
       stats: {
-        todayOrders: todayOrders || 0,
-        todayRevenue,
+        todayOrders: (todayOrders || 0) + (todayServiceApps || 0),
+        todayRevenue: todayRevenue + todayAppRevenue,
         activeCustomers: totalCustomers || 0,
         pendingTasks: (pendingOrders || 0) + (pendingGovtServices || 0) + (pendingNotarisations || 0),
+        totalOrders: (totalOrdersCount || 0) + (totalServiceAppsCount || 0),
         // New comparison stats
-        yesterdayOrders: yesterdayOrders || 0,
-        yesterdayRevenue,
+        yesterdayOrders: (yesterdayOrders || 0) + (yesterdayServiceApps || 0),
+        yesterdayRevenue: yesterdayRevenue + yesterdayAppRevenue,
         thisWeekRevenue,
         orderTrend: Math.round(orderTrend * 10) / 10,
         revenueTrend: Math.round(revenueTrend * 10) / 10,

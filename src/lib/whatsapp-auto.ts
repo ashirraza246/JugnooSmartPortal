@@ -36,15 +36,15 @@ export function orderCreatedMessage(data: OrderData): WhatsAppMessageConfig {
 ━━━━━━━━━━━━━━━━━━━━━
 📋 Order: #${data.orderNumber || 'N/A'}
 🔧 Service: ${data.serviceName || 'N/A'}
-📅 Date: ${new Date().toLocaleDateString()}
+📆 Date: ${new Date().toLocaleDateString()}
 💰 Amount: Rs. ${data.amount?.toLocaleString() || 'N/A'}
 
 Assalam o Alaikum ${data.customerName || ''}! Aap ka order receive ho gaya hai. Hum jald hi process karenge.
 
 ━━━━━━━━━━━━━━━━━━━━━
-📸 _Jugnoo Photostate_
+🏪 _Jugnoo Photostate_
 📍 _Chowk Azam, Layyah_
-🤖 _AI-Powered Business Management_`
+💡 _AI-Powered Business Management_`
 
   return {
     phone: '',
@@ -83,14 +83,14 @@ export function statusChangedMessage(data: OrderData, newStatus: string): WhatsA
 ━━━━━━━━━━━━━━━━━━━━━
 📋 Order: #${data.orderNumber || 'N/A'}
 🔧 Service: ${data.serviceName || 'N/A'}
-📊 Status: *${label}*
+📋 Status: *${label}*
 
 ${newStatus === 'completed' ? '🎉 Mubarak! Aap ka order mukammal ho gaya hai! / Your order is complete!' : ''}
 ${newStatus === 'ready' ? '✅ Aap ka order tayar hai! / Your order is ready for pickup!' : ''}
 ${newStatus === 'in_progress' ? '🔄 Aap ka order par kaam ho raha hai. / Your order is being processed.' : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━
-📸 _Jugnoo Photostate_
+🏪 _Jugnoo Photostate_
 📍 _Chowk Azam, Layyah_`
 
   return {
@@ -107,14 +107,14 @@ export function paymentConfirmedMessage(data: OrderData): WhatsAppMessageConfig 
 🔧 Service: ${data.serviceName || 'N/A'}
 💵 Amount: Rs. ${data.amount?.toLocaleString() || 'N/A'}
 ${data.paymentMethod ? `💳 Method: ${data.paymentMethod}` : ''}
-${data.transactionId ? `🔑 Trx ID: ${data.transactionId}` : ''}
+${data.transactionId ? `🔐 Trx ID: ${data.transactionId}` : ''}
 
 ✅ Payment confirm ho gayi hai! / Payment confirmed!
 
 ━━━━━━━━━━━━━━━━━━━━━
-📸 _Jugnoo Photostate_
+🏪 _Jugnoo Photostate_
 📍 _Chowk Azam, Layyah_
-🤖 _AI-Powered Business Management_`
+💡 _AI-Powered Business Management_`
 
   return {
     phone: '',
@@ -135,9 +135,9 @@ Assalam o Alaikum ${data.customerName || ''}! Aap ka document tayar hai! / Your 
 🕐 Working Hours: 9 AM - 9 PM
 
 ━━━━━━━━━━━━━━━━━━━━━
-📸 _Jugnoo Photostate_
+🏪 _Jugnoo Photostate_
 📍 _Chowk Azam, Layyah_
-🤖 _AI-Powered Business Management_`
+💡 _AI-Powered Business Management_`
 
   return {
     phone: '',

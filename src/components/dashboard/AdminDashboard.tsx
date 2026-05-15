@@ -355,7 +355,7 @@ export default function AdminDashboard() {
       </style></head><body>
       <div class="header">
         <div><div class="logo">JUGNOO PHOTOSTATE</div><div style="font-size:12px;color:#6B7280;">Chowk Azam, Layyah, Punjab</div></div>
-        <div style="text-align:right"><div class="invoice-label">INVOICE / رسید</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString('en-PK')}</div></div>
+        <div style="text-align:right"><div class="invoice-label">INVOICE / رسید</div><div style="font-size:12px;color:#6B7280;">#JUG-${app.id.slice(0,6).toUpperCase()}-${new Date(app.created_at).getTime().toString(36).slice(-4).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString('en-PK')}</div></div>
       </div>
       <div class="grid">
         <div>
@@ -406,7 +406,7 @@ Amount: Rs. ${app.fee_amount?.toLocaleString()}
 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
 Transaction ID: ${app.transaction_id || 'N/A'}
 Date: ${new Date(app.created_at).toLocaleDateString('en-PK')}
-${docLink ? `\n📥 *Download your work:*\n${docLink}` : ''}
+${docLink ? `\n⬇️ *Download your work:*\n${docLink}` : ''}
 ━━━━━━━━━━━━━━━━━
 Thank you for choosing Jugnoo! 🙏
 
@@ -434,8 +434,8 @@ Service: ${app.service_name}
 Amount: Rs. ${app.fee_amount?.toLocaleString()}
 Status: COMPLETED ✅
 
-${docLink ? `📥 *Download your work here:*
-${docLink}` : '📥 Your work is ready! Please visit the shop to collect it.'}
+${docLink ? `⬇️ *Download your work here:*
+${docLink}` : '⬇️ Your work is ready! Please visit the shop to collect it.'}
 ━━━━━━━━━━━━━━━━━
 Thank you for choosing Jugnoo! 🙏
 

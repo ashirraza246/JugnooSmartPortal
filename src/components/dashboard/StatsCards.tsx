@@ -2,7 +2,7 @@
 
 import { motion } from 'framer-motion'
 import { Card, CardContent } from '@/components/ui/card'
-import { TrendingUp, TrendingDown, ShoppingCart, Users, AlertCircle, Wallet } from 'lucide-react'
+import { TrendingUp, TrendingDown, ShoppingCart, Users, AlertCircle, Wallet, ClipboardList } from 'lucide-react'
 
 interface StatsCardsProps {
   stats: {
@@ -10,6 +10,7 @@ interface StatsCardsProps {
     todayRevenue: number
     activeCustomers: number
     pendingTasks: number
+    totalOrders?: number
     yesterdayOrders?: number
     yesterdayRevenue?: number
     thisWeekRevenue?: number
@@ -117,12 +118,24 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
       trendLabel: '',
       comparison: undefined,
     },
+    {
+      title: 'Total Orders',
+      value: stats.totalOrders || 0,
+      formattedValue: String(stats.totalOrders || 0),
+      icon: ClipboardList,
+      color: '#7C3AED',
+      bgColor: '#F3E5F5',
+      sparkColor: '#7C3AED',
+      trend: 0,
+      trendLabel: '',
+      comparison: undefined,
+    },
   ]
 
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {[1, 2, 3, 4].map((i) => (
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[1, 2, 3, 4, 5].map((i) => (
           <Card key={i} className="border-0 shadow-sm rounded-2xl overflow-hidden">
             <CardContent className="p-3 sm:p-4">
               <div className="h-16 ubl-skeleton-shimmer rounded-xl" />
@@ -134,7 +147,7 @@ export function StatsCards({ stats, isLoading }: StatsCardsProps) {
   }
 
   return (
-    <div className="grid grid-cols-2 lg:grid-cols-4 gap-3">
+    <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
       {cards.map((card, index) => {
         const Icon = card.icon
         return (

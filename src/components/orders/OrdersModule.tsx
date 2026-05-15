@@ -271,7 +271,7 @@ export function OrdersModule() {
             <div class="logo-sub" style="color:#F5A623;">\u0622\u0631\u0679\u06CC\u0641\u06CC\u0634\u06CC\u0644 \u0627\u0646\u0679\u06CC\u0644\u06CC\u062C\u0646\u0633 \u067E\u0631 \u0645\u0628\u0646\u06CC \u06A9\u0627\u0631\u0648\u0628\u0627\u0631\u06CC \u0627\u0646\u0638\u0627\u0645</div>
           </div>
         </div>
-        <div style="text-align:right"><div class="invoice-label">\u0628\u0644 / INVOICE</div><div style="font-size:12px;color:#6B7280;">#${app.id.slice(0,8).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
+        <div style="text-align:right"><div class="invoice-label">\u0628\u0644 / INVOICE</div><div style="font-size:12px;color:#6B7280;">#JUG-${app.id.slice(0,6).toUpperCase()}-${new Date(app.created_at).getTime().toString(36).slice(-4).toUpperCase()}</div><div style="font-size:11px;color:#6B7280;">${new Date(app.created_at).toLocaleDateString()}</div></div>
       </div>
       <div class="grid">
         <div>
@@ -325,29 +325,29 @@ export function OrdersModule() {
       ? app.result_document_url
       : ''
 
-    const invoiceText = `🧾 *JUGNOO PHOTOSTATE - Invoice*
+    const invoiceText = `📄 *JUGNOO PHOTOSTATE - Invoice*
 ━━━━━━━━━━━━━━━━━━━━━
-📋 Invoice: #${app.id.slice(0,8).toUpperCase()}
-📅 Date: ${new Date(app.created_at).toLocaleDateString()}
+📋 Invoice: #JUG-${app.id.slice(0,6).toUpperCase()}-${app.created_at ? new Date(app.created_at).getTime().toString(36).slice(-4).toUpperCase() : '0000'}
+📆 Date: ${new Date(app.created_at).toLocaleDateString()}
 
 👤 *Customer:* ${app.applicant_name || 'N/A'}
-🪪 CNIC: ${app.applicant_cnic || 'N/A'}
+🆔 CNIC: ${app.applicant_cnic || 'N/A'}
 📱 Phone: ${app.applicant_phone || 'N/A'}
 
 🔧 *Service:* ${app.service_name}
-📂 Type: ${app.service_type}
-📊 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
+📁 Type: ${app.service_type}
+📋 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
 💰 Payment: ${app.payment_status === 'paid' ? '✅ PAID' : '❌ UNPAID'}
-${app.transaction_id ? `🔑 Trx ID: ${app.transaction_id}` : ''}
+${app.transaction_id ? `🔐 Trx ID: ${app.transaction_id}` : ''}
 ${app.payment_method ? `💳 Method: ${app.payment_method}` : ''}
 
 💵 *Amount: Rs. ${app.fee_amount?.toLocaleString()}*
-${docLink ? `\n📥 *Download Work:*\n${docLink}` : ''}
+${docLink ? `\n⬇️ *Download Work:*\n${docLink}` : ''}
 
 ━━━━━━━━━━━━━━━━━━━━━
-📸 _Jugnoo Photostate_
+🏪 _Jugnoo Photostate_
 📍 _Chowk Azam, Layyah, Punjab_
-🤖 _AI-Powered Business Management_`
+💡 _AI-Powered Business Management_`
 
     const url = formattedPhone
       ? `https://wa.me/${formattedPhone}?text=${encodeURIComponent(invoiceText)}`
@@ -371,10 +371,10 @@ ${docLink ? `\n📥 *Download Work:*\n${docLink}` : ''}
 
 *Jugnoo Photostate - ${app.service_name}*
 ━━━━━━━━━━━━━━━━━
-📊 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
+📋 Status: ${app.status.replace(/_/g, ' ').toUpperCase()}
 💰 Amount: Rs. ${app.fee_amount?.toLocaleString()}
 
-📥 *Your completed work:*
+⬇️ *Your completed work:*
 ${docLink}
 
 ━━━━━━━━━━━━━━━━━

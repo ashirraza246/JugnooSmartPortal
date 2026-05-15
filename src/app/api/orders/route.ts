@@ -57,7 +57,9 @@ export async function POST(req: NextRequest) {
 
     // Generate order number
     const { count } = await supabase.from('orders').select('*', { count: 'exact', head: true })
-    const orderNumber = `ORD-2025-${String((count || 0) + 1001)}`
+    const datePrefix = new Date().toISOString().slice(0,10).replace(/-/g, '')
+    const randomSuffix = Math.random().toString(36).substring(2, 6).toUpperCase()
+    const orderNumber = `JUG-${datePrefix}-${randomSuffix}`
 
     const { data, error } = await supabase.from('orders').insert([{
       order_number: orderNumber,
